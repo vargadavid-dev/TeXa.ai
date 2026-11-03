@@ -238,14 +238,10 @@ html, body, #root {
   border: 1px solid var(--border-medium);
 }
 
-.subject-btn.active.math {
-  border-color: rgba(56, 189, 248, 0.4);
-  color: #38bdf8;
-}
-
+.subject-btn.active.math,
 .subject-btn.active.physics {
-  border-color: rgba(191, 90, 242, 0.4);
-  color: #bf5af2;
+  border-color: var(--border-medium);
+  color: #ffffff;
 }
 
 .toolbar-spacer {
@@ -498,12 +494,12 @@ html, body, #root {
 }
 
 .sidebar-collapsed-btn.folder-btn {
-  color: #38bdf8;
+  color: var(--text-secondary);
 }
 
 .sidebar-collapsed-btn.folder-btn:hover {
-  color: #7dd3fc;
-  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
 }
 
 .collapsed-mini-badge {
@@ -943,8 +939,8 @@ html, body, #root {
 }
 
 .file-action-btn.move:hover {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent-light);
+  background: var(--bg-hover);
 }
 
 .file-item[draggable="true"] {
@@ -1303,9 +1299,9 @@ html, body, #root {
 }
 
 .toolbar-autosave-toggle.active {
-  background: rgba(48, 209, 88, 0.12);
-  border-color: rgba(48, 209, 88, 0.35);
-  color: #30d158;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
 }
 
 .autosave-status-dot {
@@ -1318,7 +1314,7 @@ html, body, #root {
 
 .toolbar-autosave-toggle.active .autosave-status-dot {
   background: #30d158;
-  box-shadow: 0 0 6px rgba(48, 209, 88, 0.8);
+  box-shadow: none;
 }
 
 /* ── Szerkesztő Fejléc Auto-mentés Állapotjelző ── */
@@ -4127,22 +4123,12 @@ html, body, #root {
   line-height: 1.1;
 }
 
-.outline-level-pill.h1 {
-  background: rgba(10, 132, 255, 0.25);
-  color: #8ec5ff;
-  border: 1px solid rgba(10, 132, 255, 0.45);
-}
-
-.outline-level-pill.h2 {
-  background: rgba(14, 165, 233, 0.2);
-  color: #7dd3fc;
-  border: 1px solid rgba(14, 165, 233, 0.4);
-}
-
+.outline-level-pill.h1,
+.outline-level-pill.h2,
 .outline-level-pill.h3 {
-  background: rgba(100, 116, 139, 0.2);
-  color: #a1a1a6;
-  border: 1px solid rgba(100, 116, 139, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
 }
 
 .outline-item-icon {
@@ -4591,10 +4577,10 @@ html, body, #root {
 }
 
 .inline-ai-tab-btn.insert-tab.active {
-  background: rgba(48, 209, 88, 0.18);
-  border-color: rgba(48, 209, 88, 0.45);
-  color: #30d158;
-  box-shadow: 0 2px 8px rgba(48, 209, 88, 0.25);
+  background: rgba(48, 209, 88, 0.16);
+  border-color: rgba(48, 209, 88, 0.35);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .inline-ai-position-bar {
@@ -4716,8 +4702,8 @@ html, body, #root {
   align-items: center;
   justify-content: space-between;
   padding: 6px 10px;
-  background: rgba(6, 182, 212, 0.08);
-  border: 1px solid rgba(6, 182, 212, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   margin-top: 4px;
   gap: 8px;
@@ -4727,11 +4713,11 @@ html, body, #root {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
-  border: 1px solid rgba(6, 182, 212, 0.45);
-  color: #38bdf8;
+  background: rgba(10, 132, 255, 0.14);
+  border: 1px solid rgba(10, 132, 255, 0.28);
+  color: var(--text-primary);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   padding: 4px 10px;
   border-radius: 5px;
   cursor: pointer;
@@ -4740,21 +4726,20 @@ html, body, #root {
 }
 
 .inline-ai-expand-btn:hover {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.35) 0%, rgba(59, 130, 246, 0.35) 100%);
-  border-color: #38bdf8;
+  background: rgba(10, 132, 255, 0.24);
+  border-color: rgba(10, 132, 255, 0.45);
   color: #fff;
   transform: translateY(-1px);
 }
 
 .inline-ai-expand-hint {
   font-size: 10px;
-  color: #7dd3fc;
-  font-style: italic;
+  color: var(--text-secondary);
 }
 
 .inline-ai-chip.insert-chip:hover {
-  border-color: #30d158;
-  color: #30d158;
+  border-color: rgba(48, 209, 88, 0.45);
+  color: var(--text-primary);
   background: rgba(48, 209, 88, 0.12);
 }
 
@@ -4764,22 +4749,13 @@ html, body, #root {
   font-size: 11px !important;
   height: 23px !important;
   margin-left: 10px;
-  background: linear-gradient(135deg, #ff453a 0%, #ec4899 100%) !important;
-  box-shadow: 0 0 10px rgba(255, 69, 58, 0.45) !important;
+  background: var(--error) !important;
+  box-shadow: none !important;
   border: none !important;
-  animation: pulseGlow 2s infinite ease-in-out;
   display: flex;
   align-items: center;
   gap: 5px;
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(255, 69, 58, 0.35);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(236, 72, 153, 0.65);
-  }
+  color: #fff !important;
 }
 
 .console-error-banner {
@@ -4787,8 +4763,8 @@ html, body, #root {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: linear-gradient(135deg, rgba(255, 69, 58, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
-  border: 1px solid rgba(255, 69, 58, 0.35);
+  background: rgba(255, 69, 58, 0.12);
+  border: 1px solid rgba(255, 69, 58, 0.28);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   margin-bottom: 8px;
@@ -4821,17 +4797,17 @@ html, body, #root {
 .console-error-banner-title {
   font-size: 12px;
   font-weight: 600;
-  color: #fca5a5;
+  color: #ff6961;
 }
 
 .console-error-banner-sub {
   font-size: 11px;
-  color: #d1d1d6;
+  color: var(--text-secondary);
 }
 
 .console-error-action-btn {
-  background: linear-gradient(135deg, #ff453a 0%, #d946ef 100%) !important;
-  box-shadow: 0 0 14px rgba(255, 69, 58, 0.4) !important;
+  background: var(--error) !important;
+  box-shadow: none !important;
   border: none !important;
   font-size: 11.5px !important;
   padding: 5px 12px !important;
@@ -4840,12 +4816,14 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 6px;
+  color: #fff !important;
   transition: var(--transition);
 }
 
 .console-error-action-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 0 18px rgba(217, 70, 239, 0.6) !important;
+  background: #ff5449 !important;
+  box-shadow: none !important;
 }
 
 /* ── Preambulumok & Sablonok Kezelő Modál ── */
@@ -5171,9 +5149,9 @@ html, body, #root {
   font-size: 9.5px;
   padding: 0.5px 5px;
   border-radius: 4px;
-  background: rgba(56, 189, 248, 0.12);
-  color: #7dd3fc;
-  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
   line-height: 1.35;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -5363,12 +5341,12 @@ html, body, #root {
 
 .current-doc-subject-badge {
   font-size: 10.5px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  font-weight: 600;
+  padding: 1.5px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  font-weight: 500;
   flex-shrink: 0;
 }
 
@@ -5503,20 +5481,20 @@ html, body, #root {
 
 /* ── TikZ Ábra AI Szerkesztő és Gyorsválasztó Sáv ── */
 .inline-ai-tab-btn.figure-tab.active {
-  background: rgba(10, 132, 255, 0.2);
-  border-color: rgba(10, 132, 255, 0.5);
-  color: #bf5af2;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  background: var(--accent-dim);
+  border-color: rgba(10, 132, 255, 0.4);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .inline-ai-figure-badge {
   font-size: 10px;
   padding: 1px 7px;
-  border-radius: 12px;
-  background: rgba(10, 132, 255, 0.15);
-  border: 1px solid rgba(10, 132, 255, 0.35);
-  color: #bf5af2;
-  font-weight: 600;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .inline-ai-snippet-preview.figure-preview {
@@ -5533,7 +5511,7 @@ html, body, #root {
 
 .inline-ai-chip.figure-chip:hover {
   border-color: #0a84ff;
-  color: #bf5af2;
+  color: var(--text-primary);
   background: rgba(10, 132, 255, 0.15);
 }
 
@@ -5563,7 +5541,7 @@ html, body, #root {
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #bf5af2;
+  color: var(--text-primary);
 }
 
 .pdf-figures-quickbar-hint {
@@ -5705,12 +5683,12 @@ html, body, #root {
 
 .pdf-popover-page-badge {
   font-size: 10px;
-  font-weight: 600;
-  padding: 1px 7px;
+  font-weight: 500;
+  padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(6, 182, 212, 0.18);
-  border: 1px solid rgba(6, 182, 212, 0.4);
-  color: #38bdf8;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary);
 }
 
 .pdf-popover-tabs {
@@ -5741,8 +5719,8 @@ html, body, #root {
 }
 
 .pdf-popover-tab.active {
-  color: #bf5af2;
-  border-bottom-color: #0a84ff;
+  color: #ffffff;
+  border-bottom-color: var(--accent);
   font-weight: 600;
 }
 
@@ -5781,7 +5759,7 @@ html, body, #root {
   justify-content: center;
   gap: 10px;
   height: 130px;
-  color: #bf5af2;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 
@@ -5969,18 +5947,12 @@ html, body, #root {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.ai-subject-btn.active.math {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.45);
-  color: #38bdf8;
-  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.2);
-}
-
+.ai-subject-btn.active.math,
 .ai-subject-btn.active.physics {
-  background: rgba(191, 90, 242, 0.15);
-  border-color: rgba(191, 90, 242, 0.45);
-  color: #bf5af2;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  background: #636366;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
 
@@ -6125,9 +6097,8 @@ html, body, #root {
   background: #636366;
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  color: #ffffff;
 }
-.ai-subject-btn.active.math { color: var(--math-accent); }
-.ai-subject-btn.active.physics { color: #d9a3ff; }
 .ai-subject-strip { background: transparent; border-bottom: 0.5px solid var(--border-subtle); }
 
 /* Fejlécek (szerkesztő / PDF / AI): egységes, lapos felület */

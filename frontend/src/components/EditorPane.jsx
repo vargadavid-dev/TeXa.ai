@@ -517,7 +517,7 @@ const EditorPane = forwardRef(function EditorPane({
               {/* Fájl fül vagy Átnevezés űrlap */}
               {isEditingName ? (
                 <div className="editor-file-tab editing">
-                  <FileCode size={13} color="var(--accent-light)" style={{ flexShrink: 0 }} />
+                  <FileCode size={13} style={{ flexShrink: 0 }} />
                   <form
                     className="editor-file-tab-rename-form"
                     onSubmit={(e) => {
@@ -596,7 +596,7 @@ const EditorPane = forwardRef(function EditorPane({
                   className="editor-file-tab"
                   title="Kattints a ceruza ikonra vagy kattints duplán a névre a dokumentum átnevezéséhez"
                 >
-                  <FileCode size={13} color="var(--accent-light)" style={{ flexShrink: 0 }} />
+                  <FileCode size={13} style={{ flexShrink: 0 }} />
                   <span
                     className="editor-file-tab-name"
                     onDoubleClick={handleStartRename}
@@ -700,7 +700,7 @@ const EditorPane = forwardRef(function EditorPane({
                     </>
                   ) : (
                     <>
-                      <Sparkles size={13} color="var(--accent-light, #38bdf8)" />
+                      <Sparkles size={13} />
                       <span className="editor-btn-label">TOC javítása</span>
                     </>
                   )}

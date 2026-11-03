@@ -143,7 +143,7 @@ export default function Toolbar({
         title="Egyéni és mester preambulumok / sablonok kezelése"
         id="btn-preambles"
       >
-        <Layers size={14} color="var(--accent-light)" />
+        <Layers size={14} />
         Preambulumok
       </button>
 
@@ -163,13 +163,12 @@ export default function Toolbar({
         <span
           style={{
             position: 'absolute',
-            top: 5,
-            right: 5,
-            width: 7,
-            height: 7,
+            top: 6,
+            right: 6,
+            width: 6,
+            height: 6,
             borderRadius: '50%',
-            background: hasCustomKey ? '#4ade80' : '#f87171',
-            boxShadow: hasCustomKey ? '0 0 6px #4ade80' : '0 0 8px #f87171'
+            background: hasCustomKey ? '#30d158' : '#ff453a'
           }}
         />
       </button>

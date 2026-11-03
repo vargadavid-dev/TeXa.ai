@@ -77,50 +77,13 @@ router.post('/workspace', async (req, res) => {
   }
 });
 
-// POST /api/config/browse-native - Natív rendszer mappa-választó ablak (macOS Finder)
+// POST /api/config/browse-native - Elavult végpont, helyette a kliens oldali fájlkezelő használandó
 router.post('/browse-native', (req, res) => {
-  if (process.platform === 'darwin') {
-    const promptText = 'Válassz ki egy LaTeX munkakönyvtárat:';
-    const script = `osascript -e 'try' -e 'set chosenFolder to choose folder with prompt "${promptText}"' -e 'POSIX path of chosenFolder' -e 'on error number -128' -e 'return "CANCELED"' -e 'end try'`;
-
-    exec(script, { timeout: 15000 }, async (err, stdout) => {
-      if (err) {
-        console.warn('[browse-native] macOS osascript nem tudott felugró ablakot nyitni:', err.message);
-        return res.json({
-          success: false,
-          fallback: true,
-          error: 'A macOS rendszer nem engedélyezte a felugró mappaválasztót (jogosultsági korlátozás). Kérjük, add meg a mappa útvonalát kézzel az alábbi mezőben!'
-        });
-      }
-      const raw = (stdout || '').trim();
-      if (!raw || raw === 'CANCELED') {
-        return res.json({ success: true, canceled: true });
-      }
-
-      const pickedPath = raw.replace(/\/+$/, '');
-      try {
-        const resolved = setProjectsDir(pickedPath);
-        const stats = await getDirStats(resolved);
-        const isDefault = path.resolve(resolved) === path.resolve(DEFAULT_PROJECTS_DIR);
-        res.json({
-          success: true,
-          canceled: false,
-          projectsRootDirectory: resolved,
-          isDefault,
-          stats,
-          message: 'Munkakönyvtár sikeresen kiválasztva!'
-        });
-      } catch (saveErr) {
-        res.status(400).json({ error: saveErr.message });
-      }
-    });
-  } else {
-    res.json({
-      success: false,
-      fallback: true,
-      error: 'A natív felugró ablak macOS-en érhető el. Kérjük, add meg manuálisan a mappa elérési útját!'
-    });
-  }
+  res.json({
+    success: false,
+    fallback: true,
+    error: 'A mappát a böngésző mappaválasztójával vagy az importálás gombbal tudod megnyitni.'
+  });
 });
 
 // POST /api/config/reset-default - Visszaállítás az alapértelmezett projektek mappára

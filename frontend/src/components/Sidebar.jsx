@@ -474,7 +474,7 @@ export default function Sidebar({
     const directFiles = Array.isArray(folder.files) ? folder.files : []
     const subFolders = Array.isArray(folder.folders) ? folder.folders : []
     const totalCount = folder.totalCount !== undefined ? folder.totalCount : (directFiles.length + subFolders.length)
-    const folderColor = isMath ? '#38bdf8' : isPhys ? '#c084fc' : '#34d399'
+    const folderColor = '#0a84ff'
 
     return (
       <div key={key} className={`folder-group ${isRoot ? 'root-group' : 'subfolder-group'}`}>
@@ -743,9 +743,9 @@ export default function Sidebar({
               title={`Aktív tantárgy: ${currentSubject}`}
             >
               {currentSubject === 'Matematika' ? (
-                <Sigma size={15} color="#38bdf8" />
+                <Sigma size={15} color="var(--text-secondary)" />
               ) : (
-                <Atom size={15} color="#c084fc" />
+                <Atom size={15} color="var(--text-secondary)" />
               )}
             </div>
           </div>
@@ -838,9 +838,9 @@ export default function Sidebar({
               style={{
                 padding: '6px 12px',
                 fontSize: 11,
-                background: 'rgba(74, 222, 128, 0.08)',
-                borderBottom: '1px solid rgba(74, 222, 128, 0.2)',
-                color: '#4ade80',
+                background: 'rgba(255, 255, 255, 0.04)',
+                borderBottom: '1px solid var(--border-subtle)',
+                color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
@@ -851,8 +851,8 @@ export default function Sidebar({
                 style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', flex: 1 }}
                 title="Kattints a beállítások megnyitásához vagy mappa módosításához"
               >
-                <HardDrive size={13} style={{ flexShrink: 0 }} />
-                <span><strong>{localWorkspaceName}</strong> (saját gép)</span>
+                <HardDrive size={13} style={{ flexShrink: 0, color: 'var(--accent)' }} />
+                <span><strong style={{ color: 'var(--text-primary)' }}>{localWorkspaceName}</strong> (saját gép)</span>
               </span>
               {onDisconnectLocalFolder && (
                 <button
@@ -872,9 +872,9 @@ export default function Sidebar({
               style={{
                 padding: '7px 12px',
                 fontSize: 11,
-                background: 'rgba(56, 189, 248, 0.08)',
-                borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
-                color: '#38bdf8',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderBottom: '1px solid var(--border-subtle)',
+                color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -883,10 +883,10 @@ export default function Sidebar({
               title="Kattints saját mappa megnyitásához a számítógépeden"
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                <FolderOpen size={13} style={{ flexShrink: 0 }} />
+                <FolderOpen size={13} style={{ flexShrink: 0, color: 'var(--accent)' }} />
                 <span>Mappa megnyitása...</span>
               </span>
-              <span style={{ fontSize: 9.5, background: 'rgba(56, 189, 248, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>Tallózás</span>
+              <span style={{ fontSize: 9.5, background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-primary)', border: '0.5px solid rgba(255, 255, 255, 0.12)', padding: '2px 6px', borderRadius: 4, fontWeight: 500 }}>Tallózás</span>
             </div>
           )}
 

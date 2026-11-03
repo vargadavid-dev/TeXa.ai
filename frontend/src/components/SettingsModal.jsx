@@ -99,7 +99,7 @@ export default function SettingsModal({
     }
   }
 
-  // Mappa kiválasztása: Chrome esetén showDirectoryPicker, Safari/egyéb böngészőknél natív macOS Finder ablak
+  // Mappa kiválasztása a számítógépen
   const handlePickLocalDirectory = async () => {
     setSelectingLocalDir(true)
     setWorkspaceError('')
@@ -122,42 +122,15 @@ export default function SettingsModal({
           }
         } catch (pickErr) {
           if (pickErr.name === 'AbortError') return
-          console.warn('Böngésző mappa picker fallback:', pickErr)
+          console.warn('Mappa választó hiba:', pickErr)
         }
-      }
-
-      // Safari és natív macOS mappa kiválasztás a szerveren keresztül
-      const res = await axios.post('/api/config/browse-native')
-      if (res.data?.canceled) {
-        return
-      }
-      if (res.data?.fallback) {
-        setWorkspaceError(res.data.error || 'Kérjük, add meg a mappa útvonalát kézzel az alábbi mezőben!')
-        setShowManualPath(true)
-        return
-      }
-      if (res.data?.success && res.data.projectsRootDirectory) {
-        setServerConfig(prev => ({
-          ...prev,
-          projectsRootDirectory: res.data.projectsRootDirectory,
-          stats: res.data.stats,
-          isDefault: res.data.isDefault
-        }))
-        setCustomPathInput(res.data.projectsRootDirectory)
-        const parts = res.data.projectsRootDirectory.split(/[\/\\]/).filter(Boolean)
-        const folderName = parts[parts.length - 1] || 'Munkakönyvtár'
-        if (addNotif) {
-          addNotif(`Munkakönyvtár sikeresen csatlakoztatva: ${folderName}`, 'success')
-        }
-        if (onWorkspaceChanged) {
-          onWorkspaceChanged(null)
-        }
+      } else {
+        setWorkspaceError('A böngésződ (Safari/Firefox) nem támogatja a közvetlen merevlemez-mappahozzáférést. A bal oldali sávban lévő fájlokat közvetlenül tudod szerkeszteni, új fájlokat pedig az „Importálás” gombbal tölthetsz be!')
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        const msg = err.response?.data?.error || err.message || 'Nem sikerült kiválasztani a mappát'
+        const msg = err.message || 'Nem sikerült kiválasztani a mappát'
         setWorkspaceError(msg)
-        setShowManualPath(true)
       }
     } finally {
       setSelectingLocalDir(false)
@@ -300,7 +273,7 @@ export default function SettingsModal({
       >
         {/* Modal Header */}
         <div className="modal-header">
-          <div className="modal-header-icon" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
+          <div className="modal-header-icon" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
             <Settings size={18} />
           </div>
           <div className="modal-header-text">
@@ -372,8 +345,8 @@ export default function SettingsModal({
                         width: 36,
                         height: 36,
                         borderRadius: 8,
-                        background: activeName ? 'rgba(74, 222, 128, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                        color: activeName ? '#4ade80' : '#38bdf8',
+                        background: activeName ? 'rgba(48, 209, 88, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                        color: activeName ? 'var(--success)' : 'var(--text-secondary)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -394,8 +367,8 @@ export default function SettingsModal({
                       fontSize: 11,
                       padding: '3px 8px',
                       borderRadius: 10,
-                      background: activeName ? 'rgba(74, 222, 128, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-                      color: activeName ? '#4ade80' : 'var(--text-muted)',
+                      background: activeName ? 'rgba(48, 209, 88, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                      color: activeName ? 'var(--success)' : 'var(--text-muted)',
                       fontWeight: 500,
                       whiteSpace: 'nowrap'
                     }}>
@@ -523,9 +496,9 @@ export default function SettingsModal({
                         style={{
                           fontSize: 11,
                           padding: '3px 8px',
-                          background: customPathInput === sug.path ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                          border: `1px solid ${customPathInput === sug.path ? 'rgba(56, 189, 248, 0.3)' : 'var(--border-color)'}`,
-                          color: customPathInput === sug.path ? '#38bdf8' : 'var(--text-muted)',
+                          background: customPathInput === sug.path ? 'var(--accent-dim)' : 'rgba(255, 255, 255, 0.05)',
+                          border: `1px solid ${customPathInput === sug.path ? 'var(--accent)' : 'var(--border-color)'}`,
+                          color: customPathInput === sug.path ? 'var(--accent)' : 'var(--text-muted)',
                           borderRadius: 6
                         }}
                       >
@@ -556,14 +529,14 @@ export default function SettingsModal({
               <div style={{
                 padding: '12px 14px',
                 borderRadius: 8,
-                background: 'rgba(56, 189, 248, 0.05)',
-                border: '1px solid rgba(56, 189, 248, 0.15)',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--border-subtle)',
                 fontSize: 11,
                 color: 'var(--text-muted)',
                 lineHeight: 1.5
               }}>
-                <div style={{ fontWeight: 600, color: '#38bdf8', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <ShieldCheck size={14} />
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <ShieldCheck size={14} color="var(--accent)" />
                   100% Adatvédelem és Saját Tárhely:
                 </div>
                 A fájljaid kizárólag a te számítógépeden tárolódnak. A szerver soha nem menti el a dokumentumaidat, csak a fordításhoz szükséges pillanatnyi szöveget kapja meg. Legközelebb a böngésző automatikusan felajánlja a folytatást ugyanezzel a mappával.
@@ -693,7 +666,7 @@ export default function SettingsModal({
                 padding: '12px 14px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#38bdf8' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                     💡 Nincs még saját Gemini kulcsod?
                   </div>
                   <a
@@ -701,7 +674,7 @@ export default function SettingsModal({
                     target="_blank"
                     rel="noreferrer"
                     className="btn btn-ghost"
-                    style={{ fontSize: 11, padding: '4px 8px', color: '#38bdf8', textDecoration: 'none' }}
+                    style={{ fontSize: 11, padding: '4px 8px', color: 'var(--accent)', textDecoration: 'none' }}
                   >
                     <span>Google AI Studio megnyitása</span>
                     <ExternalLink size={12} style={{ marginLeft: 4 }} />

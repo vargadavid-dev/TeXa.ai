@@ -226,33 +226,33 @@ export default function DocumentOutline({
     switch (type) {
       case 'part':
       case 'chapter':
-        return <BookOpen size={13} color="#8ec5ff" />
+        return <BookOpen size={13} color="#0a84ff" />
       case 'section':
-        return <Bookmark size={13} color="#64a8ff" />
+        return <Bookmark size={13} color="#0a84ff" />
       case 'subsection':
-        return <Layers size={12} color="#38bdf8" />
+        return <Layers size={12} color="#0a84ff" />
       case 'subsubsection':
-        return <Layers size={11} color="#94a3b8" />
+        return <Layers size={11} color="var(--text-secondary)" />
       case 'frame':
-        return <Presentation size={13} color="#c084fc" />
+        return <Presentation size={13} color="#bf5af2" />
       case 'theorem':
-        return <Sparkles size={12} color="#fbbf24" />
+        return <Sparkles size={12} color="#ff9f0a" />
       case 'definition':
-        return <HelpCircle size={12} color="#34d399" />
+        return <HelpCircle size={12} color="#30d158" />
       case 'task':
-        return <CheckSquare size={12} color="#38bdf8" />
+        return <CheckSquare size={12} color="#0a84ff" />
       case 'example':
-        return <Bookmark size={12} color="#2dd4bf" />
+        return <Bookmark size={12} color="#64d2ff" />
       case 'proof':
-        return <Bookmark size={12} color="#a78bfa" />
+        return <Bookmark size={12} color="#bf5af2" />
       case 'box':
         return <Square size={12} color="#bf5af2" />
       case 'figure':
-        return <Image size={12} color="#f472b6" />
+        return <Image size={12} color="#ff9f0a" />
       case 'table':
-        return <Table size={12} color="#fb923c" />
+        return <Table size={12} color="#ff9f0a" />
       default:
-        return <Bookmark size={12} color="#94a3b8" />
+        return <Bookmark size={12} color="var(--text-secondary)" />
     }
   }
 
@@ -330,7 +330,7 @@ export default function DocumentOutline({
               </>
             ) : (
               <>
-                <Sparkles size={12} color="var(--accent-light, #38bdf8)" />
+                <Sparkles size={12} />
                 <span>TOC és szintek javítása</span>
               </>
             )}

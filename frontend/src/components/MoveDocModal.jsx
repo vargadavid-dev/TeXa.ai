@@ -107,7 +107,7 @@ export default function MoveDocModal({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-                      <Folder size={14} color={folder.subject === 'Matematika' ? '#38bdf8' : '#c084fc'} style={{ flexShrink: 0 }} />
+                      <Folder size={14} color="#0a84ff" style={{ flexShrink: 0 }} />
                       <span style={{ fontWeight: isSelected ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {folder.relativePath || folder.name}
                       </span>

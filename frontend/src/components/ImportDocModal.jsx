@@ -247,7 +247,7 @@ export default function ImportDocModal({
                         style={{
                           padding: '3px 8px',
                           fontSize: 11,
-                          color: sub === 'Matematika' ? '#38bdf8' : 'var(--text-muted)'
+                          color: sub === 'Matematika' ? 'var(--text-primary)' : 'var(--text-muted)'
                         }}
                       >
                         <Sigma size={12} />
@@ -262,7 +262,7 @@ export default function ImportDocModal({
                         style={{
                           padding: '3px 8px',
                           fontSize: 11,
-                          color: sub === 'Fizika' ? '#c084fc' : 'var(--text-muted)'
+                          color: sub === 'Fizika' ? 'var(--text-primary)' : 'var(--text-muted)'
                         }}
                       >
                         <Atom size={12} />
