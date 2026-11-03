@@ -359,25 +359,6 @@ export default function SettingsModal({
 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Safari & macOS információs sáv */}
-                {!isSupportedBrowser && (
-                  <div style={{
-                    padding: '10px 14px',
-                    borderRadius: 8,
-                    background: 'rgba(56, 189, 248, 0.08)',
-                    border: '1px solid rgba(56, 189, 248, 0.25)',
-                    color: '#38bdf8',
-                    fontSize: 12,
-                    lineHeight: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10
-                  }}>
-                    <CheckCircle2 size={16} style={{ flexShrink: 0, color: '#38bdf8' }} />
-                    <span><strong>Safari & macOS natív támogatás aktív:</strong> A mappaválasztás közvetlenül a macOS Finder ablakával működik a saját gépeden.</span>
-                  </div>
-                )}
-
                 {/* Status card */}
                 <div style={{
                   background: activeName ? 'rgba(74, 222, 128, 0.05)' : 'rgba(255, 255, 255, 0.03)',
@@ -451,7 +432,7 @@ export default function SettingsModal({
                       ) : (
                         <FolderOpen size={14} style={{ marginRight: 6 }} />
                       )}
-                      Mappa tallózása a Mac-en
+                      Mappa tallózása a számítógépen
                     </button>
 
                     {!isDefaultDir && (

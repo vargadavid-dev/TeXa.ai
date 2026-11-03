@@ -764,7 +764,7 @@ export default function Sidebar({
                 className="btn-subtle"
                 onClick={onPickLocalFolder}
                 style={{ padding: '3px 6px', borderRadius: 4, color: 'var(--accent-light)' }}
-                title="Saját mappa megnyitása a számítógépedről (Finder)"
+                title="Mappa megnyitása a számítógépről"
               >
                 <FolderOpen size={13} />
               </button>
@@ -884,7 +884,7 @@ export default function Sidebar({
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <FolderOpen size={13} style={{ flexShrink: 0 }} />
-                <span>Mappa megnyitása a Mac-en...</span>
+                <span>Mappa megnyitása...</span>
               </span>
               <span style={{ fontSize: 9.5, background: 'rgba(56, 189, 248, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>Tallózás</span>
             </div>
