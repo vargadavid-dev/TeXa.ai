@@ -1,11 +1,10 @@
 #!/bin/bash
 set -e
 
-echo "1. texa-app konténer ellenőrzése és indítása..."
-if ! docker ps --format '{{.Names}}' | grep -Eq "^texa-app\$"; then
-  docker rm -f texa-app 2>/dev/null || true
-  docker run -d --name texa-app -p 3005:3005 --restart unless-stopped texa
-fi
+echo "1. TeXa Docker image frissítése és konténer újraindítása..."
+docker build -t texa .
+docker rm -f texa-app 2>/dev/null || true
+docker run -d --name texa-app -p 3005:3005 --restart unless-stopped texa
 
 echo "2. Belső Docker hálózat összekötése..."
 docker network create texa-net 2>/dev/null || true
