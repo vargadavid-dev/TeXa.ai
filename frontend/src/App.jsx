@@ -50,6 +50,7 @@ export default function App() {
   const [availableFolders, setAvailableFolders] = useState([])
   const [localDirHandle, setLocalDirHandle] = useState(null)
   const localDirHandleRef = useRef(null)
+  const [serverWorkspace, setServerWorkspace] = useState(null)
 
   const categories = useMemo(() => {
     return Object.keys(projectTree).filter(k => k !== '_root')
@@ -168,6 +169,11 @@ export default function App() {
       setProjectTree(tree)
       if (Array.isArray(r.data.availableFolders)) {
         setAvailableFolders(r.data.availableFolders)
+      }
+      if (r.data.workspacePath) {
+        const parts = r.data.workspacePath.split(/[\/\\]/).filter(Boolean)
+        const name = parts[parts.length - 1] || 'projektek'
+        setServerWorkspace({ path: r.data.workspacePath, name })
       }
       const cats = Object.keys(tree).filter(k => k !== '_root')
       if (cats.length > 0) {
@@ -1402,7 +1408,7 @@ export default function App() {
           currentSubject={currentSubject}
           apiOk={apiOk}
           activeModel={activeModel}
-          localWorkspaceName={localDirHandle ? localDirHandle.name : null}
+          localWorkspaceName={localDirHandle ? localDirHandle.name : (serverWorkspace?.name || 'projektek')}
           onOpenSettings={() => setSettingsModalOpen(true)}
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={toggleSidebarCollapse}

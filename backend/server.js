@@ -19,6 +19,16 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Ha a kérés /texa alútvonalon érkezik (pl. matek.neumann-bp.edu.hu/texa), levágjuk a prefixet
+app.use((req, res, next) => {
+  if (req.url.startsWith('/texa/')) {
+    req.url = req.url.slice(5);
+  } else if (req.url === '/texa') {
+    req.url = '/';
+  }
+  next();
+});
+
 app.use('/api/compile', compileRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/files', filesRouter);

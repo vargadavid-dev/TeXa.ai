@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs-extra');
+const os = require('os');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
@@ -51,7 +52,11 @@ function setProjectsDir(targetPath) {
   if (!targetPath || typeof targetPath !== 'string') {
     throw new Error('Érvénytelen könyvtár útvonal');
   }
-  const resolved = path.resolve(targetPath.trim());
+  let trimmed = targetPath.trim();
+  if (trimmed.startsWith('~')) {
+    trimmed = path.join(os.homedir(), trimmed.slice(1));
+  }
+  const resolved = path.resolve(trimmed);
   fs.ensureDirSync(resolved);
 
   // Írási jogosultság ellenőrzése tesztfájllal

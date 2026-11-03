@@ -5,6 +5,11 @@ import App from './App.jsx'
 import './index.css'
 import { apiKeyManager } from './utils/apiKeyManager'
 
+// Ha a /texa alútvonalon vagyunk (pl. matek.neumann-bp.edu.hu/texa)
+if (window.location.pathname.startsWith('/texa')) {
+  axios.defaults.baseURL = '/texa'
+}
+
 // Automatikus Axios kérés-fejléc interceptor egyéni Gemini API kulcshoz
 axios.interceptors.request.use((config) => {
   const customKey = apiKeyManager.getKey()

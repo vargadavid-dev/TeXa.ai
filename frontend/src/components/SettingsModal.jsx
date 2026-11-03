@@ -16,7 +16,8 @@ import {
   FolderOpen,
   HardDrive,
   FolderCheck,
-  Unlink
+  Unlink,
+  RotateCcw
 } from 'lucide-react'
 import { apiKeyManager } from '../utils/apiKeyManager'
 import { localWorkspace } from '../utils/localWorkspaceManager'
@@ -38,17 +39,38 @@ export default function SettingsModal({
   const [workspaceStats, setWorkspaceStats] = useState({ foldersCount: 0, filesCount: 0 })
   const [workspaceError, setWorkspaceError] = useState('')
 
+  // Szerver-oldali Munkakönyvtár állapot (Safari és natív macOS támogatáshoz)
+  const [serverConfig, setServerConfig] = useState(null)
+  const [customPathInput, setCustomPathInput] = useState('')
+  const [showManualPath, setShowManualPath] = useState(false)
+  const [savingPath, setSavingPath] = useState(false)
+
   // API kulcs állapot
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [testingKey, setTestingKey] = useState(false)
   const [keyValidation, setKeyValidation] = useState(null) // null | { valid: boolean, message: string }
 
+  const fetchServerConfig = async () => {
+    try {
+      const res = await axios.get('/api/config')
+      if (res.data?.success) {
+        setServerConfig(res.data)
+        if (res.data.projectsRootDirectory) {
+          setCustomPathInput(res.data.projectsRootDirectory)
+        }
+      }
+    } catch (err) {
+      console.warn('Hiba a szerver munkakönyvtár lekérésekor:', err)
+    }
+  }
+
   useEffect(() => {
     if (isOpen) {
       const supported = localWorkspace.isSupported()
       setIsSupportedBrowser(supported)
       checkSavedLocalWorkspace()
+      fetchServerConfig()
       setApiKeyInput(apiKeyManager.getKey())
       setKeyValidation(null)
       setWorkspaceError('')
@@ -77,27 +99,134 @@ export default function SettingsModal({
     }
   }
 
+  // Mappa kiválasztása: Chrome esetén showDirectoryPicker, Safari/egyéb böngészőknél natív macOS Finder ablak
   const handlePickLocalDirectory = async () => {
     setSelectingLocalDir(true)
     setWorkspaceError('')
     try {
-      const handle = await localWorkspace.selectDirectory()
-      if (handle) {
-        setLocalDirHandle(handle)
-        setLocalDirName(handle.name)
-        const tree = await localWorkspace.readDirectoryTree(handle)
-        setWorkspaceStats({ foldersCount: tree.folders.length, filesCount: tree.totalCount })
+      if (localWorkspace.isSupported()) {
+        try {
+          const handle = await localWorkspace.selectDirectory()
+          if (handle) {
+            setLocalDirHandle(handle)
+            setLocalDirName(handle.name)
+            const tree = await localWorkspace.readDirectoryTree(handle)
+            setWorkspaceStats({ foldersCount: tree.folders.length, filesCount: tree.totalCount })
+            if (addNotif) {
+              addNotif(`Munkakönyvtár csatlakoztatva: ${handle.name}`, 'success')
+            }
+            if (onWorkspaceChanged) {
+              onWorkspaceChanged(handle)
+            }
+            return
+          }
+        } catch (pickErr) {
+          if (pickErr.name === 'AbortError') return
+          console.warn('Böngésző mappa picker fallback:', pickErr)
+        }
+      }
+
+      // Safari és natív macOS mappa kiválasztás a szerveren keresztül
+      const res = await axios.post('/api/config/browse-native')
+      if (res.data?.canceled) {
+        return
+      }
+      if (res.data?.fallback) {
+        setWorkspaceError(res.data.error || 'Kérjük, add meg a mappa útvonalát kézzel az alábbi mezőben!')
+        setShowManualPath(true)
+        return
+      }
+      if (res.data?.success && res.data.projectsRootDirectory) {
+        setServerConfig(prev => ({
+          ...prev,
+          projectsRootDirectory: res.data.projectsRootDirectory,
+          stats: res.data.stats,
+          isDefault: res.data.isDefault
+        }))
+        setCustomPathInput(res.data.projectsRootDirectory)
+        const parts = res.data.projectsRootDirectory.split(/[\/\\]/).filter(Boolean)
+        const folderName = parts[parts.length - 1] || 'Munkakönyvtár'
         if (addNotif) {
-          addNotif('success', `Munkakönyvtár csatlakoztatva: ${handle.name}`)
+          addNotif(`Munkakönyvtár sikeresen csatlakoztatva: ${folderName}`, 'success')
         }
         if (onWorkspaceChanged) {
-          onWorkspaceChanged(handle)
+          onWorkspaceChanged(null)
         }
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        setWorkspaceError(err.message || 'Nem sikerült kiválasztani a mappát')
+        const msg = err.response?.data?.error || err.message || 'Nem sikerült kiválasztani a mappát'
+        setWorkspaceError(msg)
+        setShowManualPath(true)
       }
+    } finally {
+      setSelectingLocalDir(false)
+    }
+  }
+
+  const handleSaveCustomPath = async (pathOverride = null) => {
+    const targetPath = (typeof pathOverride === 'string' ? pathOverride : customPathInput).trim()
+    if (!targetPath) {
+      setWorkspaceError('Kérlek adj meg egy érvényes mappa elérési utat!')
+      return
+    }
+    setSavingPath(true)
+    setWorkspaceError('')
+    try {
+      const res = await axios.post('/api/config/workspace', {
+        projectsRootDirectory: targetPath
+      })
+      if (res.data?.success) {
+        setServerConfig(prev => ({
+          ...prev,
+          projectsRootDirectory: res.data.projectsRootDirectory,
+          stats: res.data.stats,
+          isDefault: res.data.isDefault
+        }))
+        setCustomPathInput(res.data.projectsRootDirectory)
+        const parts = res.data.projectsRootDirectory.split(/[\/\\]/).filter(Boolean)
+        const folderName = parts[parts.length - 1] || 'Munkakönyvtár'
+        if (addNotif) {
+          addNotif(`Munkakönyvtár beállítva: ${folderName}`, 'success')
+        }
+        if (onWorkspaceChanged) {
+          onWorkspaceChanged(null)
+        }
+      }
+    } catch (err) {
+      setWorkspaceError(err.response?.data?.error || err.message || 'Hiba a mappa beállításakor')
+    } finally {
+      setSavingPath(false)
+    }
+  }
+
+  const handleResetDefault = async () => {
+    setSelectingLocalDir(true)
+    setWorkspaceError('')
+    try {
+      if (localDirHandle) {
+        await localWorkspace.disconnectDirectory()
+        setLocalDirHandle(null)
+        setLocalDirName('')
+      }
+      const res = await axios.post('/api/config/reset-default')
+      if (res.data?.success) {
+        setServerConfig(prev => ({
+          ...prev,
+          projectsRootDirectory: res.data.projectsRootDirectory,
+          stats: res.data.stats,
+          isDefault: true
+        }))
+        setCustomPathInput(res.data.projectsRootDirectory)
+        if (addNotif) {
+          addNotif('Visszaállítva az alapértelmezett projektek mappára!', 'info')
+        }
+        if (onWorkspaceChanged) {
+          onWorkspaceChanged(null)
+        }
+      }
+    } catch (err) {
+      setWorkspaceError(err.response?.data?.error || err.message || 'Hiba a visszaállítás során')
     } finally {
       setSelectingLocalDir(false)
     }
@@ -109,7 +238,7 @@ export default function SettingsModal({
     setLocalDirName('')
     setWorkspaceStats({ foldersCount: 0, filesCount: 0 })
     if (addNotif) {
-      addNotif('info', 'Munkakönyvtár leválasztva.')
+      addNotif('Helyi böngésző munkakönyvtár leválasztva, visszaállítva a szerver mappára.', 'info')
     }
     if (onWorkspaceChanged) {
       onWorkspaceChanged(null)
@@ -217,115 +346,213 @@ export default function SettingsModal({
 
         {/* Modal Body */}
         <div className="modal-body" style={{ overflowY: 'auto', padding: '16px 20px', flex: 1 }}>
-          {activeTab === 'workspace' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Browser support alert if not supported */}
-              {!isSupportedBrowser && (
-                <div style={{
-                  padding: '12px 14px',
-                  borderRadius: 8,
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171',
-                  fontSize: 12,
-                  lineHeight: 1.5
-                }}>
-                  <strong>⚠️ Böngésző korlátozás:</strong> A közvetlen helyi mappakezeléshez kérjük, használj modern asztali böngészőt (pl. <strong>Google Chrome</strong> vagy <strong>Microsoft Edge</strong>).
-                </div>
-              )}
+          {activeTab === 'workspace' && (() => {
+            const hasLocalHandle = Boolean(localDirHandle)
+            const activePath = hasLocalHandle ? null : serverConfig?.projectsRootDirectory
+            const activeName = hasLocalHandle
+              ? localDirName
+              : (serverConfig?.projectsRootDirectory
+                  ? serverConfig.projectsRootDirectory.split(/[\/\\]/).filter(Boolean).pop()
+                  : 'projektek')
+            const activeStats = hasLocalHandle ? workspaceStats : (serverConfig?.stats || { foldersCount: 0, filesCount: 0 })
+            const isDefaultDir = !hasLocalHandle && (serverConfig?.isDefault ?? true)
 
-              {/* Status card */}
-              <div style={{
-                background: localDirName ? 'rgba(74, 222, 128, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-                border: `1px solid ${localDirName ? 'rgba(74, 222, 128, 0.25)' : 'var(--border-color)'}`,
-                borderRadius: 8,
-                padding: '16px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 8,
-                      background: localDirName ? 'rgba(74, 222, 128, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                      color: localDirName ? '#4ade80' : '#38bdf8',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {localDirName ? <FolderCheck size={20} /> : <HardDrive size={20} />}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-main)' }}>
-                        {localDirName ? localDirName : 'Nincs csatlakoztatva helyi mappa'}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                        {localDirName
-                          ? 'Mappa a számítógéped merevlemezén (a böngésző megjegyezte)'
-                          : 'Válassz ki egy mappát a saját gépeden (pl. Dokumentumok/LaTeX)'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <span style={{
-                    fontSize: 11,
-                    padding: '3px 8px',
-                    borderRadius: 10,
-                    background: localDirName ? 'rgba(74, 222, 128, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-                    color: localDirName ? '#4ade80' : 'var(--text-muted)',
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {localDirName ? '● Csatlakoztatva' : 'Nincs kiválasztva'}
-                  </span>
-                </div>
-
-                {localDirName && (
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Safari & macOS információs sáv */}
+                {!isSupportedBrowser && (
                   <div style={{
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    background: 'rgba(56, 189, 248, 0.08)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    color: '#38bdf8',
                     fontSize: 12,
-                    color: 'var(--text-muted)',
+                    lineHeight: 1.5,
                     display: 'flex',
-                    gap: 16,
-                    padding: '8px 12px',
-                    background: 'rgba(0, 0, 0, 0.2)',
-                    borderRadius: 6,
-                    marginBottom: 12
+                    alignItems: 'center',
+                    gap: 10
                   }}>
-                    <span>Talált almappák: <strong>{workspaceStats.foldersCount} db</strong></span>
-                    <span>LaTeX (.tex) fájlok: <strong>{workspaceStats.filesCount} db</strong></span>
+                    <CheckCircle2 size={16} style={{ flexShrink: 0, color: '#38bdf8' }} />
+                    <span><strong>Safari & macOS natív támogatás aktív:</strong> A mappaválasztás közvetlenül a macOS Finder ablakával működik a saját gépeden.</span>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handlePickLocalDirectory}
-                    disabled={selectingLocalDir || !isSupportedBrowser}
-                    style={{ fontSize: 12, padding: '7px 14px' }}
-                  >
-                    {selectingLocalDir ? (
-                      <Loader2 size={14} className="spinner" style={{ marginRight: 6 }} />
-                    ) : (
-                      <FolderOpen size={14} style={{ marginRight: 6 }} />
-                    )}
-                    {localDirName ? 'Másik mappa kiválasztása' : 'Mappa kiválasztása a számítógépemen'}
-                  </button>
+                {/* Status card */}
+                <div style={{
+                  background: activeName ? 'rgba(74, 222, 128, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+                  border: `1px solid ${activeName ? 'rgba(74, 222, 128, 0.25)' : 'var(--border-color)'}`,
+                  borderRadius: 8,
+                  padding: '16px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        background: activeName ? 'rgba(74, 222, 128, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                        color: activeName ? '#4ade80' : '#38bdf8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {activeName ? <FolderCheck size={20} /> : <HardDrive size={20} />}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-main)' }}>
+                          {activeName || 'Nincs csatlakoztatva helyi mappa'}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+                          {activePath || (hasLocalHandle ? 'Mappa a számítógéped merevlemezén (a böngésző megjegyezte)' : 'Válassz ki egy mappát a saját gépeden (pl. Dokumentumok/LaTeX)')}
+                        </div>
+                      </div>
+                    </div>
 
-                  {localDirName && (
+                    <span style={{
+                      fontSize: 11,
+                      padding: '3px 8px',
+                      borderRadius: 10,
+                      background: activeName ? 'rgba(74, 222, 128, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                      color: activeName ? '#4ade80' : 'var(--text-muted)',
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {activeName ? '● Csatlakoztatva' : 'Nincs kiválasztva'}
+                    </span>
+                  </div>
+
+                  {activeName && (
+                    <div style={{
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      gap: 16,
+                      padding: '8px 12px',
+                      background: 'rgba(0, 0, 0, 0.2)',
+                      borderRadius: 6,
+                      marginBottom: 12
+                    }}>
+                      <span>Talált almappák: <strong>{activeStats.foldersCount} db</strong></span>
+                      <span>LaTeX (.tex) fájlok: <strong>{activeStats.filesCount} db</strong></span>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     <button
                       type="button"
-                      className="btn btn-ghost"
-                      onClick={handleDisconnectLocalDirectory}
-                      style={{ fontSize: 12, color: '#f87171' }}
-                      title="Mappa leválasztása"
+                      className="btn btn-primary"
+                      onClick={handlePickLocalDirectory}
+                      disabled={selectingLocalDir}
+                      style={{ fontSize: 12, padding: '7px 14px' }}
                     >
-                      <Unlink size={13} style={{ marginRight: 4 }} />
-                      Leválasztás
+                      {selectingLocalDir ? (
+                        <Loader2 size={14} className="spinner" style={{ marginRight: 6 }} />
+                      ) : (
+                        <FolderOpen size={14} style={{ marginRight: 6 }} />
+                      )}
+                      Mappa tallózása a Mac-en
                     </button>
-                  )}
+
+                    {!isDefaultDir && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={handleResetDefault}
+                        disabled={selectingLocalDir}
+                        style={{ fontSize: 12, color: 'var(--text-muted)' }}
+                        title="Visszaállítás az alapértelmezett projektek mappára"
+                      >
+                        <RotateCcw size={13} style={{ marginRight: 4 }} />
+                        Alapértelmezett visszaállítása
+                      </button>
+                    )}
+
+                    {hasLocalHandle && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={handleDisconnectLocalDirectory}
+                        style={{ fontSize: 12, color: '#f87171' }}
+                        title="Mappa leválasztása"
+                      >
+                        <Unlink size={13} style={{ marginRight: 4 }} />
+                        Leválasztás
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+
+                {/* Mappa elérési útja és gyors választó */}
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 8,
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Munkakönyvtár elérési útja a saját gépeden:</span>
+                    <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)' }}>Abszolút útvonal vagy ~/</span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={customPathInput}
+                      onChange={e => {
+                        setCustomPathInput(e.target.value)
+                        setWorkspaceError('')
+                      }}
+                      placeholder="pl. /Users/.../Documents/LaTeX vagy ~/Documents/LaTeX"
+                      style={{ flex: 1, fontSize: 12 }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleSaveCustomPath()
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => handleSaveCustomPath()}
+                      disabled={savingPath || !customPathInput.trim()}
+                      style={{ fontSize: 12, padding: '7px 14px' }}
+                    >
+                      {savingPath ? <Loader2 size={13} className="spinner" /> : 'Alkalmazás'}
+                    </button>
+                  </div>
+
+                  {/* Gyors gombok / javaslatok */}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 2 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginRight: 2 }}>Gyors választás:</span>
+                    {(serverConfig?.suggestions || [
+                      { name: 'Alapértelmezett (projektek)', path: serverConfig?.defaultDirectory || '' }
+                    ]).map((sug, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => {
+                          setCustomPathInput(sug.path)
+                          handleSaveCustomPath(sug.path)
+                        }}
+                        disabled={savingPath}
+                        style={{
+                          fontSize: 11,
+                          padding: '3px 8px',
+                          background: customPathInput === sug.path ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                          border: `1px solid ${customPathInput === sug.path ? 'rgba(56, 189, 248, 0.3)' : 'var(--border-color)'}`,
+                          color: customPathInput === sug.path ? '#38bdf8' : 'var(--text-muted)',
+                          borderRadius: 6
+                        }}
+                      >
+                        {sug.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
               {workspaceError && (
                 <div style={{
@@ -361,7 +588,8 @@ export default function SettingsModal({
                 A fájljaid kizárólag a te számítógépeden tárolódnak. A szerver soha nem menti el a dokumentumaidat, csak a fordításhoz szükséges pillanatnyi szöveget kapja meg. Legközelebb a böngésző automatikusan felajánlja a folytatást ugyanezzel a mappával.
               </div>
             </div>
-          )}
+            )
+          })()}
 
           {activeTab === 'apikey' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
