@@ -1,0 +1,24 @@
+# Környezeti változók és érzékeny kulcsok
+.env
+.env.local
+*.env
+
+# Függőségek
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Munkakönyvtárak és ideiglenes fájlok
+backend/temp/
+backend/uploads/
+projektek/
+*.log
+
+# Építési fájlok
+frontend/dist/
+frontend/dist-ssr/
+
+# Rendszerfájlok
+.DS_Store
+Thumbs.db
+AI LaTeX Szerkesztő.app/

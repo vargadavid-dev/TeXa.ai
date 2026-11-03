@@ -1,0 +1,51 @@
+{
+  "Matematika/Gráfok_Mikrotananyag.tex": {
+    "tags": [
+      "Mikrotananyag",
+      "Gráfelmélet",
+      "Interaktív",
+      "Érettségi"
+    ],
+    "updatedAt": "2026-10-27T16:33:24.942Z"
+  },
+  "Matematika/Gráfok.tex": {
+    "tags": [
+      "Összefoglaló",
+      "Gráfelmélet"
+    ]
+  },
+  "Matematika/Bevezetés_és_a_trigonometrikus_alapegyenlet.tex": {
+    "tags": [
+      "Trigonometria",
+      "Egyenletek"
+    ]
+  },
+  "Matematika/primary.tex": {
+    "tags": [
+      "Sablon",
+      "Koordinátageometria"
+    ]
+  },
+  "Matematika/Másodfokú egyenletek és a diszkrimináns.tex": {
+    "tags": [
+      "Elmélet",
+      "Alapfogalmak"
+    ]
+  },
+  "Matematika/Kombinatorika/Ismétlés nélküli permutáció.tex": {
+    "tags": [
+      "Kombinatorika",
+      "Permutáció",
+      "Alapfogalmak"
+    ],
+    "updatedAt": "2026-11-03T09:48:46.469Z"
+  },
+  "Matematika/Kombinatorika/Ismétléses permutáció.tex": {
+    "tags": [
+      "Kombinatorika",
+      "Permutáció",
+      "Ismétléses permutáció"
+    ],
+    "updatedAt": "2026-11-02T22:00:00.000Z"
+  }
+}

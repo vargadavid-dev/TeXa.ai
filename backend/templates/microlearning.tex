@@ -1,0 +1,84 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+% Egyedi stílusú dobozok a mikrotananyag módszertanhoz
+\newtcolorbox{definiciodoboz}[1][]{colback=blue!5!white,colframe=blue!75!black,fonttitle=\bfseries,title=Definíció: #1}
+\newtcolorbox{teteldoboz}[1][]{colback=green!8!white,colframe=green!75!black,fonttitle=\bfseries,title=Tétel / Szabály: #1}
+\newtcolorbox{feladatdoboz}[1][]{colback=orange!5!white,colframe=orange!85!black,fonttitle=\bfseries,title=Ellenőrző feladat: #1}
+\newtcolorbox{megoldasdoboz}[1][]{colback=gray!5!white,colframe=gray!60!black,fonttitle=\bfseries,title=Megoldás és magyarázat: #1}
+
+\title{Témakör -- Mikrotananyag}
+\author{AI LaTeX Studio}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{1. Mikro-egység: Alapfogalom bemutatása}
+
+\begin{definiciodoboz}[Fogalom meghatározása]
+Itt szerepel a témakör legkisebb, önállóan megérthető egysége, szabálya vagy definíciója. Egyszerre mindig csak egy új gondolatot vezetünk be.
+\end{definiciodoboz}
+
+% Azonnali visszacsatolás: Elmélet 1 -> Feladat 1
+\begin{feladatdoboz}[1. Megértést ellenőrző kérdés (Feleletválasztós)]
+Melyik állítás írja le helyesen a fenti fogalmat?
+\begin{enumerate}[label=(\Alph*)]
+    \item Első válaszlehetőség
+    \item Második válaszlehetőség (Helyes megoldás)
+    \item Harmadik válaszlehetőség
+    \item Negyedik válaszlehetőség
+\end{enumerate}
+\end{feladatdoboz}
+
+\begin{megoldasdoboz}[Megoldás az 1. kérdéshez]
+\textbf{Helyes válasz: (B)} \\
+\textit{Indoklás:} A definíció alapján ez az állítás tükrözi a pontos összefüggést.
+\end{megoldasdoboz}
+
+\section{2. Mikro-egység: Szabály és összefüggés}
+
+\begin{teteldoboz}[Alapvető tétel / képlet]
+A következő logikus lépésként bemutatott alaptétel vagy számítási képlet:
+\[
+    f(x) = a \cdot x + b
+\]
+ahol $a$ a meredekség és $b$ a tengelymetszet.
+\end{teteldoboz}
+
+% Azonnali visszacsatolás: Elmélet 2 -> Feladat 2
+\begin{feladatdoboz}[2. Megértést ellenőrző feladat (Igaz/Hamis és Többlépcsős vezetés)]
+\textbf{A) Igaz vagy Hamis?}
+\begin{itemize}
+    \item Ha $a > 0$, akkor a függvény szigorúan monoton növekvő. (I / H)
+\end{itemize}
+
+\medskip
+\textbf{B) Többlépcsős feladatvezetés:}
+\begin{enumerate}[label=\alph*)]
+    \item Számítsd ki a függvényértéket $x = 3$ esetén, ha $a = 2$ és $b = 4$!
+    \item Határozd meg, melyik pontban metszi az $y$-tengelyt!
+\end{enumerate}
+\end{feladatdoboz}
+
+\begin{megoldasdoboz}[Megoldás a 2. feladathoz]
+\textbf{A) Igaz}, mert pozitív meredekség esetén az argumentum növekedésével a függvényérték is nő. \\
+\textbf{B) Lépésről lépésre:}
+\begin{enumerate}[label=\alph*)]
+    \item $f(3) = 2 \cdot 3 + 4 = 6 + 4 = 10$.
+    \item $x = 0$ helyettesítéssel $f(0) = 4$, tehát a metszéspont $(0, 4)$.
+\end{enumerate}
+\end{megoldasdoboz}
+
+\end{document}

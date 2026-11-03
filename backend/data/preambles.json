@@ -1,0 +1,51 @@
+[
+  {
+    "id": "default-microlearning",
+    "name": "Interaktív Mikrotananyag",
+    "desc": "Definíciók, tételek, feladat- és megoldásdobozok az azonnali visszacsatoláshoz",
+    "subject": "Mindkettő",
+    "isBuiltin": true,
+    "preamble": "\\documentclass[a4paper,12pt]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage[magyar]{babel}\n\\usepackage{amsmath, amssymb, amsthm}\n\\usepackage{geometry}\n\\usepackage{xcolor}\n\\usepackage{tcolorbox}\n\\tcbuselibrary{theorems,skins,breakable}\n\\usepackage{tikz}\n\\usepackage{enumitem}\n\\geometry{margin=2.5cm}\n\n% Dobozok a mikrotananyag módszertanhoz\n\\newtcolorbox{definiciodoboz}[1][]{colback=blue!5!white,colframe=blue!75!black,fonttitle=\\bfseries,title=Definíció: #1}\n\\newtcolorbox{teteldoboz}[1][]{colback=green!8!white,colframe=green!75!black,fonttitle=\\bfseries,title=Tétel: #1}\n\\newtcolorbox{feladatdoboz}[1][]{colback=orange!5!white,colframe=orange!85!black,fonttitle=\\bfseries,title=Ellenőrző feladat: #1}\n\\newtcolorbox{megoldasdoboz}[1][]{colback=gray!5!white,colframe=gray!60!black,fonttitle=\\bfseries,title=Megoldás és magyarázat: #1}"
+  },
+  {
+    "id": "default-math",
+    "name": "Matematika Mester-Preambulum",
+    "desc": "Elegáns kék definíciók, zöld tételek, bizonyítások, TikZ és koordinátarendszer",
+    "subject": "Matematika",
+    "isBuiltin": true,
+    "preamble": "\\documentclass[a4paper,12pt]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage[magyar]{babel}\n\\usepackage{amsmath, amssymb, amsthm}\n\\usepackage{geometry}\n\\usepackage{xcolor}\n\\usepackage{tcolorbox}\n\\tcbuselibrary{theorems,skins}\n\\usepackage{tikz}\n\\usepackage{pgfplots}\n\\pgfplotsset{compat=1.18}\n\\usepackage{enumerate}\n\\geometry{margin=2.5cm}\n\n% Egyedi definíció és tétel dobozok\n\\newtcolorbox{definiciodoboz}[1][]{colback=blue!5!white,colframe=blue!75!black,fonttitle=\\bfseries,title=Definíció: #1}\n\\newtcolorbox{teteldoboz}[1][]{colback=green!10!white,colframe=green!75!black,fonttitle=\\bfseries,title=Tétel: #1}"
+  },
+  {
+    "id": "default-physics",
+    "name": "Fizika Mester-Preambulum",
+    "desc": "SI mértékegységek (siunitx), törvénydobozok, TikZ és áramkörök",
+    "subject": "Fizika",
+    "isBuiltin": true,
+    "preamble": "\\documentclass[a4paper,12pt]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage[magyar]{babel}\n\\usepackage{amsmath, amssymb}\n\\usepackage{siunitx}\n\\sisetup{locale=DE}\n\\usepackage{geometry}\n\\usepackage{xcolor}\n\\usepackage{tcolorbox}\n\\usepackage{tikz}\n\\usepackage{circuitikz}\n\\usepackage{booktabs}\n\\geometry{margin=2.5cm}\n\n% Egyedi fizikai törvény kiemelő doboz\n\\newtcolorbox{torvenydoboz}[1][]{colback=purple!5!white,colframe=purple!75!black,fonttitle=\\bfseries,title=Fizikai törvény: #1}"
+  },
+  {
+    "id": "default-worksheet",
+    "name": "Gyakorló Feladatsor & Dolgozat",
+    "desc": "Kompakt 2cm margó, fejléc mezők, számozott feladatok és pontozás",
+    "subject": "Mindkettő",
+    "isBuiltin": true,
+    "preamble": "\\documentclass[a4paper,11pt]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage[magyar]{babel}\n\\usepackage{amsmath, amssymb}\n\\usepackage{geometry}\n\\usepackage{xcolor}\n\\usepackage{tcolorbox}\n\\usepackage{enumitem}\n\\geometry{margin=2cm}"
+  },
+  {
+    "id": "default-beamer",
+    "name": "Beamer Diavetítés",
+    "desc": "16:9 szélesvásznú diák, Madrid téma, bullet pointok és képletek",
+    "subject": "Mindkettő",
+    "isBuiltin": true,
+    "preamble": "\\documentclass[aspectratio=169,11pt]{beamer}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage[magyar]{babel}\n\\usepackage{amsmath, amssymb}\n\\usetheme{Madrid}\n\\usecolortheme{whale}"
+  },
+  {
+    "id": "custom-1f3c2168",
+    "name": "Próba",
+    "desc": "Felhasználói egyéni preambulum",
+    "subject": "Mindkettő",
+    "isBuiltin": false,
+    "preamble": "\\documentclass[a4paper,12pt]{article}\n\n%%% Alapdokumentum beállítások %%%\n\\usepackage[hungarian]{babel}     % Magyar nyelvi támogatás\n\\usepackage[T1]{fontenc}          % T1 betűtípus kódolás (az utf8 inputenc ma már alapértelmezett)\n\\usepackage{geometry}             % Oldalformázás\n\\geometry{a4paper, margin=1.5in}  % Papírméret és margók\n\n%%% Szövegformázás és oldalelrendezés (JAVÍTOTT) %%%\n\\usepackage{microtype}            % Intelligens sorkizárás, szebb szövegkép\n\\usepackage{parskip}              % Bekezdések közötti térköz (behúzás helyett)\n\\usepackage{enumitem}             % Lista testreszabáshoz\n\\usepackage{multicol}             % Többszörös oszlopokhoz\n\\setlength{\\emergencystretch}{3em}% Segít a nehezen törhető soroknál (a \\sloppy helyett)\n% Az elválasztás tiltása (\\hyphenpenalty) kivezetve, mert magyar nyelvben tönkreteszi a sorkizárást!\n\n%%% Matematikai és tudományos csomagok %%%\n\\usepackage{amsmath, amssymb, amsfonts, amsthm} % Matematikai csomagok egyben\n\\usepackage{stmaryrd}                           % Speciális matematikai szimbólumok\n\\usepackage[version=4]{mhchem}                  % Kémiai képletekhez\n\\usepackage{esvect}                             % Vektorokhoz (vastag nyilak)\n\\usepackage{cancel}                             % Matematikai áthúzáshoz\n\n%%% Színek és Grafikai elemek (JAVÍTOTT) %%%\n\\usepackage{xcolor}                             % Színek kezelése (FONTOS!)\n\\definecolor{bvred}{rgb}{0.8, 0.0, 0.0}         % Piros szín definiálása\n\n\\usepackage{graphicx}                           % Képek beszúrásához\n\\usepackage{wrapfig}                            % Képek lebegtetéséhez\n\\usepackage{tikz}                               % Vektoros ábrákhoz\n\\usetikzlibrary{calc, intersections, decorations.pathreplacing}\n\\usepackage{pgfplots}\n\\pgfplotsset{compat=1.18}                       % PGFPlots kompatibilitás (FONTOS!)\n\\usepackage{caption}                            % Ábrafeliratok testreszabásához\n\\usepackage{float}                              % Ábrák pozicionálásához\n\n%%% Táblázatok és tömbök %%%\n\\usepackage{array}                       % Speciális oszloptípusok\n\\setlength{\\arrayrulewidth}{0.8pt}       % Táblázatvonalak vastagsága\n\\setlength{\\tabcolsep}{6pt}              % Oszlopok közötti térköz\n\\renewcommand{\\arraystretch}{1.8}        % Sorok magassága\n\n%%% Egyedi parancsok és környezetek (JAVÍTOTT) %%%\n\\newcommand{\\textbfr}[1]{\\textbf{\\textcolor{bvred}{#1}}} % Piros félkövér szöveg\n\n\\usepackage{etoolbox} % LaTeX programozási eszközök\n\\newrobustcmd*{\\mytriangle}[1]{%                  % Háromszög jelölés\n    \\tikz{\\filldraw[draw=#1,fill=#1,rotate=-90] (0,0)--(0.2cm,0)--(0.1cm,0.2cm)--cycle;}}\n\n% amsthm környezetek letisztult beállítása\n\\theoremstyle{definition} % Ezzel a normál (nem dőlt) betűtípust használja a környezeteken belül\n\\newtheorem*{definition}{Definíció}\n\\newtheorem*{theorem}{Tétel}\n\\newtheorem*{problem}{Feladat}\n\\newtheorem*{example}{Példa}\n\\newtheorem*{remark}{\\mytriangle{bvred} Megjegyzés}\n\n%%% Hiperhivatkozások és PDF-beállítások %%%\n\n%%% Megjelenítéshez automatikusan kiegészített csomagok %%%\n\\usepackage[utf8]{inputenc}\n\\usepackage{tcolorbox}\n\\tcbuselibrary{theorems,skins,breakable}\n\\usepackage{booktabs}\n\n%%% Megjelenítéshez kiegészített dobozok és makrók %%%\n\\newtcolorbox{definiciodoboz}[1][]{colback=blue!5!white,colframe=blue!75!black,fonttitle=\\bfseries,title=Definíció: #1}\n\\newtcolorbox{teteldoboz}[1][]{colback=green!10!white,colframe=green!75!black,fonttitle=\\bfseries,title=Tétel: #1}\n\\newtcolorbox{torvenydoboz}[1][]{colback=purple!5!white,colframe=purple!75!black,fonttitle=\\bfseries,title=Fizikai törvény: #1}\n\n\\usepackage{hyperref}                    % Mindig utolsóként (vagy majdnem utolsóként) érdemes betölteni\n\n%%% Geometriai jelölések %%%\n\\def\\dotMarkRightAngle[size=#1](#2,#3,#4){%\n \\draw ($(#3)!#1!(#2)$) -- \n       ($($(#3)!#1!(#2)$)!#1!90:(#2)$) --\n       ($(#3)!#1!(#4)$);\n \\path (#3)--node[circle,fill,inner sep=.5pt]{} ($($(#3)!#1!(#2)$)!#1!90:(#2)$);\n}",
+    "createdAt": "2026-10-18T20:40:00.648Z"
+  }
+]

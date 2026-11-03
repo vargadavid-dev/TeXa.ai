@@ -1,0 +1,15 @@
+{
+  "name": "ai-latex-editor",
+  "version": "1.0.0",
+  "description": "Helyi AI-alapú LaTeX szerkesztő oktatási anyagokhoz",
+  "scripts": {
+    "prestart": "lsof -ti :3005 | xargs kill -9 2>/dev/null || true",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
