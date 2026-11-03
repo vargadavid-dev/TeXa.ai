@@ -49,6 +49,7 @@ export default function App() {
   const [projectTree, setProjectTree] = useState({})
   const [availableFolders, setAvailableFolders] = useState([])
   const [localDirHandle, setLocalDirHandle] = useState(null)
+  const [pendingPermissionHandle, setPendingPermissionHandle] = useState(null)
   const localDirHandleRef = useRef(null)
   const [serverWorkspace, setServerWorkspace] = useState(null)
 
@@ -206,7 +207,9 @@ export default function App() {
         const saved = await localWorkspace.getSavedDirectory()
         if (saved) {
           const handle = saved.handle || saved
-          if (!saved.needsPermission) {
+          if (saved.needsPermission) {
+            setPendingPermissionHandle(handle)
+          } else {
             setLocalDirHandle(handle)
             localDirHandleRef.current = handle
             await loadProjects(handle)
@@ -229,6 +232,60 @@ export default function App() {
     const timeoutDuration = action ? 7000 : 4000
     setTimeout(() => setNotifications(n => n.filter(x => x.id !== id)), timeoutDuration)
   }, [])
+
+  // Helyi mappa engedélyezése 1 kattintással (újratöltés után)
+  const handleGrantPermission = useCallback(async () => {
+    if (!pendingPermissionHandle) return
+    try {
+      const granted = await localWorkspace.requestPermission(pendingPermissionHandle)
+      if (granted) {
+        const handle = pendingPermissionHandle
+        setLocalDirHandle(handle)
+        localDirHandleRef.current = handle
+        setPendingPermissionHandle(null)
+        await loadProjects(handle)
+        addNotif(`Munkakönyvtár csatlakoztatva: ${handle.name}`, 'success')
+      } else {
+        addNotif('A mappa hozzáférését nem hagytad jóvá.', 'warning')
+      }
+    } catch (err) {
+      console.warn('Hiba a jogosultság kérésekor:', err)
+      addNotif('Nem sikerült hozzáférni a helyi mappához.', 'error')
+    }
+  }, [pendingPermissionHandle, loadProjects, addNotif])
+
+  // Helyi mappa tallózása 1 kattintással a Sidebarból
+  const handlePickLocalFolder = useCallback(async () => {
+    if (!localWorkspace.isSupported()) {
+      setSettingsModalOpen(true)
+      return
+    }
+    try {
+      const handle = await localWorkspace.selectDirectory()
+      if (handle) {
+        setLocalDirHandle(handle)
+        localDirHandleRef.current = handle
+        setPendingPermissionHandle(null)
+        await loadProjects(handle)
+        addNotif(`Munkakönyvtár csatlakoztatva: ${handle.name}`, 'success')
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.warn('Hiba a mappa kiválasztásakor:', err)
+        addNotif('Nem sikerült kiválasztani a mappát.', 'error')
+      }
+    }
+  }, [loadProjects, addNotif])
+
+  // Helyi mappa leválasztása
+  const handleDisconnectLocalFolder = useCallback(async () => {
+    await localWorkspace.disconnectDirectory()
+    setLocalDirHandle(null)
+    localDirHandleRef.current = null
+    setPendingPermissionHandle(null)
+    await loadProjects(null)
+    addNotif('Helyi mappa leválasztva, visszaállítva a szerver mappára.', 'info')
+  }, [loadProjects, addNotif])
 
   // PDF Fordítás végrehajtása
   const compile = useCallback(
@@ -1408,7 +1465,11 @@ export default function App() {
           currentSubject={currentSubject}
           apiOk={apiOk}
           activeModel={activeModel}
-          localWorkspaceName={localDirHandle ? localDirHandle.name : (serverWorkspace?.name || 'projektek')}
+          localWorkspaceName={localDirHandle ? localDirHandle.name : null}
+          pendingWorkspaceName={pendingPermissionHandle ? pendingPermissionHandle.name : null}
+          onGrantPermission={handleGrantPermission}
+          onPickLocalFolder={handlePickLocalFolder}
+          onDisconnectLocalFolder={handleDisconnectLocalFolder}
           onOpenSettings={() => setSettingsModalOpen(true)}
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={toggleSidebarCollapse}
@@ -1418,7 +1479,7 @@ export default function App() {
           onNewDoc={() => setNewDocModal(true)}
           onImportDoc={handleTriggerImport}
           onImportFiles={handleProcessImportFiles}
-          onRefresh={loadProjects}
+          onRefresh={() => loadProjects()}
           onEditTags={(file) => setTagModalFile(file)}
           onRename={handleRenameFile}
           onMoveFile={handleMoveFile}
@@ -1625,6 +1686,7 @@ export default function App() {
         onWorkspaceChanged={async (newHandle) => {
           setLocalDirHandle(newHandle)
           localDirHandleRef.current = newHandle
+          setPendingPermissionHandle(null)
           await loadProjects(newHandle)
         }}
         onApiKeyChanged={async () => {

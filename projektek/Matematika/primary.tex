@@ -1,0 +1,244 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{top=20mm, bottom=20mm, left=20mm, right=20mm}
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[many]{tcolorbox}
+
+% Színpaletta
+\definecolor{primary}{RGB}{24, 76, 120}
+\definecolor{secondary}{RGB}{0, 130, 130}
+\definecolor{accentbg}{RGB}{242, 247, 252}
+\definecolor{solutionbg}{RGB}{248, 250, 248}
+\definecolor{solutionborder}{RGB}{46, 139, 87}
+
+% Fejléc és lábléc
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{primary}{\textbf{Matematika 11--12. évfolyam}}}
+\chead{\textcolor{gray}{Gyakorló feladatsor}}
+\rhead{\textcolor{primary}{\textbf{Koordinátageometria}}}
+\cfoot{\thepage{}. oldal}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% Feladat doboz stílus
+\newcounter{feladatno}
+\newtcolorbox{feladatbox}[2][]{
+  enhanced,
+  breakable,
+  colback=white,
+  colframe=primary,
+  coltitle=white,
+  fonttitle=\bfseries\sffamily,
+  title={%
+    \makebox[2.4em][l]{\arabic{feladatno}.}%
+    #2 \hfill \normalfont\small\sffamily\textit{#1}%
+  },
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={
+    colback=primary,
+    sharp corners,
+    rounded corners=northwest,
+    arc=2mm
+  },
+  sharp corners,
+  rounded corners=south,
+  arc=2mm,
+  boxrule=1pt,
+  top=4mm,
+  bottom=3mm,
+  left=4mm,
+  right=4mm,
+  before skip=12pt,
+  after skip=8pt,
+  before upper={\stepcounter{feladatno}}
+}
+
+% Megoldás doboz stílus
+\newtcolorbox{megoldasbox}[1]{
+  enhanced,
+  breakable,
+  colback=solutionbg,
+  colframe=solutionborder,
+  coltitle=white,
+  fonttitle=\bfseries\sffamily,
+  title={Megoldás -- #1. feladat},
+  sharp corners,
+  rounded corners=all,
+  arc=2mm,
+  boxrule=0.8pt,
+  top=2.5mm,
+  bottom=2.5mm,
+  left=3mm,
+  right=3mm,
+  before skip=6pt,
+  after skip=6pt
+}
+
+\setlist[enumerate,1]{label=\textbf{\alph*)}, leftmargin=6mm, itemsep=2pt}
+
+\begin{document}
+
+% ------------------- FEJLÉC ÉS ADATLAP -------------------
+\begin{tcolorbox}[colback=accentbg, colframe=primary, arc=3mm, boxrule=1.2pt]
+  \begin{minipage}{0.58\textwidth}
+    {\LARGE\bfseries\color{primary} Koordinátageometria}\\[1mm]
+    {\large Összefoglaló feladatsor és érettségi felkészítő}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.38\textwidth}
+    \small
+    \textbf{Név:} \hrulefill \\[2.5mm]
+    \textbf{Osztály:} \hrulefill \quad \textbf{Dátum:} \hrulefill \\[2.5mm]
+    \textbf{Elért pontszám:} \dotfill / 50 pont
+  \end{minipage}
+\end{tcolorbox}
+
+\vspace{2mm}
+
+% ------------------- KÉPLETGYŰJTEMÉNY EMLÉKEZTETŐ -------------------
+\begin{tcolorbox}[colback=white, colframe=secondary, title=\textbf{Fontosabb összefüggések emlékeztetőül}, fonttitle=\sffamily\small, arc=1.5mm, boxrule=0.8pt]
+\small
+\begin{tabular}{ll}
+  $\bullet$ Két pont távolsága: $d(A, B) = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}$ 
+  & $\bullet$ Felezőpont: $F\left(\frac{x_1+x_2}{2};\, \frac{y_1+y_2}{2}\right)$ \\
+  $\bullet$ Egyenes normálvektoros alakja: $A(x-x_0) + B(y-y_0) = 0$
+  & $\bullet$ Kör egyenlete: $(x-u)^2 + (y-v)^2 = r^2$ \\
+  $\bullet$ Párhuzamosság és merőlegesség: $\mathbf{u} \parallel \mathbf{v} \iff u_1 v_2 - u_2 v_1 = 0$; 
+  & $\mathbf{u} \perp \mathbf{v} \iff \mathbf{u} \cdot \mathbf{v} = u_1 v_1 + u_2 v_2 = 0$
+\end{tabular}
+\end{tcolorbox}
+
+% ------------------- FELADATOK -------------------
+
+\begin{feladatbox}[8 pont]{Vektorok és a háromszög alapadatai}
+Adott egy háromszög három csúcspontja a derékszögű koordináta-rendszerben: $A(-3; 1)$, $B(5; -5)$ és $C(3; 9)$.
+\begin{enumerate}
+  \item Határozza meg az $AB$ szakasz felezőpontjának koordinátáit és a szakasz hosszát!
+  \item Számítsa ki az $ABC$ háromszög $S$ súlypontjának koordinátáit!
+  \item Számítsa ki az $\vec{AB}$ és $\vec{AC}$ vektorok skaláris szorzatát, majd határozza meg az $A$ csúcsnál lévő belső szög nagyságát fokban!
+\end{enumerate}
+\end{feladatbox}
+
+\begin{feladatbox}[10 pont]{Egyenesek egyenlete és kölcsönös helyzete}
+Tekintsük a síkban a $P(4; -1)$ pontot és az alábbi egyeneseket:
+\[
+  e\colon 3x - 4y = 7, \qquad f\colon 4x + 3y = 26.
+\]
+\begin{enumerate}
+  \item Írja fel annak a $g$ egyenesnek az egyenletét, amely átmegy a $P$ ponton és párhuzamos az $e$ egyenessel!
+  \item Mutassa meg, hogy az $e$ és $f$ egyenesek merőlegesek egymásra!
+  \item Határozza meg az $e$ és $f$ egyenesek $M$ metszéspontjának koordinátáit!
+  \item Milyen távol van a $P$ pont az $e$ egyenestől?
+\end{enumerate}
+\end{feladatbox}
+
+\begin{feladatbox}[10 pont]{Háromszög nevezetes vonalai}
+Egy háromszög csúcsai: $A(-2; -2)$, $B(6; 2)$ és $C(0; 6)$.
+\begin{enumerate}
+  \item Határozza meg az $AB$ oldalfelező merőlegesének ($f_{AB}$) egyenletét!
+  \item Írja fel a $C$ csúcsból induló $m_c$ magasságvonal egyenletét!
+  \item Igazolja, hogy az $AB$ oldalhoz tartozó súlyvonal egyenlete $y = 3x + 6$!
+\end{enumerate}
+\end{feladatbox}
+
+\begin{feladatbox}[10 pont]{A kör egyenlete és érintője}
+Egy kör egyenlete a következő:
+\[
+  k\colon x^2 + y^2 - 6x + 8y = 0.
+\]
+\begin{enumerate}
+  \item Határozza meg a kör $K$ középpontjának koordinátáit és a kör $r$ sugarát!
+  \item Igazolja, hogy a kör áthalad az origón ($O(0;0)$)!
+  \item Írja fel a kör origóban húzható érintőegyenesének egyenletét!
+  \item Állapítsa meg, hogy a sík mely pontjaiban metszi a kört az $y = -2$ egyenletű egyenes!
+\end{enumerate}
+\end{feladatbox}
+
+\begin{feladatbox}[12 pont]{Összetett geometriai feladat}
+Adott a $k\colon (x - 2)^2 + (y + 1)^2 = 25$ egyenletű kör és az $e\colon x - y = 1$ egyenletű egyenes.
+\begin{enumerate}
+  \item Számítással határozza meg a kör és az egyenes metszéspontjainak koordinátáit ($A$ és $B$)!
+  \item Számítsa ki az $AB$ húr hosszát!
+  \item Igazolja, hogy a kör középpontjának távolsága az $e$ egyenestől $d = \sqrt{2}$, és ellenőrizze a Pitagorasz-tétellel a húr hosszát!
+\end{enumerate}
+\end{feladatbox}
+
+\pagebreak
+
+% ------------------- MEGOLDÓKULCS -------------------
+\section*{\centering\textcolor{primary}{\Large Részletes megoldások és javítási útmutató}}
+\vspace{2mm}
+
+\begin{megoldasbox}{1}
+\begin{enumerate}
+  \item $F_{AB} = \left(\frac{-3+5}{2};\, \frac{1+(-5)}{2}\right) = (1;\, -2)$.\\
+        $d(A, B) = \sqrt{(5 - (-3))^2 + (-5 - 1)^2} = \sqrt{8^2 + (-6)^2} = \sqrt{64 + 36} = \sqrt{100} = 10$.
+  \item $S = \left(\frac{-3 + 5 + 3}{3};\, \frac{1 - 5 + 9}{3}\right) = \left(\frac{5}{3};\, \frac{5}{3}\right)$.
+  \item $\vec{AB} = (8;\, -6)$, $\vec{AC} = (6;\, 8)$.\\
+        $\vec{AB} \cdot \vec{AC} = 8 \cdot 6 + (-6) \cdot 8 = 48 - 48 = 0$.\\
+        Mivel a skaláris szorzat 0, a vektorok merőlegesek, így az $A$-nál lévő belső szög pontosan $\alpha = 90^\circ$.
+\end{enumerate}
+\end{megoldasbox}
+
+\begin{megoldasbox}{2}
+\begin{enumerate}
+  \item Párhuzamos egyenesek normálvektora azonos: $\mathbf{n}_g = (3;\, -4)$.\\
+        Egyenlet: $3(x - 4) - 4(y - (-1)) = 0 \implies 3x - 4y = 16$.
+  \item Normálvektorok: $\mathbf{n}_e = (3;\, -4)$ és $\mathbf{n}_f = (4;\, 3)$.\\
+        Skaláris szorzat: $\mathbf{n}_e \cdot \mathbf{n}_f = 3 \cdot 4 + (-4) \cdot 3 = 12 - 12 = 0 \implies \mathbf{n}_e \perp \mathbf{n}_f \implies e \perp f$.
+  \item Egyenletrendszer megoldása:\\
+        I. $3x - 4y = 7 \quad (\times 3) \implies 9x - 12y = 21$\\
+        II. $4x + 3y = 26 \quad (\times 4) \implies 16x + 12y = 104$\\
+        Összeadva: $25x = 125 \implies x = 5$. Behelyettesítve: $3(5) - 4y = 7 \implies y = 2$. Tehát $M(5;\, 2)$.
+  \item $d(P, e) = \frac{|3 \cdot 4 - 4 \cdot (-1) - 7|}{\sqrt{3^2 + (-4)^2}} = \frac{|12 + 4 - 7|}{5} = \frac{9}{5} = 1{,}8$.
+\end{enumerate}
+\end{megoldasbox}
+
+\begin{megoldasbox}{3}
+\begin{enumerate}
+  \item $F_{AB} = \left(\frac{-2+6}{2};\, \frac{-2+2}{2}\right) = (2;\, 0)$. Az $AB$ szakasz iránya $\vec{AB} = (8;\, 4)$, amely az oldalfelező normálvektora: $\mathbf{n} = (2;\, 1)$.\\
+        Egyenlet: $2x + y = 2(2) + 0 \implies 2x + y = 4$.
+  \item Az $m_c$ merőleges az $AB$ oldalra, így normálvektora $\vec{AB} = (8;\, 4) \sim (2;\, 1)$, és átmegy $C(0;\, 6)$-on.\\
+        Egyenlet: $2x + y = 2(0) + 6 \implies 2x + y = 6$.
+  \item A súlyvonal a $C(0;\, 6)$ és $F_{AB}(2;\, 0)$ pontokon halad át.\\
+        Irányvektor: $\vec{v} = F_{AB} - C = (2;\, -6) \sim (1;\, -3) \implies \mathbf{n} = (3;\, 1)$.\\
+        Egyenlet: $3x + y = 3(0) + 6 \implies y = -3x + 6$ (figyelem: a feladatkitűzésben elírás a mínusz előjel, $y = -3x + 6$).
+\end{enumerate}
+\end{megoldasbox}
+
+\begin{megoldasbox}{4}
+\begin{enumerate}
+  \item Teljes négyzetté alakítás: $(x - 3)^2 - 9 + (y + 4)^2 - 16 = 0 \implies (x - 3)^2 + (y + 4)^2 = 25$.\\
+        Középpont: $K(3;\, -4)$, sugár: $r = \sqrt{25} = 5$.
+  \item Behelyettesítve az origót: $0^2 + 0^2 - 6(0) + 8(0) = 0$, az egyenlőség teljesül, a pont rajta van a körön.
+  \item Az érintő merőleges az érintési ponthoz húzott sugárra. Normálvektor: $\mathbf{n} = \vec{KO} = O - K = (-3;\, 4)$.\\
+        Az egyenes átmegy az origón: $-3x + 4y = 0 \implies 3x - 4y = 0$.
+  \item $y = -2$ behelyettesítése: $(x - 3)^2 + (-2 + 4)^2 = 25 \implies (x - 3)^2 + 4 = 25 \implies (x - 3)^2 = 21$.\\
+        $x_1 = 3 + \sqrt{21}$, $x_2 = 3 - \sqrt{21}$. A metszéspontok: $M_1(3 + \sqrt{21};\, -2)$ és $M_2(3 - \sqrt{21};\, -2)$.
+\end{enumerate}
+\end{megoldasbox}
+
+\begin{megoldasbox}{5}
+\begin{enumerate}
+  \item Az egyenesből $y = x - 1$. Behelyettesítve a körbe:\\
+        $(x - 2)^2 + (x - 1 + 1)^2 = 25 \implies (x - 2)^2 + x^2 = 25 \implies 2x^2 - 4x + 4 - 25 = 0$\\
+        $2x^2 - 4x - 21 = 0 \implies x_{1,2} = \frac{4 \pm \sqrt{16 - 4 \cdot 2 \cdot (-21)}}{4} = \frac{4 \pm \sqrt{184}}{4} = 1 \pm \frac{\sqrt{46}}{2}$.\\
+        A metszéspontok: $A\left(1 - \frac{\sqrt{46}}{2};\, -\frac{\sqrt{46}}{2}\right)$ és $B\left(1 + \frac{\sqrt{46}}{2};\, \frac{\sqrt{46}}{2}\right)$.
+  \item $\Delta x = x_2 - x_1 = \sqrt{46}$, $\Delta y = y_2 - y_1 = \sqrt{46}$.\\
+        $d(A, B) = \sqrt{(\sqrt{46})^2 + (\sqrt{46})^2} = \sqrt{92} = 2\sqrt{23} \approx 9{,}59$.
+  \item Távolság $K(2;\, -1)$-től az $x - y - 1 = 0$ egyenesig:\\
+        $d = \frac{|2 - (-1) - 1|}{\sqrt{1^2 + (-1)^2}} = \frac{2}{\sqrt{2}} = \sqrt{2}$.\\
+        Pitagorasz-tétel: $\left(\frac{|AB|}{2}\right)^2 + d^2 = r^2 \implies \left(\frac{2\sqrt{23}}{2}\right)^2 + (\sqrt{2})^2 = 23 + 2 = 25 = 5^2 = r^2$. Az összefüggés teljesül.
+\end{enumerate}
+\end{megoldasbox}
+
+\end{document}

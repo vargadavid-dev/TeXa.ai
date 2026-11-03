@@ -113,35 +113,66 @@ export const localWorkspace = {
     const folders = [];
     let totalCount = 0;
 
-    for await (const entry of dirHandle.values()) {
-      if (entry.name.startsWith('.')) continue; // Rejtett fájlok (.git, .DS_Store) kihagyása
+    const IGNORED = new Set([
+      'node_modules',
+      'dist',
+      'dist-ssr',
+      'build',
+      '.git',
+      '.cache',
+      'temp',
+      'uploads',
+      'coverage',
+      '.next',
+      '.vite',
+      '.gemini'
+    ]);
 
-      const relPath = pathPrefix ? `${pathPrefix}/${entry.name}` : entry.name;
+    try {
+      const iterator = dirHandle.values ? dirHandle.values() : (dirHandle.entries ? dirHandle.entries() : []);
+      for await (const item of iterator) {
+        const entry = Array.isArray(item) ? item[1] : item;
+        if (!entry || !entry.name) continue;
+        if (entry.name.startsWith('.') || IGNORED.has(entry.name.toLowerCase())) continue;
 
-      if (entry.kind === 'directory') {
-        const sub = await this.readDirectoryTree(entry, relPath);
-        folders.push({
-          name: entry.name,
-          path: relPath,
-          relativePath: relPath,
-          isFolder: true,
-          handle: entry,
-          folders: sub.folders,
-          files: sub.files,
-          totalCount: sub.totalCount
-        });
-        totalCount += sub.totalCount;
-      } else if (entry.kind === 'file' && entry.name.endsWith('.tex')) {
-        files.push({
-          name: entry.name,
-          path: relPath,
-          relativePath: relPath,
-          isFolder: false,
-          handle: entry,
-          tags: []
-        });
-        totalCount += 1;
+        const relPath = pathPrefix ? `${pathPrefix}/${entry.name}` : entry.name;
+
+        if (entry.kind === 'directory') {
+          try {
+            const sub = await this.readDirectoryTree(entry, relPath);
+            folders.push({
+              name: entry.name,
+              path: relPath,
+              relativePath: relPath,
+              subject: entry.name,
+              isFolder: true,
+              handle: entry,
+              folders: sub.folders,
+              files: sub.files,
+              totalCount: sub.totalCount
+            });
+            totalCount += sub.totalCount;
+          } catch (subErr) {
+            console.warn(`Nem sikerült beolvasni a(z) ${entry.name} almappát:`, subErr);
+          }
+        } else if (entry.kind === 'file') {
+          const lower = entry.name.toLowerCase();
+          if (lower.endsWith('.tex') || lower.endsWith('.ltx') || lower.endsWith('.latex')) {
+            files.push({
+              name: entry.name,
+              path: relPath,
+              relativePath: relPath,
+              subject: pathPrefix ? pathPrefix.split('/')[0] : '',
+              isFolder: false,
+              handle: entry,
+              tags: []
+            });
+            totalCount += 1;
+          }
+        }
       }
+    } catch (err) {
+      console.warn(`Hiba a mappa beolvasásakor (${pathPrefix || 'gyökér'}):`, err);
     }
 
     folders.sort((a, b) => a.name.localeCompare(b.name, 'hu'));
@@ -161,6 +192,7 @@ export const localWorkspace = {
         name: node.name,
         path: node.path,
         relativePath: node.relativePath,
+        subject: node.subject || node.name,
         depth
       });
       if (Array.isArray(node.folders)) {
@@ -181,11 +213,15 @@ export const localWorkspace = {
 
     // Ha vannak gyökérfájlok közvetlenül a főkönyvtárban
     if (raw.files.length > 0 || raw.folders.length === 0) {
-      const rootCatName = dirHandle.name || 'Dokumentumok';
+      let rootCatName = dirHandle.name || 'Dokumentumok';
+      if (tree[rootCatName]) {
+        rootCatName = `${rootCatName} (Gyökér)`;
+      }
       tree[rootCatName] = {
         name: rootCatName,
         path: '',
         relativePath: '',
+        subject: rootCatName,
         isFolder: true,
         folders: [],
         files: raw.files,
@@ -195,6 +231,7 @@ export const localWorkspace = {
         name: rootCatName,
         path: '',
         relativePath: '',
+        subject: rootCatName,
         depth: 0
       });
     }

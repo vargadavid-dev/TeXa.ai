@@ -11,7 +11,6 @@ frontend/node_modules/
 # Munkakönyvtárak és ideiglenes fájlok
 backend/temp/
 backend/uploads/
-projektek/
 *.log
 
 # Építési fájlok

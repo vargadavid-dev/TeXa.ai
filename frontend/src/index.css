@@ -549,25 +549,7 @@ html, body, #root {
   border: 1px solid var(--border-subtle);
 }
 
-.toolbar-sidebar-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  transition: all 0.15s ease;
-}
 
-.toolbar-sidebar-btn:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-}
-
-.toolbar-sidebar-btn.collapsed {
-  color: var(--accent-light);
-}
 
 .sidebar-header {
   height: 38px;

@@ -83,6 +83,10 @@ export default function Sidebar({
   apiOk,
   activeModel = 'Gemini 3.8 Flash',
   localWorkspaceName = null,
+  pendingWorkspaceName = null,
+  onGrantPermission,
+  onPickLocalFolder,
+  onDisconnectLocalFolder,
   onOpenSettings,
   isCollapsed = false,
   onToggleCollapse,
@@ -758,6 +762,14 @@ export default function Sidebar({
             <div className="sidebar-header-actions">
               <button
                 className="btn-subtle"
+                onClick={onPickLocalFolder}
+                style={{ padding: '3px 6px', borderRadius: 4, color: 'var(--accent-light)' }}
+                title="Saját mappa megnyitása a számítógépedről (Finder)"
+              >
+                <FolderOpen size={13} />
+              </button>
+              <button
+                className="btn-subtle"
                 onClick={() => {
                   const name = window.prompt('Új kategória / mappa neve (pl. Informatika, Kémia, Szakdolgozat):')
                   if (name && name.trim() && onCreateFolder) {
@@ -789,9 +801,40 @@ export default function Sidebar({
           </div>
 
           {/* Helyi munkakönyvtár jelvény vagy felhívás */}
-          {localWorkspaceName ? (
+          {pendingWorkspaceName ? (
             <div
-              onClick={onOpenSettings}
+              onClick={onGrantPermission}
+              style={{
+                padding: '7px 12px',
+                fontSize: 11,
+                background: 'rgba(245, 158, 11, 0.12)',
+                borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+                color: '#f59e0b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer'
+              }}
+              title="Kattints ide a mappa hozzáférésének feloldásához!"
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <FolderOpen size={13} style={{ flexShrink: 0 }} />
+                <span><strong>{pendingWorkspaceName}</strong> mappa elérése</span>
+              </span>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ fontSize: 10, padding: '2px 8px', height: 'auto', background: '#f59e0b', borderColor: '#d97706', color: '#000', fontWeight: 600 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onGrantPermission?.();
+                }}
+              >
+                Feloldás
+              </button>
+            </div>
+          ) : localWorkspaceName ? (
+            <div
               style={{
                 padding: '6px 12px',
                 fontSize: 11,
@@ -800,37 +843,51 @@ export default function Sidebar({
                 color: '#4ade80',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer'
+                justifyContent: 'space-between'
               }}
-              title="Kattints a beállítások megnyitásához vagy mappa módosításához"
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span
+                onClick={onOpenSettings}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', flex: 1 }}
+                title="Kattints a beállítások megnyitásához vagy mappa módosításához"
+              >
                 <HardDrive size={13} style={{ flexShrink: 0 }} />
                 <span><strong>{localWorkspaceName}</strong> (saját gép)</span>
               </span>
+              {onDisconnectLocalFolder && (
+                <button
+                  type="button"
+                  className="btn-subtle"
+                  onClick={onDisconnectLocalFolder}
+                  style={{ padding: '2px 4px', color: 'var(--text-muted)' }}
+                  title="Helyi mappa leválasztása"
+                >
+                  <X size={12} />
+                </button>
+              )}
             </div>
           ) : (
-            onOpenSettings && (
-              <div
-                onClick={onOpenSettings}
-                style={{
-                  padding: '6px 12px',
-                  fontSize: 11,
-                  background: 'rgba(56, 189, 248, 0.06)',
-                  borderBottom: '1px solid rgba(56, 189, 248, 0.15)',
-                  color: '#38bdf8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  cursor: 'pointer'
-                }}
-                title="Kattints saját mappa kijelöléséhez a számítógépeden"
-              >
+            <div
+              onClick={onPickLocalFolder || onOpenSettings}
+              style={{
+                padding: '7px 12px',
+                fontSize: 11,
+                background: 'rgba(56, 189, 248, 0.08)',
+                borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
+                color: '#38bdf8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer'
+              }}
+              title="Kattints saját mappa megnyitásához a számítógépeden"
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <FolderOpen size={13} style={{ flexShrink: 0 }} />
-                <span>Mappa kijelölése a saját gépeden...</span>
-              </div>
-            )
+                <span>Mappa megnyitása a Mac-en...</span>
+              </span>
+              <span style={{ fontSize: 9.5, background: 'rgba(56, 189, 248, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>Tallózás</span>
+            </div>
           )}
 
           {/* Keresőmező */}
@@ -901,20 +958,31 @@ export default function Sidebar({
                     <div style={{ fontSize: 11, lineHeight: 1.4, color: 'var(--text-muted)' }}>
                       A munkakönyvtárad jelenleg üres. Hozz létre egy új kategóriát vagy kezdj egy üres dokumentummal!
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{ fontSize: 11, padding: '5px 12px', marginTop: 4 }}
-                      onClick={() => {
-                        const name = window.prompt('Új kategória / mappa neve (pl. Informatika, Kémia, Szakdolgozat):')
-                        if (name && name.trim() && onCreateFolder) {
-                          onCreateFolder(null, name.trim(), '')
-                        }
-                      }}
-                    >
-                      <FolderPlus size={13} style={{ marginRight: 6 }} />
-                      + Új kategória létrehozása
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ fontSize: 11, padding: '5px 12px' }}
+                        onClick={onPickLocalFolder || onOpenSettings}
+                      >
+                        <FolderOpen size={13} style={{ marginRight: 6 }} />
+                        Mappa megnyitása
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ fontSize: 11, padding: '5px 12px' }}
+                        onClick={() => {
+                          const name = window.prompt('Új kategória / mappa neve (pl. Informatika, Kémia, Szakdolgozat):')
+                          if (name && name.trim() && onCreateFolder) {
+                            onCreateFolder(null, name.trim(), '')
+                          }
+                        }}
+                      >
+                        <FolderPlus size={13} style={{ marginRight: 6 }} />
+                        + Új kategória
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

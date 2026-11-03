@@ -12,8 +12,6 @@ import {
   Upload,
   Undo2,
   Redo2,
-  PanelLeftClose,
-  PanelLeftOpen,
   Settings
 } from 'lucide-react'
 
@@ -52,15 +50,6 @@ export default function Toolbar({
     <div className="toolbar">
       {/* Brand logo */}
       <div className="toolbar-brand">
-        <button
-          type="button"
-          className={`btn-subtle toolbar-sidebar-btn ${sidebarCollapsed ? 'collapsed' : ''}`}
-          onClick={onToggleSidebar}
-          title={sidebarCollapsed ? "Fájlkezelő kibontása (⌘B)" : "Fájlkezelő becsukása vékony sávra (⌘B)"}
-          id="btn-toggle-sidebar"
-        >
-          {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-        </button>
         <div className="toolbar-logo-icon" title="TeXa AI">
           <InfinityIcon size={19} strokeWidth={2.4} />
         </div>

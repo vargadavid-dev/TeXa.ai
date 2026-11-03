@@ -1,0 +1,210 @@
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\setlist[itemize]{label=-}
+
+\title{\vspace{-1.5cm}\textbf{Exponenciális egyenletek -- Elmélet és Feladattípusok}}
+\author{}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+\maketitle
+\vspace{-1.5cm}
+
+\section*{Az exponenciális egyenletek elméleti alapjai}
+
+Az exponenciális egyenletek megoldásához két fő matematikai pillérre van szükségünk: az exponenciális függvény tulajdonságaira és a hatványozás azonosságaira.
+
+\subsection*{1. Az exponenciális függvény és tulajdonságai}
+
+Az exponenciális függvény általános alakja:
+\[ f(x) = a^x \]
+ahol az alapra érvényes, hogy $a > 0$ és $a \neq 1$, az értelmezési tartomány pedig a valós számok halmaza ($x \in \mathbb{R}$).
+
+\textbf{Legfontosabb tulajdonságok az egyenletmegoldás szempontjából:}
+\begin{itemize}
+    \item \textbf{Szigorú monotonitás (Injektivitás):} Mivel a függvény szigorúan monoton (növekvő, ha $a > 1$, és csökkenő, ha $0 < a < 1$), ezért minden értéket pontosan egyszer vesz fel. Ebből következik az egyenletmegoldás legfontosabb elve:
+    \[ a^{f(x)} = a^{g(x)} \iff f(x) = g(x) \]
+    \textit{(Vagyis ha az alapok megegyeznek, a kitevőknek is meg kell egyezniük.)}
+    
+    \item \textbf{Pozitivitás:} Az exponenciális függvény értékkészlete a pozitív valós számok halmaza ($\mathbb{R}^+$). Tehát:
+    \[ a^x > 0 \quad \text{minden } x \in \mathbb{R} \text{ esetén.} \]
+    \textit{(Emiatt egy exponenciális kifejezéssel bármikor oszthatunk egyenletrendezés közben, nem kell tartani a nullával való osztástól, illetve emiatt nincs valós megoldása egy $2^x = -4$ alakú egyenletnek.)}
+\end{itemize}
+
+\subsection*{2. A hatványozás azonosságai}
+
+Az exponenciális egyenletek átalakításához elengedhetetlen a hatványozási szabályok magabiztos használata. Legyenek $a, b > 0$ és $x, y \in \mathbb{R}$:
+
+\begin{align*}
+a^x \cdot a^y &= a^{x+y} \quad &\text{(Azonos alapú hatványok szorzása)} \\
+\frac{a^x}{a^y} &= a^{x-y} \quad &\text{(Azonos alapú hatványok osztása)} \\
+(a^x)^y &= a^{x \cdot y} \quad &\text{(Hatvány hatványozása)} \\
+(a \cdot b)^x &= a^x \cdot b^x \quad &\text{(Szorzat hatványozása)} \\
+\left(\frac{a}{b}\right)^x &= \frac{a^x}{b^x} \quad &\text{(Tört hatványozása)}
+\end{align*}
+
+\textbf{További fontos definíciók és átalakítások:}
+\begin{align*}
+a^0 &= 1 \quad &\text{(Bármely nem nulla szám nulladik hatványa)} \\
+a^{-x} &= \frac{1}{a^x} \quad &\text{(Negatív kitevőjű hatvány)} \\
+a^{\frac{n}{m}} &= \sqrt[m]{a^n} \quad &\text{(Törtkitevő és gyökvonás kapcsolata)}
+\end{align*}
+
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}
+
+\section*{Kidolgozott mintapéldák}
+
+Az exponenciális egyenletek megoldása során a legfontosabb cél, hogy az egyenletet olyan alakra hozzuk, ahol az exponenciális függvény szigorú monotonitását vagy a logaritmus azonosságait (illetve definícióját) kihasználva megkaphatjuk az ismeretlent.
+
+\section*{1. Közös alapra hozható egyenletek}
+\subsection*{Elsőfokú}
+Ez a legalapvetőbb típus, ahol az egyenlet mindkét oldalán szereplő kifejezéseket azonos alapú hatványként tudjuk felírni.
+
+\textbf{Feladat:}
+\[ 2^{3x-1} = 32 \]
+
+\textbf{Megoldás:}
+A jobb oldalon lévő 32-t felírjuk kettő hatványaként ($32 = 2^5$).
+\[ 2^{3x-1} = 2^5 \]
+Mivel az $f(x) = 2^x$ exponenciális függvény szigorúan monoton, az alapok elhagyhatók, a kitevőknek egyenlőnek kell lenniük:
+\begin{align*}
+3x - 1 &= 5 \\
+3x &= 6 \\
+x &= 2
+\end{align*}
+
+\subsection*{Másodfokú}
+Gyakori eset, hogy az exponenciális egyenlet egyik oldalán a nullára rendezés után egy 1-es értékű konstans jelenik meg (vagy átrendezéssel 1-et kapunk az egyik oldalon). Ilyenkor azt a szabályt használjuk ki, hogy bármely nem nulla pozitív szám nulladik hatványa 1 ($a^0 = 1$). 
+
+\textbf{Feladat:}
+\[ 7^{x^2 - 9} - 1 = 0 \]
+
+\textbf{Megoldás:}
+
+Első lépésként rendezzük az egyenletet úgy, hogy az exponenciális kifejezés az egyik oldalon, a konstans pedig a másikon legyen. Adjunk hozzá 1-et mindkét oldalhoz:
+\[ 7^{x^2 - 9} = 1 \]
+
+Tudjuk, hogy bármely pozitív valós szám nulladik hatványa 1. Annak érdekében, hogy mindkét oldalon azonos legyen az alap, a jobb oldalon lévő 1-et felírjuk a 7-es szám nulladik hatványaként ($1 = 7^0$):
+\[ 7^{x^2 - 9} = 7^0 \]
+
+Mivel az exponenciális függvény szigorúan monoton, az alapok megegyeznek, így a kitevőknek is egyenlőnek kell lenniük:
+\[ x^2 - 9 = 0 \]
+
+Ezt a hiányos másodfokú egyenletet úgy a legegyszerűbb megoldani, ha a 9-et átvisszük a jobb oldalra:
+\[ x^2 = 9 \]
+
+Mindkét oldalból négyzetgyököt vonva figyelnünk kell arra, hogy a 9-nek két valós szám is a négyzete (a 3 és a -3), így két megoldást kapunk:
+\[ |x| = 3 \]
+\[ x_1 = 3 \quad \text{és} \quad x_2 = -3 \]
+
+\textbf{Ellenőrzés:} \\
+Ha $x = 3$: $7^{3^2 - 9} - 1 = 7^{9 - 9} - 1 = 7^0 - 1 = 1 - 1 = 0$. \\
+Ha $x = -3$: $7^{(-3)^2 - 9} - 1 = 7^{9 - 9} - 1 = 7^0 - 1 = 1 - 1 = 0$. \\
+Látható, hogy mindkét eredmény helyes.
+
+
+
+\section*{2. Kiemeléssel (összevonással) megoldható egyenletek}
+Amikor azonos alapú, de különböző (összegként vagy különbségként megadott) kitevőjű hatványok szerepelnek összeadásban vagy kivonásban.
+
+\textbf{Feladat:}
+\[ 5^{x+1} - 5^x = 100 \]
+
+\textbf{Megoldás:}
+A hatványozás azonosságát ($a^{n+m} = a^n \cdot a^m$) használva szétbontjuk a hatványokat:
+\[ 5^x \cdot 5^1 - 5^x = 100 \]
+Kiemeljük a közös tényezőt, az $5^x$-et:
+\begin{align*}
+5^x(5 - 1) &= 100 \\
+5^x \cdot 4 &= 100
+\end{align*}
+Osztjuk mindkét oldalt 4-gyel, majd közös alapra hozzuk az egyenletet:
+\begin{align*}
+5^x &= 25 \\
+5^x &= 5^2 \\
+x &= 2
+\end{align*}
+
+
+\section*{3. Másodfokú egyenletre visszavezethető}
+Ebben az esetben a hatványok között olyan kapcsolat van, hogy az egyik a másiknak a négyzete. Új ismeretlen (paraméter) bevezetése a célravezető módszer.
+
+\textbf{Feladat:}
+\[ 9^x - 4 \cdot 3^x + 3 = 0 \]
+
+\textbf{Megoldás:}
+Észrevesszük, hogy a $9^x$ felírható $3^x$ négyzeteként, hiszen $9^x = (3^2)^x = (3^x)^2$:
+\[ (3^x)^2 - 4 \cdot 3^x + 3 = 0 \]
+Vezessünk be egy új ismeretlent: legyen $y = 3^x$ (ahol $y > 0$).
+\[ y^2 - 4y + 3 = 0 \]
+Megoldjuk a másodfokú egyenletet (például a megoldóképlettel vagy szorzattá alakítással):
+\[ (y - 1)(y - 3) = 0 \]
+Ebből kapjuk, hogy $y_1 = 1$ és $y_2 = 3$.
+
+Visszahelyettesítjük az eredeti kifejezést ($y = 3^x$):
+\begin{itemize}
+    \item 1. eset:
+    \begin{align*}
+    3^x &= 1 \\
+    3^x &= 3^0 \implies x_1 = 0
+    \end{align*}
+    \item 2. eset:
+    \begin{align*}
+    3^x &= 3 \\
+    3^x &= 3^1 \implies x_2 = 1
+    \end{align*}
+\end{itemize}
+
+
+\section*{4. Különböző alapú, azonos kitevőjű egyenletek (Osztásos módszer)}
+Ha a kitevők azonosak, de az alapok különbözőek, érdemes az egyenlet egyik oldalával elosztani mindkét oldalt.
+
+\textbf{Feladat:}
+\[ 2^{2x} \cdot 3^x = 144 \]
+
+\textbf{Megoldás:}
+Alakítsuk át az első tényezőt úgy, hogy csak $x$ legyen a kitevőben ($2^{2x} = (2^2)^x = 4^x$):
+\[ 4^x \cdot 3^x = 144 \]
+Az azonos kitevőjű hatványok szorzási szabálya alapján ($a^x \cdot b^x = (a \cdot b)^x$) összevonjuk a bal oldalt:
+\begin{align*}
+(4 \cdot 3)^x &= 144 \\
+12^x &= 144
+\end{align*}
+Most már közös alapra hozható:
+\begin{align*}
+12^x &= 12^2 \\
+x &= 2
+\end{align*}
+
+
+
+
+
+
+\end{document}
