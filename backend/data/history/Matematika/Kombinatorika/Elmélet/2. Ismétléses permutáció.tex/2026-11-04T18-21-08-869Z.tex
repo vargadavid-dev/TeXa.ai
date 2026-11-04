@@ -41,7 +41,7 @@ De mi történik akkor, ha \textbf{vannak azonos, egymástól megkülönbözteth
 
 Ha felcserélünk két egyforma betűt vagy golyót egymás között, a sorrend a valóságban \textbf{nem változik meg}: ugyanazt az eredményt látjuk. Az \textbf{ismétléses permutáció} lényege éppen az, hogy az összes lehetséges sorrend ($n!$) számából szisztematikusan \textbf{kiosztjuk a feleslegesen duplán, triplán számolt egyforma eseteket}.
 
-\subsection*{2. Miért pont így működik? (A megkülönböztetés gondolatkísérlete)}
+\subsection*{2. Hogyan működik? (A megkülönböztetés gondolatkísérlete)}
 Képzeljük el a lehető legegyszerűbb esetet: rakjuk sorba az \textbf{A}, \textbf{A}, \textbf{B} betűket (két darab A és egy darab B betűnk van). Hány különböző 3 betűs szó készíthető belőlük? 
 
 Írjuk fel kézzel az összes létező lehetőséget:
@@ -137,6 +137,26 @@ Ezért a helyes darabszámhoz az összes permutációt el kell osztanunk az azon
 \frac{3!}{2!} = \frac{6}{2} = 3
 \]
 
+
+\vspace{0.3cm}
+\noindent\textbf{Egy kicsit összetettebb példa:} \\
+Hány különböző anagrammája készíthető a \textbf{PAPAYA} szó betűiből?
+\begin{itemize}
+    \item \textbf{1. lépés – Leltár:} A szó hossza $n = 6$. A betűk gyakorisága:
+    \begin{itemize}
+        \item A betű: 3 db
+        \item P betű: 2 db
+        \item Y betű: 1 db
+    \end{itemize}
+    \item \textbf{2. lépés – Ellenőrzés:} $3 + 2 + 1 = 6$, tehát az összes betűt felhasználjuk.
+    \item \textbf{3. lépés – Képlet alkalmazása:}
+    \[
+    P_6^{3, 2, 1} = \frac{6!}{3! \cdot 2! \cdot 1!} = \frac{720}{6 \cdot 2 \cdot 1} = \frac{720}{12} = \mathbf{60}
+    \]
+\end{itemize}
+Tehát a PAPAYA betűiből pontosan 60 különböző (értelmes vagy értelmetlen) szó rakható ki.
+
+
 \subsection*{3. Általános képlet és tulajdonságok}
 Tegyük fel, hogy összesen $n$ darab elemet szeretnénk sorba rendezni, de ezek között:
 \begin{itemize}
@@ -156,14 +176,9 @@ P_n^{k_1, k_2, \ldots, k_r} = \frac{n!}{k_1! \cdot k_2! \cdot \ldots \cdot k_r!}
 \end{tcolorbox}
 
 \vspace{0.2cm}
-\noindent\textbf{Fontos észrevételek és kapcsolatok:}
+\noindent\textbf{Fontos észrevétel:}
 \begin{itemize}
     \item \textbf{Kapcsolat az ismétlés nélküli permutációval:} Ha minden elem különböző (azaz mindegyikből pontosan $k_i = 1$ darab van), a nevezőben $1! \cdot 1! \dots = 1$ áll, így visszakapjuk a sima $n!$ képletet.
-    \item \textbf{Kapcsolat a kombinációval (kétféle elem esete):} Ha csak 2-féle elemünk van (például $k$ darab piros és $n - k$ darab kék golyó), a képlet így alakul:
-    \[
-    \frac{n!}{k! \cdot (n - k)!} = \binom{n}{k}
-    \]
-    Ez nem véletlen: $n$ hely közül kiválasztani azt a $k$ helyet, ahová a piros golyók kerülnek, pontosan a binomiális együtthatóval (kombinációval) egyezik meg!
 \end{itemize}
 
 \vspace{0.4cm}

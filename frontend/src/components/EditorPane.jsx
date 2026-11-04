@@ -16,6 +16,10 @@ import {
   ListTree,
   Navigation,
   AlertTriangle,
+  AlertCircle,
+  ArrowRight,
+  List,
+  Code2,
   Undo2,
   Redo2,
   Sun,
@@ -26,6 +30,124 @@ import {
 import { extractOutline } from '../utils/latexOutline'
 import { registerLatexLanguage } from '../utils/latexMonarch'
 import DocumentOutline from './DocumentOutline'
+
+const LATEX_ERROR_HINTS = {
+  'Missing $ inserted.': 'Hiányzó dollárjel ($) matematikai képlet körül vagy aláhúzás/speciális karakter (_ , ^ , &) sima szövegben.',
+  'Undefined control sequence.': 'Ismeretlen vagy elgépelt parancs, esetleg hiányzó \\usepackage csomag a preambulumban.',
+  'LaTeX Error: Environment': 'Ismeretlen környezet (pl. hiányzó tcolorbox, amsmath stb. csomag).',
+  'LaTeX Error: File': 'Hiányzó stíluslap (.sty) vagy képfájl.',
+  'Extra }, or forgotten $.': 'Felesleges lezáró kapcsos zárójel (}) vagy lezáratlan képlet.',
+  'Missing \\begin{document}': 'Hiányzó \\begin{document} a dokumentum elején.',
+  'Paragraph ended before': 'Lezáratlan parancs vagy hiányzó kapcsos zárójel a bekezdésben.',
+  'Missing number, treated as zero.': 'Hiányzó számérték méret- vagy pozíciómegadásnál.',
+  'Illegal unit of measure': 'Érvénytelen mértékegység (pl. pt, cm, mm helyett hibás karakter).',
+  'Emergency stop.': 'Kritikus hiba, a TeX feldolgozó leállt.',
+  'Bad math environment delimiter': 'Hibás egyenlethatároló vagy egymásba ágyazott matematikai környezet.'
+}
+
+function getFriendlyHint(msg) {
+  if (!msg) return null
+  for (const [key, hint] of Object.entries(LATEX_ERROR_HINTS)) {
+    if (msg.includes(key)) return hint
+  }
+  return null
+}
+
+function parseLatexErrors(log) {
+  if (!log || typeof log !== 'string') return []
+  const lines = log.split('\n')
+  const items = []
+  let current = null
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i]
+    const trimmed = rawLine.trim()
+
+    // 1. pdflatex hiba sor: ! jellel kezdődik
+    if (trimmed.startsWith('!')) {
+      if (current) items.push(current)
+      const msg = trimmed.replace(/^!\s*/, '')
+      current = {
+        id: `err-${items.length + 1}`,
+        type: 'error',
+        message: msg,
+        hint: getFriendlyHint(msg),
+        line: null,
+        snippet: '',
+        raw: [trimmed]
+      }
+      continue
+    }
+
+    // 2. document.tex:33: format
+    const fileLineMatch = trimmed.match(/^(?:\.\/)?[\w\-\.]+\.tex:(\d+):\s*(.*)/i)
+    if (fileLineMatch && !current) {
+      const lineNum = parseInt(fileLineMatch[1], 10)
+      const msg = fileLineMatch[2] || 'Fordítási hiba'
+      items.push({
+        id: `err-${items.length + 1}`,
+        type: 'error',
+        message: msg,
+        hint: getFriendlyHint(msg),
+        line: lineNum,
+        snippet: '',
+        raw: [trimmed]
+      })
+      continue
+    }
+
+    if (current) {
+      current.raw.push(trimmed)
+
+      // Sorszám keresése: l.<szám>
+      const lMatch = trimmed.match(/^l\.(\d+)\s*(.*)/)
+      if (lMatch) {
+        current.line = parseInt(lMatch[1], 10)
+        if (lMatch[2] && !current.snippet) {
+          current.snippet = lMatch[2].trim()
+        }
+      } else if (!current.line) {
+        const inlineMatch = trimmed.match(/(?:on input line|lines?)\s+(\d+)/i)
+        if (inlineMatch) {
+          current.line = parseInt(inlineMatch[1], 10)
+        }
+      }
+
+      if (
+        !current.snippet &&
+        trimmed &&
+        !trimmed.startsWith('l.') &&
+        !trimmed.startsWith('<inserted') &&
+        !trimmed.startsWith('---')
+      ) {
+        current.snippet = trimmed
+      }
+    }
+  }
+
+  if (current) items.push(current)
+
+  // Ha nincs ! hiba, keressünk figyelmeztetéseket (pl. Warning on input line 42)
+  if (items.length === 0) {
+    for (let i = 0; i < lines.length; i++) {
+      const trimmed = lines[i].trim()
+      const warnMatch = trimmed.match(/LaTeX Warning:\s*(.*?)(?:on input line (\d+))?\.?$/i)
+      if (warnMatch) {
+        items.push({
+          id: `warn-${items.length + 1}`,
+          type: 'warning',
+          message: warnMatch[1] || trimmed,
+          hint: 'Figyelmeztetés a dokumentumban',
+          line: warnMatch[2] ? parseInt(warnMatch[2], 10) : null,
+          snippet: '',
+          raw: [trimmed]
+        })
+      }
+    }
+  }
+
+  return items
+}
 
 const QUICK_INLINE_CHIPS = [
   'Tedd elegáns tcolorbox dobozba',
@@ -56,7 +178,19 @@ const EditorPane = forwardRef(function EditorPane({
   onFixStructure,
   isFixingStructure
 }, ref) {
-  const [consoleCollapsed, setConsoleCollapsed] = useState(false)
+  // Alapértelmezetten összecsukva, hogy ne foglalja feleslegesen a helyet a szerkesztő elől
+  const [consoleCollapsed, setConsoleCollapsed] = useState(true)
+  const [consoleHeight, setConsoleHeight] = useState(() => {
+    try {
+      const saved = localStorage.getItem('latex_console_height')
+      return saved ? parseInt(saved, 10) : 210
+    } catch {
+      return 210
+    }
+  })
+  const [isResizingConsole, setIsResizingConsole] = useState(false)
+  const [consoleViewTab, setConsoleViewTab] = useState('errors') // 'errors' | 'raw'
+  const prevCompileStatusRef = useRef(compileStatus)
   const [copied, setCopied] = useState(false)
   const [selectedText, setSelectedText] = useState('')
   const [selectionRange, setSelectionRange] = useState(null)
@@ -298,22 +432,88 @@ const EditorPane = forwardRef(function EditorPane({
     }
   }, [activeLineToReveal, flashLine])
 
-  // Fordítási hiba esetén automatikusan kinyitjuk a konzolt
+  // Fordítási hibák elemzése kattintható listához
+  const parsedErrors = useMemo(() => parseLatexErrors(compileLog), [compileLog])
+
+  // Fordítási hiba esetén automatikusan kinyitjuk a konzolt és a hibalistára váltunk
   useEffect(() => {
+    const prevStatus = prevCompileStatusRef.current
+    prevCompileStatusRef.current = compileStatus
+
     if (compileStatus === 'error') {
       setConsoleCollapsed(false)
+      setConsoleViewTab('errors')
+    } else if (compileStatus === 'ok' && prevStatus === 'error') {
+      setConsoleCollapsed(true)
     }
   }, [compileStatus])
 
+  // Konzol magasság átméretezése egérhúzással
+  const handleConsoleResizeStart = useCallback(
+    (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const startY = e.clientY
+      const startHeight = consoleCollapsed ? 210 : consoleHeight
+      if (consoleCollapsed) {
+        setConsoleCollapsed(false)
+      }
+      setIsResizingConsole(true)
+
+      let rafId = null
+
+      const handlePointerMove = (moveEvent) => {
+        // Felfelé húzás növeli a magasságot
+        const deltaY = startY - moveEvent.clientY
+        const newHeight = Math.max(80, Math.min(Math.round(window.innerHeight * 0.75), startHeight + deltaY))
+        setConsoleHeight(newHeight)
+        try {
+          localStorage.setItem('latex_console_height', String(newHeight))
+        } catch {}
+
+        if (rafId) cancelAnimationFrame(rafId)
+        rafId = requestAnimationFrame(() => {
+          if (editorRef.current) {
+            editorRef.current.layout()
+          }
+        })
+      }
+
+      const handlePointerUp = () => {
+        setIsResizingConsole(false)
+        window.removeEventListener('pointermove', handlePointerMove)
+        window.removeEventListener('pointerup', handlePointerUp)
+        window.removeEventListener('pointercancel', handlePointerUp)
+        if (rafId) cancelAnimationFrame(rafId)
+        if (editorRef.current) {
+          editorRef.current.layout()
+        }
+      }
+
+      window.addEventListener('pointermove', handlePointerMove)
+      window.addEventListener('pointerup', handlePointerUp)
+      window.addEventListener('pointercancel', handlePointerUp)
+    },
+    [consoleCollapsed, consoleHeight]
+  )
+
   // Ha a vázlat panel állapota, szélessége vagy a konzol mérete változik, újraszámoljuk a Monaco elrendezést
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer1 = setTimeout(() => {
       if (editorRef.current) {
         editorRef.current.layout()
       }
     }, 50)
-    return () => clearTimeout(timer)
-  }, [isOutlineOpen, consoleCollapsed, outlineWidth])
+    const timer2 = setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.layout()
+      }
+    }, 220)
+    return () => {
+      clearTimeout(timer1)
+      clearTimeout(timer2)
+    }
+  }, [isOutlineOpen, consoleCollapsed, outlineWidth, consoleHeight])
 
   // Fordítási hiba javítása AI-val
   const handleFixClick = async (e) => {
@@ -514,6 +714,15 @@ const EditorPane = forwardRef(function EditorPane({
           {/* Editor Header Tab Bar */}
           <div className="editor-tab-header">
             <div className="editor-header-left">
+              <div className="column-header-title-wrap">
+                <div className="column-header-icon-wrap" title="TEX szerkesztő">
+                  <FileCode size={13} />
+                </div>
+                <span className="column-header-title">TEX szerkesztő</span>
+              </div>
+
+              <div className="editor-header-title-divider" />
+
               {/* Fájl fül vagy Átnevezés űrlap */}
               {isEditingName ? (
                 <div className="editor-file-tab editing">
@@ -580,7 +789,7 @@ const EditorPane = forwardRef(function EditorPane({
                         </>
                       ) : autoSaveStatus === 'saved' && !isModified ? (
                         <>
-                          <Check size={10} color="#10b981" />
+                          <Check size={10} color="#30d158" />
                           <span>Mentve</span>
                         </>
                       ) : isModified ? (
@@ -637,7 +846,7 @@ const EditorPane = forwardRef(function EditorPane({
                         </>
                       ) : autoSaveStatus === 'saved' && !isModified ? (
                         <>
-                          <Check size={10} color="#10b981" />
+                          <Check size={10} color="#30d158" />
                           <span>Mentve</span>
                         </>
                       ) : isModified ? (
@@ -684,29 +893,6 @@ const EditorPane = forwardRef(function EditorPane({
                 <span className="editor-header-badge">{outline.length}</span>
               </button>
 
-              {/* TOC és szintek javítása gomb */}
-              {onFixStructure && (
-                <button
-                  type="button"
-                  className="editor-header-btn editor-header-fix-toc-btn"
-                  onClick={onFixStructure}
-                  disabled={isFixingStructure || !code || code.trim().length < 20}
-                  title="Dokumentum átnézése és javítása a TOC alapján (számozások, section szintek és hierarchia)"
-                >
-                  {isFixingStructure ? (
-                    <>
-                      <RefreshCw size={13} className="spinner" />
-                      <span className="editor-btn-label">TOC javítása...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={13} />
-                      <span className="editor-btn-label">TOC javítása</span>
-                    </>
-                  )}
-                </button>
-              )}
-
               {/* SyncTeX Forward gomb */}
               <button
                 type="button"
@@ -746,23 +932,11 @@ const EditorPane = forwardRef(function EditorPane({
                 title={editorTheme === 'overleaf-dark' ? 'Váltás világos Overleaf témára' : 'Váltás sötét Overleaf témára'}
               >
                 {editorTheme === 'overleaf-dark' ? (
-                  <>
-                    <Sun size={12} color="#fbbf24" />
-                    <span className="editor-btn-label">Overleaf Sötét</span>
-                  </>
+                  <Sun size={13} color="#fbbf24" />
                 ) : (
-                  <>
-                    <Moon size={12} color="#0a84ff" />
-                    <span className="editor-btn-label">Overleaf Világos</span>
-                  </>
+                  <Moon size={13} color="#0a84ff" />
                 )}
               </button>
-
-              <div className="editor-header-stats" title="Dokumentum terjedelme">
-                <span>{lineCount} sor</span>
-                <span className="editor-stats-sep">·</span>
-                <span className="editor-stats-chars">{charCount} kar.</span>
-              </div>
 
               <button
                 type="button"
@@ -816,13 +990,56 @@ const EditorPane = forwardRef(function EditorPane({
 
           {/* Console Log Panel */}
           <div
-            className={`console-panel ${consoleCollapsed ? 'collapsed' : ''}`}
-            style={{ height: consoleCollapsed ? 34 : 140 }}
+            className={`console-panel ${consoleCollapsed ? 'collapsed' : ''} ${isResizingConsole ? 'resizing' : ''}`}
+            style={{ height: consoleCollapsed ? 34 : consoleHeight }}
           >
+            {/* Resize handle bar at the top */}
+            <div
+              className="console-resize-handle"
+              onPointerDown={handleConsoleResizeStart}
+              title="Húzd a konzol magasságának állításához"
+            >
+              <div className="console-resize-handle-bar" />
+            </div>
+
             <div className="console-header" onClick={() => setConsoleCollapsed((v) => !v)}>
               <div className={`console-status-dot ${dotClass}`} />
               <Terminal size={13} />
-              <span>Fordítási Konzol</span>
+              <span className="console-header-title">Fordítási Konzol</span>
+
+              {compileStatus === 'ok' && (
+                <span className="console-header-status-pill ok">✓ Sikeres fordítás</span>
+              )}
+              {compileStatus === 'compiling' && (
+                <span className="console-header-status-pill compiling">⏳ Fordítás...</span>
+              )}
+              {compileStatus === 'error' && (
+                <span className="console-header-status-pill error">✗ Fordítási hiba</span>
+              )}
+
+              {/* View mode switcher tabs (Hibák vs Nyers napló) */}
+              {!consoleCollapsed && parsedErrors.length > 0 && (
+                <div className="console-view-tabs" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className={`console-view-tab ${consoleViewTab === 'errors' ? 'active' : ''}`}
+                    onClick={() => setConsoleViewTab('errors')}
+                    title="Hibák listanézete gyorsugrással"
+                  >
+                    <List size={11} />
+                    <span>Hibák ({parsedErrors.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`console-view-tab ${consoleViewTab === 'raw' ? 'active' : ''}`}
+                    onClick={() => setConsoleViewTab('raw')}
+                    title="pdflatex nyers kimenete"
+                  >
+                    <Code2 size={11} />
+                    <span>Nyers napló</span>
+                  </button>
+                </div>
+              )}
 
               {/* Hiba javítása AI-val gomb a konzol fejlécében */}
               {compileStatus === 'error' && onFixError && (
@@ -849,18 +1066,18 @@ const EditorPane = forwardRef(function EditorPane({
               <div className="console-actions" onClick={(e) => e.stopPropagation()}>
                 {onClearLog && (
                   <button
-                    className="btn-subtle"
+                    type="button"
+                    className="btn-subtle console-action-btn"
                     onClick={onClearLog}
-                    style={{ padding: '2px 6px', fontSize: 11 }}
                     title="Konzol törlése"
                   >
                     <Trash2 size={12} />
                   </button>
                 )}
                 <button
-                  className="btn-subtle"
+                  type="button"
+                  className="btn-subtle console-action-btn"
                   onClick={() => setConsoleCollapsed((v) => !v)}
-                  style={{ padding: '2px 6px' }}
                   title={consoleCollapsed ? 'Konzol megnyitása' : 'Konzol összecsukása'}
                 >
                   {consoleCollapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -878,7 +1095,9 @@ const EditorPane = forwardRef(function EditorPane({
                       <div className="console-error-banner-text">
                         <span className="console-error-banner-title">pdflatex fordítási hiba történt</span>
                         <span className="console-error-banner-sub">
-                          A Gemini 3.8 Flash kielemezte a hibát és kész kijavítani a LaTeX kódot.
+                          {parsedErrors.length > 0
+                            ? `Kattints az alábbi hibákra a kódban való javításhoz, vagy kérd a Gemini segítségét!`
+                            : 'A Gemini 3.8 Flash kielemezte a hibát és kész kijavítani a LaTeX kódot.'}
                         </span>
                       </div>
                     </div>
@@ -902,7 +1121,48 @@ const EditorPane = forwardRef(function EditorPane({
                   </div>
                 )}
 
-                {compileLog ? (
+                {/* 1. Kattintható strukturált hibalista */}
+                {consoleViewTab === 'errors' && parsedErrors.length > 0 ? (
+                  <div className="console-structured-errors">
+                    {parsedErrors.map((err, idx) => (
+                      <div
+                        key={err.id || idx}
+                        className={`console-error-card ${err.line ? 'clickable' : ''}`}
+                        onClick={() => {
+                          if (err.line) handleJumpToLine(err.line)
+                        }}
+                        title={err.line ? `Kattints a ${err.line}. sorra ugráshoz a szerkesztőben` : ''}
+                      >
+                        <div className="console-error-card-badge-col">
+                          {err.line ? (
+                            <span className="console-error-line-pill">
+                              {err.line}. sor
+                            </span>
+                          ) : (
+                            <span className="console-error-line-pill general">Hiba</span>
+                          )}
+                        </div>
+
+                        <div className="console-error-card-main">
+                          <div className="console-error-card-title-row">
+                            <span className="console-error-msg">{err.message}</span>
+                            {err.line && (
+                              <span className="console-error-jump-link">
+                                Ugrás a sorra <ArrowRight size={11} />
+                              </span>
+                            )}
+                          </div>
+
+                          {err.hint && <div className="console-error-hint">{err.hint}</div>}
+
+                          {err.snippet && (
+                            <code className="console-error-code-snippet">{err.snippet}</code>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : compileLog ? (
                   compileLog.split('\n').map((line, i) => {
                     const isErr = line.startsWith('!') || line.toLowerCase().includes('error')
                     const isOk =

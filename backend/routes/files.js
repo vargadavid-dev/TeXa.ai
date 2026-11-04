@@ -26,6 +26,41 @@ async function saveMetadata(meta) {
   await fs.writeJson(METADATA_FILE, meta, { spaces: 2 });
 }
 
+/**
+ * Biztonságos és robusztus elérési út feloldó a projektek munkakönyvtárában.
+ * Megbízhatóan kezeli a relatív (pl. "Matematika/fajl.tex") és abszolút útvonalakat,
+ * szigorúan megakadályozva a könyvtárelhagyásos (path traversal) támadásokat.
+ */
+function resolvePathInProjects(filePath, projectsDir = getProjectsDir()) {
+  if (!filePath || typeof filePath !== 'string') return null;
+  const root = path.resolve(projectsDir);
+  const trimmed = filePath.trim();
+  if (!trimmed) return null;
+
+  let resolved = path.isAbsolute(trimmed)
+    ? path.resolve(trimmed)
+    : path.resolve(root, trimmed);
+
+  // Ha az abszolút útvonal a szülő munkakörnyezetre (process.cwd()) hivatkozik projektek nélkül:
+  if (!resolved.startsWith(root) && !resolved.startsWith(root + path.sep)) {
+    const workspaceRoot = path.resolve(__dirname, '..', '..');
+    const relFromWs = path.relative(workspaceRoot, resolved);
+    if (!relFromWs.startsWith('..')) {
+      const candidate = path.resolve(root, relFromWs);
+      if (fs.existsSync(candidate)) {
+        resolved = candidate;
+      }
+    }
+  }
+
+  const rel = path.relative(root, resolved);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    return null;
+  }
+
+  return resolved;
+}
+
 function autoDetectTags(filename, subject) {
   const tags = [];
   const lower = filename.toLowerCase();
@@ -222,7 +257,10 @@ router.post('/tags', async (req, res) => {
     const projectsDir = getProjectsDir();
 
     if (filePath) {
-      const resolved = path.resolve(filePath);
+      const resolved = resolvePathInProjects(filePath, projectsDir);
+      if (!resolved) {
+        return res.status(403).json({ error: 'Hozzáférés megtagadva' });
+      }
       targetFilename = path.basename(resolved);
       const relFromProjects = path.relative(projectsDir, resolved);
       key = relFromProjects;
@@ -285,8 +323,6 @@ router.post('/save', async (req, res) => {
     }
 
     const projectsDir = getProjectsDir();
-    const resolvedProjects = path.resolve(projectsDir);
-
     const safeFilename = path.basename(filename).replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ _\-().]/g, '_');
     const finalName = safeFilename.endsWith('.tex') ? safeFilename : safeFilename + '.tex';
 
@@ -294,18 +330,31 @@ router.post('/save', async (req, res) => {
     let finalSubject = subject;
 
     if (explicitFilePath) {
-      filePath = path.resolve(explicitFilePath);
+      filePath = resolvePathInProjects(explicitFilePath, projectsDir);
+      if (!filePath) {
+        return res.status(403).json({ error: 'Hozzáférés megtagadva' });
+      }
     } else if (targetDir) {
-      filePath = path.join(path.resolve(targetDir), finalName);
+      const resolvedTarget = resolvePathInProjects(targetDir, projectsDir);
+      if (!resolvedTarget) {
+        return res.status(403).json({ error: 'Hozzáférés megtagadva' });
+      }
+      filePath = path.join(resolvedTarget, finalName);
     } else if (subject) {
-      filePath = path.join(projectsDir, subject, finalName);
+      const resolvedSubject = resolvePathInProjects(subject, projectsDir);
+      if (!resolvedSubject) {
+        return res.status(403).json({ error: 'Hozzáférés megtagadva' });
+      }
+      filePath = path.join(resolvedSubject, finalName);
     } else {
       filePath = path.join(projectsDir, finalName);
     }
 
-    if (!filePath.startsWith(resolvedProjects)) {
+    const verifiedPath = resolvePathInProjects(filePath, projectsDir);
+    if (!verifiedPath) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva' });
     }
+    filePath = verifiedPath;
 
     const relFromProjects = path.relative(projectsDir, filePath);
     finalSubject = relFromProjects.includes(path.sep) ? relFromProjects.split(path.sep)[0] : (subject || '');
@@ -365,8 +414,11 @@ router.post('/save', async (req, res) => {
     res.json({
       success: true,
       path: filePath,
+      newPath: filePath,
       filename: finalName,
+      name: finalName,
       subject: finalSubject,
+      relativePath: relFromProjects,
       tags: finalTags,
       canUndo: existed && previousContent !== null && previousContent !== content
     });
@@ -382,8 +434,8 @@ router.post('/undo-save', async (req, res) => {
     if (!filePath) return res.status(400).json({ error: 'Hiányzó filePath' });
 
     const projectsDir = getProjectsDir();
-    const resolved = path.resolve(filePath);
-    if (!resolved.startsWith(path.resolve(projectsDir))) {
+    const resolved = resolvePathInProjects(filePath, projectsDir);
+    if (!resolved) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva' });
     }
 
@@ -422,10 +474,18 @@ router.post('/undo-save', async (req, res) => {
 router.post('/load', async (req, res) => {
   try {
     const { filePath } = req.body;
+    if (!filePath) return res.status(400).json({ error: 'Hiányzó filePath paraméter' });
     const projectsDir = getProjectsDir();
-    const resolved = path.resolve(filePath);
-    if (!resolved.startsWith(path.resolve(projectsDir))) {
+    const resolved = resolvePathInProjects(filePath, projectsDir);
+    if (!resolved) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva' });
+    }
+    if (!(await fs.pathExists(resolved))) {
+      return res.status(404).json({ error: 'A fájl nem található a lemezen' });
+    }
+    const stat = await fs.stat(resolved);
+    if (stat.isDirectory()) {
+      return res.status(400).json({ error: 'A megadott útvonal egy mappa, nem fájl' });
     }
     const content = await fs.readFile(resolved, 'utf8');
 
@@ -440,7 +500,17 @@ router.post('/load', async (req, res) => {
       ? meta.tags
       : autoDetectTags(targetFilename, targetSubject);
 
-    res.json({ success: true, content, tags, filename: targetFilename, subject: targetSubject });
+    res.json({
+      success: true,
+      content,
+      tags,
+      filename: targetFilename,
+      name: targetFilename,
+      subject: targetSubject,
+      path: resolved,
+      newPath: resolved,
+      relativePath: relFromProjects
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -450,9 +520,10 @@ router.post('/load', async (req, res) => {
 router.delete('/delete', async (req, res) => {
   try {
     const { filePath } = req.body;
+    if (!filePath) return res.status(400).json({ error: 'Hiányzó filePath paraméter' });
     const projectsDir = getProjectsDir();
-    const resolved = path.resolve(filePath);
-    if (!resolved.startsWith(path.resolve(projectsDir))) {
+    const resolved = resolvePathInProjects(filePath, projectsDir);
+    if (!resolved) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva' });
     }
     await fs.remove(resolved);
@@ -485,13 +556,18 @@ router.post('/rename', async (req, res) => {
     }
 
     const projectsDir = getProjectsDir();
-    const resolved = path.resolve(filePath);
-    if (!resolved.startsWith(path.resolve(projectsDir))) {
+    const resolved = resolvePathInProjects(filePath, projectsDir);
+    if (!resolved) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva' });
     }
 
     if (!(await fs.pathExists(resolved))) {
       return res.status(404).json({ error: 'A fájl nem található a lemezen' });
+    }
+
+    const stat = await fs.stat(resolved);
+    if (stat.isDirectory()) {
+      return res.status(400).json({ error: 'Mappák átnevezéséhez használd a mappa átnevezése funkciót' });
     }
 
     const dir = path.dirname(resolved);
@@ -504,7 +580,14 @@ router.post('/rename', async (req, res) => {
     const newPath = path.join(dir, finalNewName);
 
     if (resolved === newPath) {
-      return res.json({ success: true, path: newPath, name: finalNewName });
+      return res.json({
+        success: true,
+        path: newPath,
+        newPath: newPath,
+        name: finalNewName,
+        filename: finalNewName,
+        relativePath: relOld
+      });
     }
 
     if (await fs.pathExists(newPath)) {
@@ -538,7 +621,14 @@ router.post('/rename', async (req, res) => {
       await fs.move(oldHistoryDir, newHistoryDir);
     }
 
-    res.json({ success: true, path: newPath, name: finalNewName, relativePath: relNew });
+    res.json({
+      success: true,
+      path: newPath,
+      newPath: newPath,
+      name: finalNewName,
+      filename: finalNewName,
+      relativePath: relNew
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -547,17 +637,17 @@ router.post('/rename', async (req, res) => {
 // POST /api/files/move - move a .tex file to another folder
 router.post('/move', async (req, res) => {
   try {
-    const { filePath, targetFolderPath } = req.body;
-    if (!filePath || !targetFolderPath) {
+    const { filePath, targetFolderPath, targetDir } = req.body;
+    const destFolder = targetFolderPath || targetDir;
+    if (!filePath || !destFolder) {
       return res.status(400).json({ error: 'Hiányzó filePath vagy targetFolderPath paraméter' });
     }
 
     const projectsDir = getProjectsDir();
-    const resolvedProjects = path.resolve(projectsDir);
-    const sourcePath = path.resolve(filePath);
-    const targetDir = path.resolve(targetFolderPath);
+    const sourcePath = resolvePathInProjects(filePath, projectsDir);
+    const targetPath = resolvePathInProjects(destFolder, projectsDir);
 
-    if (!sourcePath.startsWith(resolvedProjects) || !targetDir.startsWith(resolvedProjects)) {
+    if (!sourcePath || !targetPath) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva: a cél vagy forrás kívül esik a projektek könyvtáron' });
     }
 
@@ -565,16 +655,22 @@ router.post('/move', async (req, res) => {
       return res.status(404).json({ error: 'A forrásfájl nem található a lemezen' });
     }
 
-    const stat = await fs.stat(targetDir);
+    const stat = await fs.stat(targetPath);
     if (!stat.isDirectory()) {
       return res.status(400).json({ error: 'A cél elérési út nem egy mappa' });
     }
 
     const filename = path.basename(sourcePath);
-    const destPath = path.join(targetDir, filename);
+    const destPath = path.join(targetPath, filename);
 
     if (sourcePath === destPath) {
-      return res.json({ success: true, path: destPath, name: filename });
+      return res.json({
+        success: true,
+        path: destPath,
+        newPath: destPath,
+        name: filename,
+        filename: filename
+      });
     }
 
     if (await fs.pathExists(destPath)) {
@@ -615,9 +711,12 @@ router.post('/move', async (req, res) => {
     res.json({
       success: true,
       path: destPath,
+      newPath: destPath,
       name: filename,
+      filename: filename,
       relativePath: newRel,
-      newSubject
+      newSubject,
+      subject: newSubject
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -638,18 +737,16 @@ router.post('/folder/create', async (req, res) => {
     }
 
     const projectsDir = getProjectsDir();
-    const resolvedProjects = path.resolve(projectsDir);
-
     let targetParent;
     if (parentPath) {
-      targetParent = path.resolve(parentPath);
+      targetParent = resolvePathInProjects(parentPath, projectsDir);
     } else if (subject) {
-      targetParent = path.join(projectsDir, subject);
+      targetParent = resolvePathInProjects(subject, projectsDir);
     } else {
       targetParent = projectsDir;
     }
 
-    if (!targetParent.startsWith(resolvedProjects)) {
+    if (!targetParent) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva' });
     }
 
@@ -667,6 +764,7 @@ router.post('/folder/create', async (req, res) => {
     res.json({
       success: true,
       path: newFolderPath,
+      newPath: newFolderPath,
       name: cleanName,
       relativePath: relPath,
       subject: rootSubject
@@ -686,9 +784,9 @@ router.post('/folder/rename', async (req, res) => {
 
     const projectsDir = getProjectsDir();
     const resolvedProjects = path.resolve(projectsDir);
-    const resolved = path.resolve(folderPath);
+    const resolved = resolvePathInProjects(folderPath, projectsDir);
 
-    if (!resolved.startsWith(resolvedProjects)) {
+    if (!resolved) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva' });
     }
 
@@ -701,7 +799,12 @@ router.post('/folder/rename', async (req, res) => {
     const newFolderPath = path.join(parentDir, cleanName);
 
     if (resolved === newFolderPath) {
-      return res.json({ success: true, path: newFolderPath, name: cleanName });
+      return res.json({
+        success: true,
+        path: newFolderPath,
+        newPath: newFolderPath,
+        name: cleanName
+      });
     }
 
     if (await fs.pathExists(newFolderPath)) {
@@ -730,7 +833,13 @@ router.post('/folder/rename', async (req, res) => {
       await saveMetadata(metadata);
     }
 
-    res.json({ success: true, path: newFolderPath, name: cleanName, relativePath: newRel });
+    res.json({
+      success: true,
+      path: newFolderPath,
+      newPath: newFolderPath,
+      name: cleanName,
+      relativePath: newRel
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -746,9 +855,9 @@ router.delete('/folder', async (req, res) => {
 
     const projectsDir = getProjectsDir();
     const resolvedProjects = path.resolve(projectsDir);
-    const resolved = path.resolve(folderPath);
+    const resolved = resolvePathInProjects(folderPath, projectsDir);
 
-    if (!resolved.startsWith(resolvedProjects)) {
+    if (!resolved) {
       return res.status(403).json({ error: 'Hozzáférés megtagadva' });
     }
 

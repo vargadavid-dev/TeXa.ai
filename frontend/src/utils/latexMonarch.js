@@ -100,7 +100,7 @@ export const latexMonarchLanguage = {
       [/\\begin\{(equation\*?|align\*?|gather\*?|multline\*?|flalign\*?|split|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|cases|aligned|gathered)\}/, { token: 'keyword.environment', next: '@mathenv' }],
 
       // Általános \begin{...} és \end{...} környezetek (Overleaf-szerű színezés: \begin és \end rózsaszín/magenta, név arany/borostyán)
-      [/\\(begin|end)(\s*)(\{)([a-zA-Z0-9*_-]+)(\})/, [
+      [/(\\begin|\\end)(\s*)(\{)([a-zA-Z0-9*_-]+)(\})/, [
         'keyword.environment',
         '',
         'delimiter.curly',
@@ -113,9 +113,8 @@ export const latexMonarchLanguage = {
       [/\\(title|author|date|maketitle|tableofcontents|listoffigures|listoftables)/, 'keyword.section'],
 
       // Hivatkozások, címkék, idézetek
-      [/\\(label|ref|eqref|pageref|cite|citep|citet|nocite|bibliography|bibliographystyle|bibitem)(\*?)(\s*)(\{)([^}]+)(\})/, [
+      [/(\\(?:label|ref|eqref|pageref|cite|citep|citet|nocite|bibliography|bibliographystyle|bibitem)\*?)(\s*)(\{)([^}]+)(\})/, [
         'keyword.reference',
-        '',
         '',
         'delimiter.curly',
         'string.reference',

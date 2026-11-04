@@ -105,6 +105,14 @@ export function detectDocumentMeta(code, currentSubjectFallback = '', availableC
     cleanName = `Dokumentum_${Date.now().toString().slice(-4)}`
   }
 
+  // Beamer prezentáció felismerése: a fájlnév végén kötelezően szerepeljen a _Beamer
+  const isBeamerDoc = /\\documentclass(?:\s*\[[^\]]*\])?\s*\{beamer\}/i.test(code)
+  if (isBeamerDoc) {
+    if (!cleanName.toLowerCase().endsWith('beamer')) {
+      cleanName = `${cleanName}_Beamer`
+    }
+  }
+
   // 2. Kategória / Tantárgy (Matematika vs Fizika) felismerése kulcsszavak és képletek alapján
   const lowerCode = code.toLowerCase()
 

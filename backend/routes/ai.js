@@ -6,7 +6,8 @@ const fs = require('fs-extra');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const axios = require('axios');
-const { supplementFullLatex } = require('../utils/latexPreambleHelper');
+const { supplementFullLatex, sanitizeLatexNumbering } = require('../utils/latexPreambleHelper');
+const { compileStandaloneTikz } = require('../utils/tikzCompiler');
 
 const router = express.Router();
 const upload = multer({ dest: path.join(__dirname, '..', 'uploads'), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -52,7 +53,20 @@ Szabályok:
 - Kötelező csomagok: inputenc(utf8), fontenc(T1), babel(magyar), amsmath, amssymb, geometry
 - Használj tcolorbox, xcolor, tikz csomagokat szép formázáshoz ahol releváns
 - Professzionális, tanulóbarát stílus
+- SZIGORÚAN TILOS a számozott listákban (\\begin{enumerate}) a számozás kézi megismétlése (pl. \\item \\textbf{1. Feladat} vagy \\item 1. vagy alpontoknál \\item a)), mert a LaTeX számozó automatikusan kirakja a sorszámot vagy betűt, és a kézi kiírás csúnya dupla számozást eredményez!
 - CSAK LaTeX kódot adj vissza, semmi más szöveget, magyarázatot`;
+
+const BEAMER_SYSTEM = `Te egy professzionális LaTeX és Beamer prezentáció-készítő asszisztens vagy MAGYAR NYELVEN.
+Szabályok:
+- Mindig teljes, azonnal pdflatex-szel fordítható Beamer dokumentumot generálj: \\documentclass[aspectratio=169,11pt]{beamer} vagy \\documentclass{beamer} és \\end{document} között.
+- Válassz tetszetős témát: pl. \\usetheme{Madrid} vagy \\usetheme{Warsaw}.
+- Csomagok: inputenc(utf8), fontenc(T1), babel(magyar), amsmath, amssymb, tikz.
+- SZIGORÚAN TILOS az enumitem, az enumerate és a geometry csomagok használata! (A Beamer maga kezeli a diákat és a listák animációit/számlálóit. Az enumitem fatális TeX capacity exceeded fordítási hibát okoz!)
+- SZIGORÚAN TILOS a számozott listákban (\\begin{enumerate}) a sorszám megismétlése az \\item mögött!
+- Minden dia KÖTELEZŐEN külön \\begin{frame}{Dia címe} ... \\end{frame} blokkban legyen! Ügyelj arra, hogy minden nyitott frame pontosan egyszer legyen lezárva, ne legyenek duplikált zárójelek vagy elhagyott környezetek!
+- Kiemelésekhez használd a Beamer beépített dobozait: \\begin{block}{Definíció}...\\end{block}, \\begin{alertblock}{Fontos trükk}...\\end{alertblock}, \\begin{exampleblock}{Példa}...\\end{exampleblock}.
+- Gráfos ábráknál, amennyiben a feladat szövegében nem hivatkozunk kifejezetten a csúcsok betűjeleire (A, B, C...), a csúcsokat csak pontként (pöttyként) kell kirajzolni betűk és zavaró fokszám-feliratok nélkül.
+- CSAK érvényes Beamer LaTeX kódot adj vissza, semmilyen magyarázó szöveg nélkül!`;
 
 const DOC_TYPES = {
   microlearning: 'interaktív mikrotananyag (aprózott mikro-egységek, azonnali ellenőrző feladatokkal: feleletválasztós A/B/C/D, Igaz/Hamis, rövid válaszos és többlépcsős feladatok)',
@@ -245,6 +259,7 @@ A tesztkérdések módja legyen minél változatosabb, vegyesen alkalmazva az al
 - Többlépcsős feladatvezetés: Ha a feladat összetettebb és számolást igényel, NE egyben kérd a végeredményt! Bontsd fel a problémát részszámításokra (a), b), c) alkérdések), és több egymásra épülő lépésen keresztül vezesd végig a tanulót a megoldásig!
 
 4. Formai és ábrázolási követelmények:
+- SZIGORÚAN TILOS A DUPLA SZÁMOZÁS: Számozott listákban (\\begin{enumerate}) az \\item után SOHA NE írj ki kézzel sorszámot vagy betűt (pl. \\item a) vagy \\item 1. Feladat), mert a lista automatikusan számoz!
 - Használj esztétikus, tiszta TikZ ábrákat a fogalmakhoz és feladatokhoz!
 - FONTOS SZABÁLY: Gráfos ábráknál és moduloknál, amennyiben a feladat vagy lecke szövegében nem hivatkozunk kifejezetten a csúcsok betűjeleire (A, B, C...), a csúcsokat csak pontként (pöttyként) kell kirajzolni betűk és zavaró fokszám-feliratok nélkül!`;
     }
@@ -264,6 +279,8 @@ A tesztkérdések módja legyen minél változatosabb, vegyesen alkalmazva az al
     } else {
       finalLatex = supplementFullLatex(finalLatex, null, topic);
     }
+
+    finalLatex = sanitizeLatexNumbering(finalLatex);
 
     res.json({ success: true, latex: finalLatex.trim(), topic: topic?.trim() });
   } catch (err) {
@@ -307,7 +324,7 @@ FONTOS SZABÁLYOK:
     let latex = await callAi(prompt, provider, [], sysPrompt, model, req);
     const m = latex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
     if (m) latex = m[1];
-    res.json({ success: true, latex: latex.trim() });
+    res.json({ success: true, latex: sanitizeLatexNumbering(latex.trim()) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -356,20 +373,165 @@ Generáld le a közvetlenül beilleszthető új LaTeX kódrészletet!`;
   }
 });
 
-// POST /api/ai/tikz
-router.post('/tikz', async (req, res) => {
+// POST /api/ai/tikz - Szöveges leírásból és képekből (Image-to-TikZ) professzionális TikZ ábra generálása
+router.post('/tikz', upload.array('files', 5), async (req, res) => {
   try {
-    const { description, subject, provider, model } = req.body;
-    const sys = `Generálj precíz TikZ kódot az alábbi leírás alapján.
-Tantárgy: ${subject === 'fizika' ? 'Fizika' : 'Matematika'}
+    const { description = '', subject = 'Matematika', provider, model, images = [] } = req.body;
 
-FONTOS: Csak a tikzpicture environment-et add vissza (\\begin{tikzpicture}...\\end{tikzpicture}), semmi mást. Ha szükséges könyvatár, add \\usetikzlibrary{...} sort a kód elé. Ne tegyél köré markdown \`\`\` blokkokat, csak a tiszta kódot add vissza.`;
+    const imageParts = [];
 
-    let tikz = await callAi(`Leírás: ${description}`, provider, [], sys, model, req);
+    // 1. Multipart feltöltött fájlok
+    for (const file of (req.files || [])) {
+      try {
+        const ex = await extractFile(file.path, file.mimetype, file.originalname);
+        if (ex.type === 'image') {
+          imageParts.push({ inlineData: { data: ex.data, mimeType: ex.mimeType } });
+        }
+      } finally {
+        await fs.remove(file.path).catch(() => {});
+      }
+    }
+
+    // 2. JSON-ben küldött képek (base64 / dataUrl / vágólap)
+    let parsedImages = images;
+    if (typeof parsedImages === 'string') {
+      try { parsedImages = JSON.parse(parsedImages); } catch (e) { parsedImages = []; }
+    }
+    if (Array.isArray(parsedImages)) {
+      for (const img of parsedImages) {
+        let base64Data = img.data || img.dataUrl || (typeof img === 'string' ? img : '');
+        let mimeType = img.mimeType || 'image/png';
+        if (base64Data.startsWith('data:')) {
+          const match = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+          if (match) {
+            mimeType = match[1];
+            base64Data = match[2];
+          }
+        }
+        if (base64Data) {
+          imageParts.push({
+            inlineData: {
+              data: base64Data,
+              mimeType
+            }
+          });
+        }
+      }
+    }
+
+    const hasImages = imageParts.length > 0;
+    const effectiveSubject = (subject === 'fizika' || subject === 'Fizika') ? 'Fizika' : 'Matematika';
+
+    const sys = `Te egy professzionális LaTeX és TikZ/PGF ábrakészítő szakértő vagy MAGYAR NYELVEN.
+Tantárgy: ${effectiveSubject}
+
+${hasImages ? `A felhasználó egy vagy több képet csatolt (vázlat, füzetrajz, tankönyvi ábra, geometriai ábra, grafikon, fizikai kísérlet).
+A FELADATOD: Végezz rendkívül pontos vizuális elemzést (Image-to-TikZ rekonstrukció), és készíts belőle tökéletes, éles, professzionális és azonnal fordítható TikZ vektoros ábrát!
+- Alakzatok, arányok, szögek, szakaszok, ívek, jelölések hű leképezése
+- Értelmes feliratok, betűzések, méretvonalak, szögívek, derékszög-jelölések elhelyezése
+- Elegáns stílus, modern színek (pl. blue!75!black, teal!80!black, orange!80!black, lágy kitöltések pl. blue!10)
+- Ha a felhasználó szöveges leírást vagy módosítási kérést is megadott, azt vedd figyelembe a kép rekonstruálásakor!` : 'Generálj precíz, professzionális TikZ ábrakódot a megadott leírás alapján.'}
+
+SZABÁLYOK:
+1. Csak a tikzpicture környezetet add vissza (\\begin{tikzpicture}...\\end{tikzpicture}), semmi mást!
+2. Ha szükségesek extra TikZ könyvtárak (pl. arrows.meta, angles, quotes, calc, positioning, decorations.pathmorphing, patterns, babel), a kód legelső soraiként tüntesd fel őket kommentben: % \\usetikzlibrary{...}.
+3. Használj modern TikZ szintaxist (pl. arrows.meta csomagot, [-{Stealth[length=2.5mm]}] a nyilakhoz).
+4. Áttekinthető, jól kommentelt, könnyen karbantartható kód koordinátákkal vagy csomópontokkal (node).
+5. Kifejezetten a felhasználói szabály szerint: Gráfos ábráknál, amennyiben a feladat vagy leírás szövegében nem hivatkozunk kifejezetten a csúcsok betűjeleire (A, B, C...), a csúcsokat csak pontként (pöttyként) rajzold ki betűk és zavaró fokszám-feliratok nélkül!
+6. Ne tegyél köré felesleges magyarázó szöveget, CSAK a tiszta TikZ kódot (markdown \`\`\` blokk megengedett).`;
+
+    let prompt = '';
+    if (description && description.trim()) {
+      prompt += `Felhasználói leírás / instrukció:\n${description.trim()}\n\n`;
+    }
+    if (hasImages) {
+      prompt += `Kérlek, alakítsd át a csatolt képet professzionális, tiszta TikZ vektoros kóddá a(z) ${effectiveSubject} követelményeknek megfelelően!`;
+    }
+    if (!prompt.trim()) {
+      prompt = `Készíts professzionális TikZ ábrát a csatolt kép alapján (${effectiveSubject})!`;
+    }
+
+    let tikz = await callAi(prompt, provider, imageParts, sys, model, req);
     const m = tikz.match(/```(?:latex|tex|tikz)?\n?([\s\S]*?)```/);
     if (m) tikz = m[1];
-    res.json({ success: true, tikz: tikz.trim() });
+    tikz = tikz.trim();
+
+    // Azonnali standalone TikZ fordítás a mini-előnézethez
+    let compiled = null;
+    try {
+      compiled = await compileStandaloneTikz(tikz);
+    } catch (compileErr) {
+      console.warn('[AI TikZ Preview Compile Warning]:', compileErr.message);
+    }
+
+    res.json({
+      success: true,
+      tikz,
+      pdf: compiled?.success ? compiled.pdf : null,
+      compileError: compiled && !compiled.success ? (compiled.log || compiled.error) : null,
+      standaloneTex: compiled?.standaloneTex || null
+    });
   } catch (err) {
+    console.error('[AI TikZ Error]:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/ai/tikz-compile - Kifejezetten a TikZ mini-előnézet azonnali újrafordításához
+router.post('/tikz-compile', async (req, res) => {
+  try {
+    const { tikzCode } = req.body;
+    if (!tikzCode || !tikzCode.trim()) {
+      return res.status(400).json({ error: 'Hiányzó TikZ kód' });
+    }
+    const compiled = await compileStandaloneTikz(tikzCode);
+    res.json({
+      success: compiled.success,
+      pdf: compiled.success ? compiled.pdf : null,
+      compileError: compiled.success ? null : (compiled.log || compiled.error),
+      standaloneTex: compiled.standaloneTex,
+      rawTikz: compiled.rawTikz
+    });
+  } catch (err) {
+    console.error('[AI TikZ Compile Error]:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/ai/tikz-refine - TikZ ábra intelligens finomhangolása és azonnali újrafordítása
+router.post('/tikz-refine', async (req, res) => {
+  try {
+    const { tikzCode, instruction, subject = 'Matematika', provider, model } = req.body;
+    if (!tikzCode || !instruction || !instruction.trim()) {
+      return res.status(400).json({ error: 'Hiányzó TikZ kód vagy finomítási instrukció' });
+    }
+    const effectiveSubject = (subject === 'fizika' || subject === 'Fizika') ? 'Fizika' : 'Matematika';
+    const refineSys = `Te egy professzionális LaTeX és TikZ ábraszerkesztő szakértő vagy MAGYAR NYELVEN.
+Tantárgy: ${effectiveSubject}
+A feladatod a megadott TikZ ábra módosítása a kért finomítási instrukció alapján.
+
+SZABÁLYOK:
+1. Csak a módosított tikzpicture környezetet add vissza (\\begin{tikzpicture}...\\end{tikzpicture}), semmi más kísérőszöveget!
+2. Őrizd meg az eredeti ábra jó részeit, de hajtsd végre pontosan a kért változtatást!
+3. Ügyelj a szintaxisra, minden utasítás pontosvesszővel (;) végződjön!
+4. Gráfos ábráknál, ha nincsenek nevesítve a csúcsok, pöttyként rajzold ki őket betűk nélkül!`;
+
+    const prompt = `EREDETI TIKZ KÓD:\n\`\`\`latex\n${tikzCode}\n\`\`\`\n\nMÓDOSÍTÁSI KÉRÉS:\n${instruction.trim()}`;
+    let refinedTikz = await callAi(prompt, provider, [], refineSys, model, req);
+    const m = refinedTikz.match(/```(?:latex|tex|tikz)?\n?([\s\S]*?)```/);
+    if (m) refinedTikz = m[1];
+    refinedTikz = refinedTikz.trim();
+
+    const compiled = await compileStandaloneTikz(refinedTikz);
+    res.json({
+      success: true,
+      tikz: refinedTikz,
+      pdf: compiled.success ? compiled.pdf : null,
+      compileError: compiled.success ? null : (compiled.log || compiled.error),
+      standaloneTex: compiled.standaloneTex
+    });
+  } catch (err) {
+    console.error('[AI TikZ Refine Error]:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -412,25 +574,52 @@ router.post('/problems', upload.array('files', 3), async (req, res) => {
       ? topic.trim()
       : (sourceMode === 'current' ? 'Gyakorló feladatsor' : 'Általános feladatsor');
 
-    // 1. Nehézségi struktúra szöveges definíciója
+    // 1. Nehézségi struktúra szöveges definíciója (K1, K2, K3 modell)
     let diffInstruction = '';
     if (difficultyStructure === 'pyramid') {
-      diffInstruction = `NEHÉZSÉGI FELÉPÍTÉS (Fokozatosan nehezedő piramis modell):
-A feladatsor szigorúan didaktikailag felépített, fokozatosan nehezedő legyen:
-- 1. Szint (Könnyű / Alapozó): Alapfogalmak közvetlen felismerése, képletbehelyettesítés, egyértelmű számolások.
-- 2. Szint (Középszint): Középszintű érettségi típusfeladatok, 2-3 lépéses levezetések, szöveges feladatok.
-- 3. Szint (Emelt szint): Emelt szintű érettségi nehézség, korlátozó feltételek, esetszétválasztások vagy kombinált fogalmak.
-${Number(count) >= 6 ? '- Opcionálisan az utolsó feladat lehet kihívást jelentő gondolkodtató feladat.' : ''}
-Minden feladat sorszáma mellett tüntesd fel a nehézséget, pl. \\textbf{1. Feladat} \\textsf{\\small [Alapszint]} vagy \\textbf{3. Feladat} \\textsf{\\small [Középszint]}!`;
+      diffInstruction = `NEHÉZSÉGI FELÉPÍTÉS (Fokozatosan nehezedő piramis modell: K1 → K2 → K3):
+A feladatsor didaktikailag szigorúan a K1, K2, K3 nehézségi szintek szerint épüljön fel fokozatosan:
+- 1. Szint: K1 (Alapszint / Könnyű): Alapfogalmak közvetlen felismerése, egyszerű alapvető képletbehelyettesítés, egyértelmű számolások.
+- 2. Szint: K2 (Közepes szint / Gyakorló): Tipikus középszintű érettségi jellegű feladatok, 2-3 lépéses levezetések, életszerű szöveges feladatok.
+- 3. Szint: K3 (Nehezebb / Összetett feladat): Mélyebb gondolkodtató, esetszétválasztást vagy kombinált összefüggéseket igénylő feladat.
+  FONTOS: A K3 feladat NEM emelt szintű érettségi tananyag vagy követelmény! A középszintű témakör nehezebb, gondolkodtatóbb feladata legyen, NEM emelt érettségi szint!
+${Number(count) >= 6 ? '- Ha a feladatok száma eléri vagy meghaladja a 6-ot, az utolsó feladat lehet egy különösen érdekes K3 szintű gondolkodtató feladvány.' : ''}
+
+KÖTELEZŐ SZINTJELÖLÉS ÉS SZÁMOZÁSI SZABÁLY:
+A feladatokhoz számozott listát használj: \\begin{enumerate}[label=\\arabic*., leftmargin=*]
+SZIGORÚAN TILOS A DUPLA SZÁMOZÁS!
+Mivel az enumerate környezet automatikusan kirakja a sorszámot (1., 2., 3...), az \\item mögé KIFEJEZETTEN TILOS még egyszer kiírni a számot!
+TILOS forma: \\item \\textbf{1. Feladat} (mert ez a PDF-ben hibás "1. 1. Feladat"-ként jelenne meg)!
+KÖTELEZŐ HELYES FORMA:
+\\item \\textbf{Feladat} \\textsf{\\small [K1 – Alap]} \\\\
+vagy
+\\item \\textbf{Feladat} \\textsf{\\small [K2 – Közepes]} \\\\
+vagy
+\\item \\textbf{Feladat} \\textsf{\\small [K3 – Nehezebb]} \\\\
+(SZIGORÚAN TILOS a 3. szintet „Emelt szint”-nek vagy „Emelt érettségi”-nek jelölni, mert a K3 szint a középszintű témakör nehezebb, összetett feladata, nem emelt érettségi!)`;
     } else {
       const diffLevels = {
-        easy: 'alapszintű (könnyű, alapfogalmi / drill feladatok)',
-        medium: 'középszintű érettségi nehézségű feladatok',
-        hard: 'emelt szintű érettségi nehézségű, összetett feladatok',
-        competition: 'verseny / olimpiai szintű, mély gondolkodtató feladatok'
+        k1: 'K1 – alapszintű (könnyű, alapfogalmi / drill feladatok)',
+        easy: 'K1 – alapszintű (könnyű, alapfogalmi / drill feladatok)',
+        k2: 'K2 – közepes szintű (tipikus középszintű érettségi jellegű feladatok)',
+        medium: 'K2 – közepes szintű (tipikus középszintű érettségi jellegű feladatok)',
+        k3: 'K3 – nehezebb, összetett feladatok (gondolkodtató, esetszétválasztásos feladatok – FONTOS: NEM emelt érettségi tananyag, hanem a középszintű témakör nehezebb feladatai!)',
+        hard: 'K3 – nehezebb, összetett feladatok (gondolkodtató, esetszétválasztásos feladatok – FONTOS: NEM emelt érettségi tananyag, hanem a középszintű témakör nehezebb feladatai!)',
+        emelt: 'valódi emelt szintű érettségi nehézségű feladatok',
+        advanced: 'valódi emelt szintű érettségi nehézségű feladatok',
+        competition: 'verseny / olimpiai szintű, mély kreativitást igénylő feladatok'
       };
-      const desc = diffLevels[difficultyStructure] || 'középszintű érettségi nehézségű';
-      diffInstruction = `NEHÉZSÉG: Minden feladat egységesen ${desc} legyen.`;
+      const desc = diffLevels[difficultyStructure] || 'K2 – közepes szintű';
+      const labelTag = (difficultyStructure === 'k1' || difficultyStructure === 'easy') ? 'K1 – Alap'
+        : (difficultyStructure === 'k2' || difficultyStructure === 'medium') ? 'K2 – Közepes'
+        : (difficultyStructure === 'k3' || difficultyStructure === 'hard') ? 'K3 – Nehezebb'
+        : (difficultyStructure === 'emelt' || difficultyStructure === 'advanced') ? 'Emelt szint'
+        : 'Versenyfeladat';
+      diffInstruction = `NEHÉZSÉG: Minden feladat egységesen ${desc} legyen.
+SZIGORÚAN TILOS A DUPLA SZÁMOZÁS: A feladatsorhoz használj \\begin{enumerate}[label=\\arabic*., leftmargin=*] környezetet!
+Minden feladat fejléce az \\item mögött: \\item \\textbf{Feladat} \\textsf{\\small [${labelTag}]} \\\\
+(TILOS a "\\item \\textbf{1. Feladat}" forma, mert az a PDF-ben hibás dupla számozást ("1. 1. Feladat") okoz!)
+${(difficultyStructure === 'k3' || difficultyStructure === 'hard') ? '(FONTOS: A K3 feladat NEM emelt szintű érettségi, szigorúan a középszintű tananyag nehezebb, gondolkodtató feladata!)' : ''}`;
     }
 
     // 2. Feladattípusok instrukciója
@@ -444,11 +633,12 @@ Minden feladat sorszáma mellett tüntesd fel a nehézséget, pl. \\textbf{1. Fe
 
     // 3. Forrás és kontextus
     let contextInstruction = '';
-    if (sourceMode === 'current' && contextContent && contextContent.trim()) {
-      contextInstruction = `FORRÁSDOKUMENTUM ÉS ELMÉLETI HÁTTÉR:
-A feladatokat közvetlenül az alábbi dokumentum elméleti anyagára, definícióira, tételeire és képleteire építsd:
-${selectedSnippet ? `KIFEJEZETTEN AZ ALÁBBI KIJELÖLT RÉSZLETRE KONCENTRÁLJ:\n"""\n${selectedSnippet}\n"""\n\nA teljes dokumentum kontextusa:` : ''}
-"""\n${contextContent.slice(0, 14000)}\n"""`;
+    if (contextContent && contextContent.trim()) {
+      contextInstruction = `FORRÁSDOKUMENTUM(OK) ÉS ELMÉLETI HÁTTÉR:
+${topic && topic.trim() ? `KIEMELT TÉMAKÖR / FÓKUSZ: ${topic.trim()}\n` : ''}
+A feladatokat közvetlenül az alábbi forrásanyag(ok) elméleti hátterére, definícióira, típusfeladataira és képleteire építsd:
+${selectedSnippet ? `KIFEJEZETTEN AZ ALÁBBI KIJELÖLT RÉSZLETRE KONCENTRÁLJ:\n"""\n${selectedSnippet}\n"""\n\nA forrásanyag részletei:` : ''}
+"""\n${contextContent.slice(0, 32000)}\n"""`;
     } else {
       contextInstruction = `TÉMAKÖR: ${effectiveTopic}`;
     }
@@ -475,10 +665,12 @@ Ezután következzen a feladatok szakasza: \\section*{Gyakorló feladatok}.`;
     if (hasSolutions) {
       if (solutionPlacement === 'inline') {
         solutionInstruction = `MEGOLDÓKULCS ÉS ELHELYEZÉS (KÖZVETLENÜL MINDEN FELADAT UTÁN):
-Minden egyes feladat után KÖZVETLENÜL szerepeljen a részletes lépésről-lépésre kidolgozás és magyarázat egy elegáns dobozban vagy kiemelt blokkban (tanári/megoldott példatár stílus):
+Minden egyes feladatnál a felépítés KÖTELEZŐEN a következő legyen:
+1. Először írd ki a feladat sorszámát és a FELADAT TELJES SZÖVEGÉT (minden adattal, kitűzéssel, kérdéssel).
+2. Közvetlenül utána helyezd el a részletes lépésről-lépésre kidolgozást és magyarázatot egy elegáns dobozban (tanári/megoldott példatár stílus):
 \\begin{tcolorbox}[title=Megoldás és levezetés, colback=blue!3!white, colframe=blue!65!black]
-... részletes levezetés lépésről lépésre ...
-${hasRubric ? '\\tcblower\n\\textbf{Pontozási útmutató:} Képlet felírása: 1p; Számolási lépések: 2p; Ellenőrzés és válasz: 1p. Összesen: 4 pont' : ''}
+... részletes levezetés lépésről lépésre, indoklással, képletekkel és kiemelt végeredménnyel ...
+${hasRubric ? '\\tcblower\n\\textbf{Pontozási útmutató:} Képlet felírása és behelyettesítés: 1p; Számolási lépések: 2p; Ellenőrzés és szöveges válasz: 1p. Összesen: 4 pont' : ''}
 \\end{tcolorbox}
 FONTOS: NE a dokumentum végére tedd a megoldásokat, hanem minden egyes feladat szövege alá KÖZVETLENÜL!`;
       } else if (solutionPlacement === 'separate_doc') {
@@ -487,18 +679,33 @@ A feladatsort és a megoldókulcsot KÉT KÜLÖNÁLLÓ DOKUMENTUMKÉNT kell elk�
 1. A feladatsor (az első szakasz) SEMMILYEN megoldást vagy választ NEM TARTALMAZHAT! Kizárólag a feladatok (és az elméleti összefoglaló ha kérték) szerepeljenek benne.
 2. A feladatsor befejezése után kötelezően szúrj be pontosan egy ilyen elválasztó sort:
 === SEPARATE_SOLUTIONS_DOCUMENT ===
-3. Az elválasztó sor UTÁN generáld le a TELJES, ÖNÁLLÓ MEGOLDÓKULCS DOKUMENTUMOT (\\title{${effectiveTopic} - Megoldókulcs}, saját dokumentum-struktúrával, ahol az összes feladat sorszámozva, teljes levezetéssel és magyarázattal ki van dolgozva${hasRubric ? ', tételes magyar érettségi pontozási útmutatóval kiegészítve' : ''})!`;
+3. Az elválasztó sor UTÁN generáld le a TELJES, ÖNÁLLÓ MEGOLDÓKULCS DOKUMENTUMOT (\\title{${effectiveTopic} - Megoldókulcs és kidolgozások}, saját dokumentum-struktúrával).
+
+SZIGORÚ KÖVETELMÉNY A MEGOLDÓKULCS DOKUMENTUMBAN:
+Minden egyes feladatnál a megoldókulcsban KÖTELEZŐ ELŐSZÖR A FELADAT TELJES SZÖVEGÉT (minden adatot, kitűzést, kérdést szó szerint) újra megjeleníteni, és KÖZVETLENÜL UTÁNA a részletes, lépésről-lépésre levezetett kidolgozást! Így a megoldókulcs a feladatlap nélkül, önállóan is tökéletesen használható.
+Formátum minden feladathoz az önálló megoldókulcs dokumentumban:
+\\subsection*{X. feladat}
+\\noindent\\textbf{A feladat szövege:} \\textit{<Itt szerepeljen a feladat teljes, hiánytalan kitűzése, adatai és kérdései>}\\par\\medskip
+\\noindent\\textbf{Részletes kidolgozás és levezetés:}
+<Részletes lépésről-lépésre kidolgozás, indoklások, egyenletek, ellenőrzés>\\par\\smallskip
+\\noindent\\textbf{Végeredmény:} <Kiemelt végeredmény és szöveges válasz>
+${hasRubric ? '\n\\smallskip\n\\noindent\\textbf{Pontozási útmutató:} <Tételes pontbontás a magyar érettségi javítási útmutatók mintájára: pl. Képlet felírása és behelyettesítés: 1 pont; Számolási lépések: 2 pont; Ellenőrzés és szöveges válasz: 1 pont. Összesen: 4 pont>' : ''}`;
       } else {
         // 'separate_page' (alapértelmezett)
         solutionInstruction = `MEGOLDÓKULCS ÉS ELHELYEZÉS (A FELADATSOR UTÁN KÜLÖN OLDALRA):
 A teljes feladatsor (összes feladat) után tegyél be egy kötelező lapdobást:
 \\newpage
-\\section*{Részletes megoldókulcs}
-Itt sorszámozva (1. feladat, 2. feladat...) részletesen, lépésről-lépésre vezesd le a megoldásokat!`;
-        if (hasRubric) {
-          solutionInstruction += `\nTÉTELES MAGYAR ÉRETTSÉGI PONTOZÁSI ÚTMUTATÓ (RUBRIC):
-Minden feladat megoldása végén adj tételes pontbontást a magyar érettségi javítási útmutatók mintájára (pl.: "Képlet felírása és behelyettesítés: 1 pont; Számítási lépések: 2 pont; Ellenőrzés és szöveges válasz: 1 pont. Összesen: 4 pont").`;
-        }
+\\section*{Részletes megoldókulcs és kidolgozások}
+
+SZIGORÚ KÖVETELMÉNY A MEGOLDÓKULCSHOZ:
+Minden egyes feladatnál a megoldókulcsban KÖTELEZŐ ELŐSZÖR A FELADAT TELJES SZÖVEGÉT (minden adatot, kitűzést, kérdést szó szerint) megjeleníteni, és KÖZVETLENÜL UTÁNA a részletes, lépésről-lépésre levezetett kidolgozást! Így a megoldókulcs a feladatsor nélkül, önmagában is tökéletesen olvasható és használható.
+Formátum minden feladathoz a megoldókulcsban:
+\\subsection*{X. feladat}
+\\noindent\\textbf{A feladat szövege:} \\textit{<Itt szerepeljen a feladat teljes, hiánytalan kitűzése, adatai és kérdései>}\\par\\medskip
+\\noindent\\textbf{Részletes kidolgozás és levezetés:}
+<Részletes lépésről-lépésre kidolgozás, indoklások, egyenletek, ellenőrzés>\\par\\smallskip
+\\noindent\\textbf{Végeredmény:} <Kiemelt végeredmény és szöveges válasz>
+${hasRubric ? '\n\\smallskip\n\\noindent\\textbf{Pontozási útmutató:} <Tételes pontbontás a magyar érettségi javítási útmutatók mintájára: pl. Képlet felírása és behelyettesítés: 1 pont; Számolási lépések: 2 pont; Ellenőrzés és szöveges válasz: 1 pont. Összesen: 4 pont>' : ''}`;
       }
     }
 
@@ -528,7 +735,7 @@ Kizárólag a meglévő dokumentum végére közvetlenül beilleszthető szakasz
 \\newpage
 ${hasTheory ? '\\section*{Elméleti összefoglaló és képletek}\n... a legfontosabb képletek és definíciók ...\n\\section*{Gyakorló feladatsor: ' + effectiveTopic + '}' : '\\section*{Gyakorló feladatsor: ' + effectiveTopic + '}'}
 ... a feladatok számozva ${solutionPlacement === 'inline' ? '(mindegyik alatt közvetlenül ott a tcolorbox megoldása)' : ''} ...
-${hasSolutions && solutionPlacement === 'separate_page' ? '\\newpage\n\\section*{Részletes megoldókulcs és pontozás}\n... a megoldások ...' : ''}`;
+${hasSolutions && solutionPlacement === 'separate_page' ? '\\newpage\n\\section*{Részletes megoldókulcs és kidolgozások}\n... a feladatok teljes szövegeivel és utána a részletes levezetésekkel ...' : ''}`;
       }
     } else {
       outputInstruction = `KIMENETI FORMÁTUM (TELJES DOKUMENTUM):
@@ -558,6 +765,12 @@ ${outputInstruction}
 
 SZABÁLYOK:
 - Kizárólag érvényes, hibátlan LaTeX kódot adj vissza!
+- SZIGORÚAN TILOS A DUPLA SZÁMOZÁS:
+  * Számozott listákban (\\begin{enumerate}) az \\item mögé SOHA NE írj ki kézzel újra sorszámot vagy betűt, mert a lista számozója azt automatikusan kirakja!
+  * Főfeladatoknál: a helyes fejléc \\item \\textbf{Feladat} \\textsf{\\small [K1 – Alap]} (SZIGORÚAN TILOS a "\\item \\textbf{1. Feladat}" forma, mert az a PDF-ben hibás "1. 1. Feladat"-ként jelenne meg duplán)!
+  * Alkérdéseknél (\\begin{enumerate}[label=\\alph*)]): \\item <kérdés szövege> (TILOS a "\\item a)" vagy "\\item (a)" forma)!
+  * Megoldókulcsban lista esetén: \\item \\textbf{Feladat megoldása} (TILOS a "\\item \\textbf{1. Feladat megoldása}" forma)!
+- MEGOLDÓKULCS KÖVETELMÉNY: A megoldókulcsban (külön lapon, külön dokumentumban, vagy inline feladatok alatti elhelyezés esetén is) MINDEN EGYES FELADATNÁL KÖTELEZŐ szerepelnie ELŐSZÖR A FELADAT TELJES SZÖVEGÉNEK (minden adat, kitűzés és kérdés szó szerint), és KÖZVETLENÜL UTÁNA a részletes lépésről lépésre kidolgozásnak és levezetésnek! A megoldások önmagukban, a feladat szövege nélkül NEM állhatnak.
 - Matematikai képletekhez használj tiszta egyenletkörnyezeteket (pl. align*, equation*, $...$).
 - Magyar ékezetek és tipográfiai szabályok betartása kötelező.
 - Gráfos ábráknál (TikZ), ha a feladat szövegében nem hivatkozol kifejezetten a csúcsok betűjeleire (A, B, C...), a csúcsokat csak pontként (pöttyként) rajzold ki, betűk és zavaró fokszám-feliratok nélkül!
@@ -614,6 +827,11 @@ SZABÁLYOK:
       finalLatex = supplementFullLatex(finalLatex, customPreamble, effectiveTopic);
     }
 
+    finalLatex = sanitizeLatexNumbering(finalLatex);
+    if (solutionsLatex) {
+      solutionsLatex = sanitizeLatexNumbering(solutionsLatex);
+    }
+
     const safeTopicName = (effectiveTopic || 'Feladatsor')
       .replace(/[\/\\:*?"<>|]/g, '_')
       .replace(/\s+/g, '_')
@@ -641,13 +859,20 @@ SZABÁLYOK:
 router.post('/beamer', async (req, res) => {
   try {
     const { content, subject, provider, model } = req.body;
-    const prompt = `Alakítsd át az alábbi LaTeX összefoglalót Beamer prezentációvá!\nTantárgy: ${subject === 'fizika' ? 'Fizika' : 'Matematika'}\n\nForrás:\n${content}\n\nKészíts szemléletes, jól tagolt Beamer prezentációt. Használj Warsaw vagy Madrid témát. Adj \\frametitle-t minden diának.`;
+    const prompt = `Alakítsd át az alábbi LaTeX tananyagot/összefoglalót Beamer prezentációvá!\nTantárgy: ${subject === 'fizika' ? 'Fizika' : 'Matematika'}\n\nForrás:\n${content}\n\nKészíts szemléletes, jól tagolt Beamer prezentációt (pl. \\usetheme{Madrid}). Adj címet minden diának (\\begin{frame}{Dia címe}). Használj átlátható bullet pointokat és Beamer block környezeteket. Ügyelj a frame-ek pontos lezárására!`;
 
-    let latex = await callAi(prompt, provider, [], SYSTEM, model, req);
+    let latex = await callAi(prompt, provider, [], BEAMER_SYSTEM, model, req);
     const m = latex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
     if (m) latex = m[1];
     const finalLatex = supplementFullLatex(latex.trim());
-    res.json({ success: true, latex: finalLatex.trim() });
+
+    let extractedTopic = '';
+    const tm = finalLatex.match(/\\title(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/i);
+    if (tm) {
+      extractedTopic = tm[1].replace(/\\[a-zA-Z]+/g, '').replace(/[{}]/g, '').trim();
+    }
+
+    res.json({ success: true, latex: finalLatex.trim(), topic: extractedTopic || undefined });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -699,6 +924,16 @@ router.post('/fix-error', async (req, res) => {
   try {
     const { code, errorLog, provider, model } = req.body;
     if (!code) return res.status(400).json({ error: 'Hiányzó forráskód' });
+
+    // 0. Gyors automatikus szanálás ismert strukturális hibákra (pl. Beamer + enumitem végtelen rekurzív hurok)
+    const isBeamer = /\\documentclass(?:\[[^\]]*\])?\{beamer\}/i.test(code);
+    if (
+      isBeamer &&
+      (errorLog?.includes('TeX capacity exceeded') || errorLog?.includes('labelenumi') || errorLog?.includes('grouping levels=255'))
+    ) {
+      const autoCleaned = supplementFullLatex(code);
+      return res.json({ success: true, latex: autoCleaned.trim(), targeted: true, autoHealed: true });
+    }
 
     // 1. Kinyerjük a hibás sorszámot a hibanaplóból (l.<sorszám>)
     const lineMatch = (errorLog || '').match(/^l\.(\d+)/m) || (errorLog || '').match(/l\.(\d+)/);
@@ -802,6 +1037,7 @@ SZIGORÚ SZABÁLYOK ÉS IRÁNYELVEK:
 2. KETTŐS ÉS HIBÁS SZÁMOZÁSOK KISZŰRÉSE:
    - A LaTeX automatikusan számozza a számozott szinteket (\\section, \\subsection, \\subsubsection).
    - Ezért ha egy számozott címben manuális számozás van (pl. \\section{1. Bevezetés}, \\subsection{1.1. Alapfogalmak}, \\subsection{1. A teljes gráf}), TÁVOLÍTSD EL a manuális számozást a címből (pl. \\section{Bevezetés}, \\subsection{Alapfogalmak}, \\subsection{A teljes gráf}), mert a LaTeX automatikus számozása csúnya kettős számozást idéz elő (pl. "1 1. Bevezetés", "3.1 1. A teljes gráf") a szövegben és a tartalomjegyzékben (TOC)!
+   - Számozott listákban (\\begin{enumerate}): ha az \\item után manuálisan meg van ismételve a sorszám vagy betűjel (pl. \\item \\textbf{1. Feladat} vagy \\item a)), TÁVOLÍTSD EL a manuális sorszámot (pl. \\item \\textbf{Feladat} vagy \\item), mert a lista automatikusan megszámozza!
    - Ha a dokumentum csillagozott címeket használ (\\section*{...}, \\subsection*{...}):
      - Ha a dokumentumhoz logikusan illik a szabványos számozott LaTeX hierarchia (hogy a \\tableofcontents működjön), alakítsd át számozott \\section / \\subsection szintekre felesleges kézi prefixek nélkül.
      - Ha csillagozottak maradnak, javítsd a számozási folytonossági hibákat (pl. 1, 2, 3, 5 -> 1, 2, 3, 4).
@@ -857,6 +1093,8 @@ Válaszodat PONTOSAN az alábbi formátumban add meg:
         }
       }
     }
+
+    fixedLatex = sanitizeLatexNumbering(fixedLatex);
 
     if (summary.length === 0) {
       summary = ['A dokumentum fejezetszintjei és számozásai átnézve és normalizálva a TOC alapján.'];

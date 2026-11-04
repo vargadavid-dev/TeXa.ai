@@ -29,17 +29,29 @@ import {
   Sigma,
   Atom,
   LayoutTemplate,
-  Upload
+  Upload,
+  Folder,
+  Loader2
 } from 'lucide-react'
 
 export default function App() {
   const [code, setCode] = useState(TEMPLATES[0].content)
+  const codeRef = useRef(code)
+  codeRef.current = code
+  const isCompilingRef = useRef(false)
+  const pendingCompileContentRef = useRef(null)
   const [pdfData, setPdfData] = useState(null)
   const [compileStatus, setCompileStatus] = useState('idle') // idle | compiling | ok | error
+  const [lastCompileInfo, setLastCompileInfo] = useState({ time: null, duration: null })
   const [compileLog, setCompileLog] = useState('')
   const [isModified, setIsModified] = useState(false)
   const [currentFile, setCurrentFile] = useState(null) // { name, path, subject }
+  const currentFileRef = useRef(currentFile)
+  currentFileRef.current = currentFile
+
   const [currentSubject, setCurrentSubject] = useState('Matematika')
+  const currentSubjectRef = useRef(currentSubject)
+  currentSubjectRef.current = currentSubject
   const [aiPanelOpen, setAiPanelOpen] = useState(true)
   const [apiOk, setApiOk] = useState(null)
   const [hasCustomKey, setHasCustomKey] = useState(() => apiKeyManager.hasCustomKey())
@@ -134,6 +146,24 @@ export default function App() {
     }
   }, [])
 
+  // Aktív dokumentum megjegyzése a böngésző tárolójában az oldalfrissítéshez
+  const rememberActiveFile = useCallback((file) => {
+    if (!file) {
+      try {
+        localStorage.removeItem('latex_last_active_file')
+      } catch {}
+      return
+    }
+    try {
+      localStorage.setItem('latex_last_active_file', JSON.stringify({
+        name: file.name,
+        path: file.path || null,
+        subject: file.subject || currentSubjectRef.current || 'Matematika',
+        tags: file.tags || []
+      }))
+    } catch {}
+  }, [])
+
   const checkHealth = useCallback(async () => {
     try {
       const r = await axios.get('/api/health')
@@ -196,13 +226,15 @@ export default function App() {
     }
   }, [])
 
-  // Rendszer állapot betöltése (health check) és projektek listázása
+  // Rendszer állapot betöltése és a legutóbb megnyitott / lefordított fájl helyreállítása
   useEffect(() => {
     const initApp = async () => {
       checkHealth()
       loadPreambles()
 
-      // Helyi munkakönyvtár ellenőrzése (Saját gép mappa)
+      let activeHandle = null
+
+      // 1. Helyi munkakönyvtár ellenőrzése (Saját gép mappa)
       try {
         const saved = await localWorkspace.getSavedDirectory()
         if (saved) {
@@ -212,19 +244,120 @@ export default function App() {
           } else {
             setLocalDirHandle(handle)
             localDirHandleRef.current = handle
+            activeHandle = handle
             await loadProjects(handle)
-            return
           }
         }
       } catch (e) {
         console.warn('Helyi munkakönyvtár inicializálása sikertelen:', e)
       }
 
-      await loadProjects(null)
+      if (!activeHandle) {
+        await loadProjects(null)
+      }
+
+      // 2. Legutóbb megnyitott / lefordított dokumentum és PDF visszaállítása
+      try {
+        let lastFile = null
+        try {
+          const raw = localStorage.getItem('latex_last_active_file')
+          if (raw) lastFile = JSON.parse(raw)
+        } catch {}
+
+        // Lekérdezzük a szerverről a legutóbb sikeresen lefordított PDF-et és metaadatait
+        let activeCompile = null
+        try {
+          const activeRes = await axios.get('/api/compile/active')
+          if (activeRes.data?.hasActive) {
+            activeCompile = activeRes.data
+          }
+        } catch {}
+
+        // Ha a localStorage-ban nem volt fájl, de van aktív fordítás a szerveren
+        if (!lastFile && activeCompile?.meta?.filePath) {
+          lastFile = {
+            name: activeCompile.meta.fileName || 'Dokumentum.tex',
+            path: activeCompile.meta.filePath,
+            subject: activeCompile.meta.subject || 'Matematika'
+          }
+        }
+
+        if (lastFile?.path) {
+          let loadedContent = null
+
+          // Helyi munkakönyvtárból olvasás
+          if (activeHandle) {
+            try {
+              loadedContent = await localWorkspace.readFileContent(activeHandle, lastFile.path)
+            } catch (err) {
+              console.warn('[Restore] Helyi fájl olvasási hiba:', err)
+            }
+          }
+
+          // Szerver mappából olvasás
+          if (loadedContent === null) {
+            try {
+              const fileRes = await axios.post('/api/files/load', { filePath: lastFile.path })
+              if (fileRes.data?.content !== undefined) {
+                loadedContent = fileRes.data.content
+                if (fileRes.data.tags) {
+                  lastFile.tags = fileRes.data.tags
+                }
+              }
+            } catch (err) {
+              console.warn('[Restore] Szerver fájl olvasási hiba:', err)
+            }
+          }
+
+          if (loadedContent !== null) {
+            applyEditorCode(loadedContent, false)
+            savedCodeRef.current = loadedContent
+            setCurrentFile(lastFile)
+            if (lastFile.subject) {
+              setCurrentSubject(lastFile.subject)
+            }
+            setIsModified(false)
+
+            // Ha van lefordított PDF a szerveren, ami ehhez a fájlhoz tartozik
+            if (activeCompile?.pdf) {
+              const isMatch = !activeCompile.meta?.filePath || activeCompile.meta.filePath === lastFile.path
+              if (isMatch) {
+                setPdfData(activeCompile.pdf)
+                setCompileStatus('ok')
+                setCompileLog('✓ Előző sikeres fordítás betöltve.')
+              }
+            }
+            return
+          }
+        }
+
+        // Ha névtelen szerkesztett vázlat volt fordítva (nincs még lemezes elérési útja)
+        if (activeCompile?.content && activeCompile?.pdf) {
+          applyEditorCode(activeCompile.content, false)
+          savedCodeRef.current = activeCompile.content
+          setPdfData(activeCompile.pdf)
+          setCompileStatus('ok')
+          setCompileLog('✓ Előző sikeres fordítás betöltve.')
+          if (activeCompile.meta) {
+            const restoredFile = {
+              name: activeCompile.meta.fileName || 'Dokumentum.tex',
+              path: activeCompile.meta.filePath || null,
+              subject: activeCompile.meta.subject || 'Matematika'
+            }
+            setCurrentFile(restoredFile)
+            if (activeCompile.meta.subject) {
+              setCurrentSubject(activeCompile.meta.subject)
+            }
+          }
+          setIsModified(false)
+        }
+      } catch (err) {
+        console.warn('Nem sikerült visszaállítani a legutóbbi fájlt:', err)
+      }
     }
 
     initApp()
-  }, [checkHealth, loadProjects, loadPreambles])
+  }, [checkHealth, loadProjects, loadPreambles, applyEditorCode])
 
   const addNotif = useCallback((message, type = 'info', action = null) => {
     const id = Date.now()
@@ -245,6 +378,24 @@ export default function App() {
         setPendingPermissionHandle(null)
         await loadProjects(handle)
         addNotif(`Munkakönyvtár csatlakoztatva: ${handle.name}`, 'success')
+
+        // Ha a legutóbbi fájl még nincs betöltve, betöltjük a helyi mappából
+        try {
+          const raw = localStorage.getItem('latex_last_active_file')
+          if (raw) {
+            const lastFile = JSON.parse(raw)
+            if (lastFile?.path) {
+              const content = await localWorkspace.readFileContent(handle, lastFile.path)
+              if (content !== null) {
+                applyEditorCode(content, false)
+                savedCodeRef.current = content
+                setCurrentFile(lastFile)
+                if (lastFile.subject) setCurrentSubject(lastFile.subject)
+                setIsModified(false)
+              }
+            }
+          }
+        } catch (e) {}
       } else {
         addNotif('A mappa hozzáférését nem hagytad jóvá.', 'warning')
       }
@@ -252,7 +403,7 @@ export default function App() {
       console.warn('Hiba a jogosultság kérésekor:', err)
       addNotif('Nem sikerült hozzáférni a helyi mappához.', 'error')
     }
-  }, [pendingPermissionHandle, loadProjects, addNotif])
+  }, [pendingPermissionHandle, loadProjects, addNotif, applyEditorCode])
 
   // Helyi mappa tallózása 1 kattintással a Sidebarból
   const handlePickLocalFolder = useCallback(async () => {
@@ -290,11 +441,31 @@ export default function App() {
   // PDF Fordítás végrehajtása
   const compile = useCallback(
     async (contentToCompile) => {
-      const content = typeof contentToCompile === 'string' ? contentToCompile : code
+      const content = typeof contentToCompile === 'string' ? contentToCompile : (codeRef.current || code)
+
+      // Ha már folyamatban van egy fordítás, elmentjük a legfrissebb állapotot a várakozási sorba
+      if (isCompilingRef.current) {
+        pendingCompileContentRef.current = content
+        return
+      }
+
+      isCompilingRef.current = true
+      const activeFile = currentFileRef.current
+      const activeSubject = currentSubjectRef.current
+
+      const t0 = performance.now()
       setCompileStatus('compiling')
       setCompileLog('⏳ pdflatex (TeX Live) fordítás indítása...')
       try {
-        const r = await axios.post('/api/compile', { content })
+        const r = await axios.post('/api/compile', {
+          content,
+          filePath: activeFile?.path || null,
+          fileName: activeFile?.name || null,
+          subject: activeFile?.subject || activeSubject || null
+        })
+        const durationSec = Math.max(0.1, (performance.now() - t0) / 1000).toFixed(1)
+        const timeStr = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })
+        setLastCompileInfo({ time: timeStr, duration: `${durationSec}s` })
         setPdfData(r.data.pdf)
         setCompileStatus('ok')
         setCompileLog(
@@ -302,6 +473,18 @@ export default function App() {
             ? `✓ Sikeres fordítás figyelmeztetésekkel:\n${r.data.warnings}`
             : '✓ Sikeres fordítás hiba és figyelmeztetés nélkül.'
         )
+
+        // Megjegyezzük az utoljára lefordított fájlt
+        if (activeFile) {
+          rememberActiveFile(activeFile)
+        } else {
+          const detected = detectDocumentMeta(content, activeSubject)
+          rememberActiveFile({
+            name: detected.filename || 'Dokumentum.tex',
+            path: null,
+            subject: detected.subject || activeSubject || 'Matematika'
+          })
+        }
 
         // Ha a fordító automatikusan kiegészítette a preambulumot a hiányzó megjelenítési csomagokkal
         if (r.data.supplementedContent && r.data.supplementedContent !== content) {
@@ -313,17 +496,30 @@ export default function App() {
           addNotif('PDF sikeresen lefordítva!', 'success')
         }
       } catch (err) {
-        const log = err.response?.data?.log || err.message
+        const durationSec = Math.max(0.1, (performance.now() - t0) / 1000).toFixed(1)
+        const timeStr = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })
+        setLastCompileInfo({ time: timeStr, duration: `${durationSec}s` })
+        const log = err.response?.data?.log || err.response?.data?.error || err.message
         setCompileStatus('error')
         setCompileLog(log)
-        addNotif('Fordítási hiba történt! Részletek a konzolban.', 'error')
+        addNotif('Fordítási hiba történt! Részletek a hibanaplóban.', 'error')
+      } finally {
+        isCompilingRef.current = false
+        if (pendingCompileContentRef.current !== null) {
+          const next = pendingCompileContentRef.current
+          pendingCompileContentRef.current = null
+          setTimeout(() => {
+            compile(next)
+          }, 60)
+        }
       }
     },
-    [code, addNotif, applyEditorCode]
+    [code, addNotif, applyEditorCode, rememberActiveFile]
   )
 
   const handleCodeChange = useCallback((val) => {
     setCode(val)
+    codeRef.current = val
     const modified = val !== savedCodeRef.current
     setIsModified(modified)
     if (modified) {
@@ -414,12 +610,14 @@ export default function App() {
           const relPath = targetFilePath || (targetSub ? `${targetSub}/${targetName}` : targetName)
           await localWorkspace.saveFileContent(localDirHandleRef.current, relPath, contentToSave)
 
-          setCurrentFile({
+          const updatedLocalFile = {
             name: targetName,
             path: relPath,
             subject: targetSub,
             tags: currentFile?.tags || []
-          })
+          }
+          setCurrentFile(updatedLocalFile)
+          rememberActiveFile(updatedLocalFile)
           savedCodeRef.current = contentToSave
           setIsModified(false)
 
@@ -459,12 +657,14 @@ export default function App() {
           ? r.data.previousContent
           : previousSavedContent
 
-        setCurrentFile({
+        const updatedServerFile = {
           name: savedName,
           path: savedPath,
           subject: targetSub,
           tags: currentFile?.tags || []
-        })
+        }
+        setCurrentFile(updatedServerFile)
+        rememberActiveFile(updatedServerFile)
         savedCodeRef.current = contentToSave
         setIsModified(false)
 
@@ -496,7 +696,7 @@ export default function App() {
         }
       }
     },
-    [code, currentFile, currentSubject, addNotif, handleUndoSave]
+    [code, currentFile, currentSubject, addNotif, handleUndoSave, rememberActiveFile]
   )
 
   // Automatikus mentés (Auto-save) inaktivitás (2.5 mp) után
@@ -557,13 +757,15 @@ export default function App() {
     applyEditorCode(EMPTY_DOCUMENT_CONTENT, false)
     savedCodeRef.current = EMPTY_DOCUMENT_CONTENT
     setCurrentFile(null)
+    rememberActiveFile(null)
     setIsModified(false)
     setAutoSaveStatus('idle')
     setPdfData(null)
     setCompileStatus('idle')
     setCompileLog('')
+    axios.delete('/api/compile/active').catch(() => {})
     addNotif('Új üres dokumentum megnyitva!', 'info')
-  }, [isModified, autoSaveEnabled, applyEditorCode, addNotif])
+  }, [isModified, autoSaveEnabled, applyEditorCode, addNotif, rememberActiveFile])
 
   // Dokumentum átnevezése (szerkesztő fülből vagy oldalsávból)
   const handleRenameFile = useCallback(
@@ -589,26 +791,60 @@ export default function App() {
         return finalNewName
       }
 
-      // Ha létezik a lemezen -> API hívás átnevezésre
+      // 1. Ha a böngésző helyi munkakönyvtár kezelője aktív (Chrome/Edge File System Access API)
+      if (localDirHandleRef.current) {
+        try {
+          const oldRel = targetFile.path
+          const dirParts = oldRel.split('/')
+          dirParts.pop()
+          const newRel = dirParts.length > 0 ? `${dirParts.join('/')}/${finalNewName}` : finalNewName
+
+          await localWorkspace.renameFile(localDirHandleRef.current, oldRel, newRel)
+
+          if (isCurrent) {
+            const updated = {
+              ...(targetFile || {}),
+              name: finalNewName,
+              path: newRel,
+              relativePath: newRel,
+              isManualName: true
+            }
+            setCurrentFile(updated)
+            rememberActiveFile(updated)
+          }
+          await loadProjects(localDirHandleRef.current)
+          addNotif(`Dokumentum sikeresen átnevezve: ${finalNewName}`, 'success')
+          return finalNewName
+        } catch (err) {
+          addNotif(err.message || 'Hiba történt a helyi fájl átnevezésekor', 'error')
+          throw err
+        }
+      }
+
+      // 2. Szerver oldali átnevezés (Safari vagy szerver munkakönyvtár)
       try {
         const res = await axios.post('/api/files/rename', {
           filePath: targetFile.path,
           newName: finalNewName
         })
         if (res.data.success) {
-          const renamedFilename = res.data.filename || finalNewName
-          const renamedPath = res.data.newPath
+          const renamedFilename = res.data.filename || res.data.name || finalNewName
+          const renamedPath = res.data.newPath || res.data.path || targetFile.path
 
           if (isCurrent) {
-            setCurrentFile(prev => ({
-              ...prev,
+            const updated = {
+              ...(targetFile || {}),
               name: renamedFilename,
               path: renamedPath,
+              relativePath: res.data.relativePath || targetFile.relativePath,
               isManualName: true
-            }))
+            }
+            setCurrentFile(updated)
+            rememberActiveFile(updated)
 
             if (isModified) {
               await axios.post('/api/files/save', {
+                filePath: renamedPath,
                 subject: res.data.subject || targetFile.subject || currentSubject,
                 filename: renamedFilename,
                 content: code
@@ -628,7 +864,7 @@ export default function App() {
         throw err
       }
     },
-    [currentFile, code, isModified, currentSubject, addNotif]
+    [currentFile, code, isModified, currentSubject, addNotif, rememberActiveFile, loadProjects]
   )
 
   // Dokumentum betöltése
@@ -645,10 +881,12 @@ export default function App() {
           const content = await localWorkspace.readFileContent(localDirHandleRef.current, file.path)
           applyEditorCode(content, false)
           savedCodeRef.current = content
-          setCurrentFile({
+          const loadedFile = {
             ...file,
             tags: file.tags || []
-          })
+          }
+          setCurrentFile(loadedFile)
+          rememberActiveFile(loadedFile)
           setCurrentSubject(file.subject || '')
           setIsModified(false)
           setAutoSaveStatus('saved')
@@ -662,10 +900,12 @@ export default function App() {
         const r = await axios.post('/api/files/load', { filePath: file.path })
         applyEditorCode(r.data.content, false)
         savedCodeRef.current = r.data.content
-        setCurrentFile({
+        const loadedFile = {
           ...file,
           tags: r.data.tags || file.tags || []
-        })
+        }
+        setCurrentFile(loadedFile)
+        rememberActiveFile(loadedFile)
         setCurrentSubject(file.subject)
         setIsModified(false)
         setAutoSaveStatus('saved')
@@ -677,7 +917,7 @@ export default function App() {
         addNotif('Hiba a fájl betöltésekor: ' + (err.message || ''), 'error')
       }
     },
-    [addNotif, applyEditorCode]
+    [addNotif, applyEditorCode, rememberActiveFile]
   )
 
   // Dokumentum címkéinek frissítése
@@ -710,10 +950,12 @@ export default function App() {
           await localWorkspace.deleteEntry(localDirHandleRef.current, file.path)
           if (currentFile?.path === file.path) {
             setCurrentFile(null)
+            rememberActiveFile(null)
             applyEditorCode(TEMPLATES[0].content, false)
             setPdfData(null)
             savedCodeRef.current = TEMPLATES[0].content
             setIsModified(false)
+            axios.delete('/api/compile/active').catch(() => {})
           }
           addNotif(`Törölve a gépedről: ${file.name}`, 'success')
           await loadProjects(localDirHandleRef.current)
@@ -723,10 +965,12 @@ export default function App() {
         await axios.delete('/api/files/delete', { data: { filePath: file.path } })
         if (currentFile?.path === file.path) {
           setCurrentFile(null)
+          rememberActiveFile(null)
           applyEditorCode(TEMPLATES[0].content, false)
           setPdfData(null)
           savedCodeRef.current = TEMPLATES[0].content
           setIsModified(false)
+          axios.delete('/api/compile/active').catch(() => {})
         }
         addNotif(`Törölve: ${file.name}`, 'success')
         loadProjects()
@@ -734,25 +978,49 @@ export default function App() {
         addNotif('Hiba a fájl törlésekor', 'error')
       }
     },
-    [currentFile, addNotif, applyEditorCode, loadProjects]
+    [currentFile, addNotif, applyEditorCode, loadProjects, rememberActiveFile]
   )
 
   // Dokumentum áthelyezése másik mappába
   const handleMoveFile = useCallback(
     async (file, targetDir) => {
       try {
+        if (localDirHandleRef.current) {
+          const filename = file.name
+          const targetRel = targetDir ? `${targetDir}/${filename}` : filename
+          await localWorkspace.renameFile(localDirHandleRef.current, file.path, targetRel)
+          addNotif(`"${file.name}" sikeresen átmozgatva!`, 'success')
+          if (currentFile?.path === file.path) {
+            const updated = {
+              ...currentFile,
+              path: targetRel,
+              relativePath: targetRel,
+              subject: targetDir ? targetDir.split('/')[0] : ''
+            }
+            setCurrentFile(updated)
+            rememberActiveFile(updated)
+          }
+          await loadProjects(localDirHandleRef.current)
+          return
+        }
+
         const res = await axios.post('/api/files/move', {
           filePath: file.path,
+          targetFolderPath: targetDir,
           targetDir
         })
         if (res.data.success) {
           addNotif(`"${file.name}" sikeresen átmozgatva!`, 'success')
+          const newPath = res.data.newPath || res.data.path
           if (currentFile?.path === file.path) {
-            setCurrentFile(prev => ({
-              ...prev,
-              path: res.data.newPath,
-              subject: res.data.subject
-            }))
+            const updated = {
+              ...currentFile,
+              path: newPath,
+              relativePath: res.data.relativePath || file.relativePath,
+              subject: res.data.subject || res.data.newSubject
+            }
+            setCurrentFile(updated)
+            rememberActiveFile(updated)
             if (res.data.subject && res.data.subject !== currentSubject) {
               setCurrentSubject(res.data.subject)
             }
@@ -763,7 +1031,7 @@ export default function App() {
         addNotif(err.response?.data?.error || 'Hiba a dokumentum áthelyezésekor', 'error')
       }
     },
-    [currentFile, currentSubject, addNotif]
+    [currentFile, currentSubject, addNotif, rememberActiveFile, loadProjects]
   )
 
   // Alkönyvtár létrehozása
@@ -943,28 +1211,40 @@ export default function App() {
       let replaceEndLine = null
       let actionType = 'append'
 
-      // 1. Prioritás: Ha a felhasználó kijelölt egy részt a Monaco szerkesztőben
-      const activeSelection = !forceAppend ? editorPaneRef.current?.getSelection?.() : null
-
-      if (activeSelection && activeSelection.selectedText && activeSelection.selectedText.trim().length > 0) {
-        const sel = activeSelection.selection
-        const model = editorPaneRef.current?.getEditor?.()?.getModel()
-        if (model) {
-          const startOffset = model.getOffsetAt({ lineNumber: sel.startLineNumber, column: sel.startColumn })
-          const endOffset = model.getOffsetAt({ lineNumber: sel.endLineNumber, column: sel.endColumn })
-          newCode = code.slice(0, startOffset) + snippet + code.slice(endOffset)
-          actionType = 'selection'
-          replaceStartLine = sel.startLineNumber
-          replaceEndLine = sel.endLineNumber
+      if (opts.insertAtCursor) {
+        // 0. Prioritás: Kifejezett kurzorpozícióhoz való beszúrás
+        const editor = editorPaneRef.current?.getEditor?.()
+        const model = editor?.getModel()
+        const pos = editor?.getPosition()
+        if (editor && model && pos) {
+          const offset = model.getOffsetAt(pos)
+          newCode = code.slice(0, offset) + '\n\n' + snippet + '\n\n' + code.slice(offset)
+          actionType = 'cursor'
+          replaceStartLine = pos.lineNumber
         }
       } else if (!forceAppend) {
-        // 2. Prioritás: Intelligens mintaillesztés a dokumentumban
-        const targetMatch = opts.targetMatch || findSmartReplacement(code, snippet)
-        if (targetMatch && targetMatch.matched) {
-          newCode = code.slice(0, targetMatch.startIndex) + snippet + code.slice(targetMatch.endIndex)
-          actionType = 'smart_replace'
-          replaceStartLine = targetMatch.startLine
-          replaceEndLine = targetMatch.endLine
+        // 1. Prioritás: Ha a felhasználó kijelölt egy részt a Monaco szerkesztőben
+        const activeSelection = editorPaneRef.current?.getSelection?.()
+        if (activeSelection && activeSelection.selectedText && activeSelection.selectedText.trim().length > 0) {
+          const sel = activeSelection.selection
+          const model = editorPaneRef.current?.getEditor?.()?.getModel()
+          if (model) {
+            const startOffset = model.getOffsetAt({ lineNumber: sel.startLineNumber, column: sel.startColumn })
+            const endOffset = model.getOffsetAt({ lineNumber: sel.endLineNumber, column: sel.endColumn })
+            newCode = code.slice(0, startOffset) + snippet + code.slice(endOffset)
+            actionType = 'selection'
+            replaceStartLine = sel.startLineNumber
+            replaceEndLine = sel.endLineNumber
+          }
+        } else {
+          // 2. Prioritás: Intelligens mintaillesztés a dokumentumban
+          const targetMatch = opts.targetMatch || findSmartReplacement(code, snippet)
+          if (targetMatch && targetMatch.matched) {
+            newCode = code.slice(0, targetMatch.startIndex) + snippet + code.slice(targetMatch.endIndex)
+            actionType = 'smart_replace'
+            replaceStartLine = targetMatch.startLine
+            replaceEndLine = targetMatch.endLine
+          }
         }
       }
 
@@ -980,7 +1260,14 @@ export default function App() {
       applyEditorCode(newCode, true)
       setIsModified(true)
 
-      if (actionType === 'smart_replace') {
+      if (actionType === 'cursor') {
+        addNotif(`Ábra sikeresen beszúrva a kurzor pozíciójához (${replaceStartLine}. sor)!`, 'success')
+        if (replaceStartLine && editorPaneRef.current?.jumpToLine) {
+          setTimeout(() => {
+            editorPaneRef.current.jumpToLine(replaceStartLine)
+          }, 60)
+        }
+      } else if (actionType === 'smart_replace') {
         addNotif(
           `Javított rész sikeresen kicserélve a dokumentumban (${replaceStartLine}–${replaceEndLine}. sor)!`,
           'success'
@@ -1263,8 +1550,9 @@ export default function App() {
 
         if (e.key.toLowerCase() === 's') {
           e.preventDefault()
-          handleSave()
-          compile()
+          Promise.resolve(handleSave()).finally(() => {
+            compile()
+          })
         } else if (!isEditingOtherInput) {
           if (e.key.toLowerCase() === 'z') {
             e.preventDefault()
@@ -1401,11 +1689,13 @@ export default function App() {
       if (itemToOpen && lastSaved) {
         applyEditorCode(itemToOpen.content, false)
         savedCodeRef.current = itemToOpen.content
-        setCurrentFile({
+        const opened = {
           name: itemToOpen.filename,
           path: lastSaved.path,
           subject: itemToOpen.subject
-        })
+        }
+        setCurrentFile(opened)
+        rememberActiveFile(opened)
         setCurrentSubject(itemToOpen.subject)
         setIsModified(false)
         setPdfData(null)
@@ -1417,42 +1707,20 @@ export default function App() {
         addNotif(`✓ Sikeresen importálva ${importedItems.length} db LaTeX dokumentum!`, 'success')
       }
     },
-    [compile, addNotif, applyEditorCode]
+    [compile, addNotif, applyEditorCode, rememberActiveFile]
   )
 
   return (
     <div className="app">
-      {/* Felső Eszköztár */}
+      {/* Felső Eszköztár (44px kompakt Apple Pro) */}
       <Toolbar
         currentFile={currentFile}
         isModified={isModified}
-        compileStatus={compileStatus}
-        currentSubject={currentSubject}
-        onSubjectChange={setCurrentSubject}
-        categories={categories}
-        onCreateCategory={handleCreateRootCategory}
-        onCompile={compile}
+        autoSaveStatus={autoSaveStatus}
         onSave={() => handleSave()}
-        autoSaveEnabled={autoSaveEnabled}
-        onToggleAutoSave={toggleAutoSave}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onNewBlankDoc={handleNewBlankDoc}
-        onNewDoc={() => setNewDocModal(true)}
-        onImportDoc={handleTriggerImport}
         onOpenPreambles={() => setPreambleModalOpen(true)}
         onOpenSettings={() => setSettingsModalOpen(true)}
         hasCustomKey={hasCustomKey}
-        onDownloadPdf={handleDownloadPdf}
-        hasPdf={!!pdfData}
-        aiPanelOpen={aiPanelOpen}
-        onToggleAi={() => setAiPanelOpen(v => !v)}
-        sidebarCollapsed={sidebarCollapsed}
-        onToggleSidebar={toggleSidebarCollapse}
-        activeModel={activeModel}
-        apiOk={apiOk}
       />
 
       {/* Fő munkafelület */}
@@ -1556,64 +1824,73 @@ export default function App() {
         </div>
       </div>
 
-      {/* Alsó Állapotsor */}
-      <div className="status-bar">
-        <div className="status-bar-item highlight">
-          <FileText size={13} />
-          <span>{currentFile ? currentFile.name : 'Névtelen.tex'}</span>
+      {/* Alsó Állapotsor (Szigorúan 26px, csendes, 3 zónás elrendezés) */}
+      <footer className="status-bar" role="contentinfo">
+        {/* Bal zóna: Munkamappa ikon és név */}
+        <div className="status-bar-zone status-bar-left">
+          <button
+            type="button"
+            className="status-bar-btn status-bar-workspace"
+            onClick={handlePickLocalFolder}
+            title={`Munkakönyvtár: ${localDirHandle ? localDirHandle.name : (serverWorkspace?.name || 'LaTeX Projektek')} (Kattints a mappa váltásához)`}
+          >
+            <Folder size={12} color="var(--accent-light)" />
+            <span className="status-bar-folder-name">
+              {localDirHandle ? localDirHandle.name : (serverWorkspace?.name || 'LaTeX Projektek')}
+            </span>
+            {localDirHandle && <span className="status-bar-local-tag">Helyi</span>}
+          </button>
         </div>
-        <div className="status-bar-divider" />
-        <div className="status-bar-item">
-          {currentSubject === 'Matematika' ? <Sigma size={13} /> : <Atom size={13} />}
-          <span>{currentSubject}</span>
-        </div>
-        <div className="status-bar-divider" />
-        <div className="status-bar-item">
-          <span>{compileStatus === 'ok' ? '✓ Lefordítva' : compileStatus === 'error' ? '✗ Hiba' : compileStatus === 'compiling' ? '⏳ Fordítás...' : '○ Szerkesztés alatt'}</span>
-        </div>
-        <div className="status-bar-divider" />
-        <div className="status-bar-item">
-          <Cpu size={13} />
-          <span>Modell: {activeModel}</span>
-        </div>
-        <div className="status-bar-divider" />
-        <div className="status-bar-item" title="Automatikus mentés állapota">
-          {autoSaveEnabled ? (
-            autoSaveStatus === 'saving' ? (
-              <span style={{ color: 'var(--accent-light, #64a8ff)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span className="autosave-status-dot" style={{ background: '#64a8ff' }} />
-                Auto-mentés...
+
+        {/* Közép zóna: Utolsó fordítás eredménye és ideje */}
+        <div className="status-bar-zone status-bar-center">
+          {compileStatus === 'compiling' ? (
+            <span className="status-bar-compile-info compiling">
+              <Loader2 size={11} className="spinner" />
+              <span>Fordítás folyamatban...</span>
+            </span>
+          ) : compileStatus === 'error' ? (
+            <span className="status-bar-compile-info error" title="LaTeX fordítási hiba történt">
+              <span className="status-bar-dot error" />
+              <span>Fordítási hiba {lastCompileInfo.duration ? `(${lastCompileInfo.duration})` : ''}</span>
+            </span>
+          ) : compileStatus === 'ok' ? (
+            <span className="status-bar-compile-info ok" title="A PDF sikeresen lefordítva (TeX Live / pdflatex)">
+              <span className="status-bar-dot ok" />
+              <span>
+                Lefordítva {lastCompileInfo.duration ? `(${lastCompileInfo.duration})` : ''}
+                {lastCompileInfo.time ? ` · ${lastCompileInfo.time}` : ''}
               </span>
-            ) : autoSaveStatus === 'saved' && !isModified ? (
-              <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span className="autosave-status-dot" style={{ background: '#10b981' }} />
-                Automatikusan mentve{lastSavedTime ? ` (${lastSavedTime})` : ''}
-              </span>
-            ) : autoSaveStatus === 'error' ? (
-              <span style={{ color: '#ef4444', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span className="autosave-status-dot" style={{ background: '#ef4444' }} />
-                Auto-mentési hiba
-              </span>
-            ) : isModified ? (
-              <span style={{ color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span className="autosave-status-dot" style={{ background: '#f59e0b' }} />
-                Módosítva (auto-mentés hamarosan)
-              </span>
-            ) : (
-              <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span className="autosave-status-dot" style={{ background: '#10b981' }} />
-                Auto-mentés aktív
-              </span>
-            )
+            </span>
           ) : (
-            <span style={{ color: 'var(--text-muted)' }}>Auto-mentés: Kikapcsolva</span>
+            <span className="status-bar-compile-info idle" title="Készenlétben">
+              <span className="status-bar-dot idle" />
+              <span>Készenlét</span>
+            </span>
           )}
         </div>
-        <div className="status-bar-divider" />
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span>TeX Live 2024 · pdflatex (UTF-8)</span>
+
+        {/* Jobb zóna: Dokumentum statisztika és hasznos gyorsbillentyűk */}
+        <div className="status-bar-zone status-bar-right">
+          <span className="status-bar-doc-stats" title="Dokumentum terjedelme">
+            {code.split('\n').length} sor · {code.length} kar.
+          </span>
+          <span className="status-bar-shortcut-sep">·</span>
+          <div className="status-bar-shortcuts" title="Hasznos billentyűparancsok">
+            <span className="status-bar-shortcut-item">
+              <kbd>⌘S</kbd> Fordítás
+            </span>
+            <span className="status-bar-shortcut-sep">·</span>
+            <span className="status-bar-shortcut-item">
+              <kbd>⌘B</kbd> Fájlkezelő
+            </span>
+            <span className="status-bar-shortcut-sep">·</span>
+            <span className="status-bar-shortcut-item">
+              <kbd>⌘K</kbd> AI Kijelölés
+            </span>
+          </div>
         </div>
-      </div>
+      </footer>
 
       {/* Toast Értesítések */}
       <Notifications items={notifications} />
@@ -1736,7 +2013,11 @@ function NewDocModal({ currentSubject, categories = [], preambles = [], onClose,
   const handleCreate = () => {
     if (!name.trim()) return
     const template = combinedTemplates.find((t) => t.id === selectedTemplateId)
-    onConfirm(subject, name.trim(), template !== undefined ? template.content : '')
+    let finalDocName = name.trim()
+    if (selectedTemplateId === 'beamer' && !finalDocName.toLowerCase().endsWith('beamer')) {
+      finalDocName = `${finalDocName}_Beamer`
+    }
+    onConfirm(subject, finalDocName, template !== undefined ? template.content : '')
   }
 
   return (

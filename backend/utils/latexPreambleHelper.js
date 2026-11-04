@@ -9,6 +9,8 @@
  * valamint a használt egyedi dobozkörnyezetekkel.
  */
 
+const { sanitizeLatexNumbering } = require('./latexNumberingHelper');
+
 // Alapvető megjelenítési csomagok (article, report, és hasonló szabványos dokumentumtípusokhoz)
 const CORE_DISPLAY_PACKAGES = [
   { name: 'inputenc', code: '\\usepackage[utf8]{inputenc}' },
@@ -50,12 +52,29 @@ function extractLoadedPackages(preambleText) {
     loaded.add('babel');
   }
 
-  // enumerate alternatívaként az enumitemre
-  if (loaded.has('enumerate')) {
+  // enumerate alternatívaként az enumitemre (ha NEM beamer)
+  const isBeamer = /\\documentclass(?:\[[^\]]*\])?\{beamer\}/i.test(preambleText);
+  if (loaded.has('enumerate') && !isBeamer) {
     loaded.add('enumitem');
   }
 
   return loaded;
+}
+
+/**
+ * Eltávolít egy adott csomagot a preambulumból vagy kódból,
+ * kezelve az önálló (\usepackage{pkg}) és a vesszővel elválasztott listákat (\usepackage{a, pkg, b}) is.
+ */
+function removePackageFromPreamble(preambleText, pkgToRemove) {
+  if (!preambleText) return preambleText;
+  const regex = /\\usepackage(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi;
+  return preambleText.replace(regex, (match, pkgList) => {
+    const pkgs = pkgList.split(',').map(p => p.trim());
+    const filtered = pkgs.filter(p => p.toLowerCase() !== pkgToRemove.toLowerCase());
+    if (filtered.length === 0) return '';
+    if (filtered.length === pkgs.length) return match;
+    return match.replace(`{${pkgList}}`, `{${filtered.join(', ')}}`);
+  });
 }
 
 /**
@@ -107,15 +126,39 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
   preamble = preamble.replace(/(^|\n)\s*title\s*\{/g, '$1\\title{');
   preamble = preamble.replace(/(^|\n)\s*date\s*\{/g, '$1\\date{');
 
-  const isBeamer = /\\documentclass(?:\[[^\]]*\])?\{beamer\}/i.test(preamble);
+  const isBeamer = /\\documentclass(?:\[[^\]]*\])?\{beamer\}/i.test(preamble) || /\\documentclass(?:\[[^\]]*\])?\{beamer\}/i.test(body);
+
+  if (isBeamer) {
+    // Beamer-specifikus összeférhetetlen csomagok szanálása:
+    // 1. enumitem / enumerate / paralist: Fatális rekurzív hurkot okoz (\labelenumi -> {\labelenumi}), mert
+    // felülírja a Beamer beépített számlálóit és overlay-logikáját (\end{frame} végtelen ciklusba fut: grouping levels=255).
+    preamble = removePackageFromPreamble(preamble, 'enumitem');
+    preamble = removePackageFromPreamble(preamble, 'enumerate');
+    preamble = removePackageFromPreamble(preamble, 'paralist');
+
+    // 2. geometry: A Beamer maga definiálja a vetítési arányt és keretet (pl. aspectratio=169).
+    // A geometry csomag felülbírálja és tönkreteszi a diák elrendezését.
+    preamble = removePackageFromPreamble(preamble, 'geometry');
+    preamble = preamble.replace(/\\geometry\s*\{[^}]*\}/gi, '');
+
+    // 3. float: A Beamer frame-ekben nem léteznek úsztatott blokkok (floating bodies).
+    preamble = removePackageFromPreamble(preamble, 'float');
+
+    // 4. caption: Beamer saját feliratozási és címsor-témákat kezel.
+    preamble = removePackageFromPreamble(preamble, 'caption');
+
+    // 5. amsthm: A Beamer beépítve tartalmazza a tételkörnyezeteket, az amsthm betöltése ütközést okoz.
+    preamble = removePackageFromPreamble(preamble, 'amsthm');
+  }
+
   const loaded = extractLoadedPackages(preamble);
   const packagesToAdd = [];
   const addedNames = [];
 
   // 1. Alapvető megjelenítési csomagok vizsgálata
   for (const pkg of CORE_DISPLAY_PACKAGES) {
-    if (isBeamer && (pkg.name === 'geometry' || pkg.name === 'tcolorbox')) {
-      // Beamer maga kezeli a margókat és a dobozokat
+    if (isBeamer && ['geometry', 'tcolorbox', 'enumitem', 'float', 'caption'].includes(pkg.name)) {
+      // Beamer esetén ezek a csomagok tilosak vagy nem szükségesek
       continue;
     }
 
@@ -127,7 +170,7 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
     }
 
     if (pkg.name === 'amsmath') {
-      if (loaded.has('amsmath') && loaded.has('amssymb') && loaded.has('amsthm')) {
+      if (loaded.has('amsmath') && loaded.has('amssymb') && (loaded.has('amsthm') || isBeamer)) {
         continue;
       }
       // Ha valamelyik hiányzik:
@@ -192,14 +235,14 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
     loaded.add('multicol');
   }
 
-  // Lebegő ábrák
-  if (fullText.includes('wrapfigure') && !loaded.has('wrapfig')) {
+  // Lebegő ábrák (Beamer diákban nem használható a wrapfigure)
+  if (fullText.includes('wrapfigure') && !isBeamer && !loaded.has('wrapfig')) {
     packagesToAdd.push('\\usepackage{wrapfig}');
     addedNames.push('wrapfig');
     loaded.add('wrapfig');
   }
 
-  // Abstract csomag
+  // Abstract csomag (Beamerben nincs abstract)
   if (fullText.includes('\\begin{abstract}') && !isBeamer && !loaded.has('abstract')) {
     packagesToAdd.push('\\usepackage{abstract}');
     addedNames.push('abstract');
@@ -275,8 +318,16 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
     addedNames.push('tippdoboz');
   }
 
-  // problem környezet
+  // Ha definíciós dobozokat használunk, biztosítjuk a tcolorbox csomagot
+  if (macrosToAdd.some(m => m.includes('\\newtcolorbox')) && !loaded.has('tcolorbox')) {
+    packagesToAdd.push(isBeamer ? '\\usepackage{tcolorbox}' : '\\usepackage{tcolorbox}\n\\tcbuselibrary{theorems,skins,breakable}');
+    addedNames.push('tcolorbox');
+    loaded.add('tcolorbox');
+  }
+
+  // problem környezet (Beamer alatt a \begin{problem} beépített környezet!)
   if (
+    !isBeamer &&
     fullText.includes('{problem}') &&
     !preamble.includes('{problem}')
   ) {
@@ -286,8 +337,9 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
     addedNames.push('problem environment');
   }
 
-  // example környezet
+  // example környezet (Beamer alatt a \begin{example} beépített környezet!)
   if (
+    !isBeamer &&
     fullText.includes('{example}') &&
     !preamble.includes('{example}')
   ) {
@@ -297,8 +349,9 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
     addedNames.push('example environment');
   }
 
-  // solution környezet
+  // solution környezet (Beamer alatt a \begin{solution} beépített környezet!)
   if (
+    !isBeamer &&
     fullText.includes('{solution}') &&
     !preamble.includes('{solution}')
   ) {
@@ -440,6 +493,7 @@ function supplementFullLatex(fullLatex = '', customPreamble = null, topic = null
   }
 
   const { preamble: currentPreamble, body, docStartIdx } = splitPreambleAndBody(workingLatex);
+  const isBeamer = /\\documentclass(?:\[[^\]]*\])?\{beamer\}/i.test(workingLatex);
 
   // Ha van saját preambulum specifikálva (pl. AI generáláskor kiválasztott)
   let basePreamble = customPreamble && customPreamble.trim() ? customPreamble.trim() : currentPreamble;
@@ -461,6 +515,9 @@ function supplementFullLatex(fullLatex = '', customPreamble = null, topic = null
         const match = trimmed.match(/\\usepackage(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/);
         if (match) {
           const names = match[1].split(',').map(n => n.trim().toLowerCase());
+          if (isBeamer && (names.includes('enumitem') || names.includes('enumerate') || names.includes('paralist') || names.includes('geometry') || names.includes('float') || names.includes('caption') || names.includes('amsthm'))) {
+            continue;
+          }
           const hasNew = names.some(n => !customPkgs.has(n));
           if (hasNew && !basePreamble.includes(trimmed)) {
             extraLines.push(trimmed);
@@ -475,6 +532,9 @@ function supplementFullLatex(fullLatex = '', customPreamble = null, topic = null
          trimmed.startsWith('\\tcbuselibrary')) &&
         !basePreamble.includes(trimmed)
       ) {
+        if (isBeamer && (trimmed.includes('{problem}') || trimmed.includes('{example}') || trimmed.includes('{solution}'))) {
+          continue;
+        }
         extraLines.push(trimmed);
       }
     }
@@ -487,11 +547,24 @@ function supplementFullLatex(fullLatex = '', customPreamble = null, topic = null
   // Végrehajtjuk az automatikus megjelenítési kiegészítést
   const { supplementedPreamble } = supplementPreamble(basePreamble, body);
 
+  let cleanBody = sanitizeLatexNumbering(body);
+  if (isBeamer) {
+    cleanBody = removePackageFromPreamble(cleanBody, 'enumitem');
+    cleanBody = removePackageFromPreamble(cleanBody, 'enumerate');
+    cleanBody = removePackageFromPreamble(cleanBody, 'paralist');
+    cleanBody = removePackageFromPreamble(cleanBody, 'geometry');
+    cleanBody = removePackageFromPreamble(cleanBody, 'float');
+  }
+
   let finalDoc = '';
-  if (docStartIdx !== -1 && body) {
-    finalDoc = `${supplementedPreamble}\n\n${body}`.trim();
+  if (docStartIdx !== -1 && cleanBody) {
+    finalDoc = `${supplementedPreamble}\n\n${cleanBody}`.trim();
   } else if (!fullLatex.includes('\\begin{document}')) {
-    finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\maketitle\n\n\\section{Bevezetés}\nIde jön a tartalom...\n\n\\end{document}`;
+    if (isBeamer) {
+      finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\frame{\\titlepage}\n\n\\begin{frame}{Bevezetés}\nIde jön a tartalom...\n\\end{frame}\n\n\\end{document}`;
+    } else {
+      finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\maketitle\n\n\\section{Bevezetés}\nIde jön a tartalom...\n\n\\end{document}`;
+    }
   } else {
     finalDoc = supplementedPreamble;
   }
@@ -509,5 +582,6 @@ module.exports = {
   supplementPreamble,
   supplementFullLatex,
   replaceLatexTitle,
+  sanitizeLatexNumbering,
   CORE_DISPLAY_PACKAGES
 };

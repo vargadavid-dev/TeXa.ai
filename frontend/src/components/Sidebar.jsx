@@ -22,7 +22,6 @@ import {
   Check,
   LayoutTemplate,
   PanelLeftClose,
-  PanelLeftOpen,
   HardDrive
 } from 'lucide-react'
 import MoveDocModal from './MoveDocModal'
@@ -151,7 +150,11 @@ export default function Sidebar({
     const newName = `${cleanBase}.tex`
     if (file.name === newName) return
     if (onRename) {
-      await onRename(file, newName)
+      try {
+        await onRename(file, newName)
+      } catch (err) {
+        // A hibaüzenetet az onRename kezelő az App.jsx-ben már értesítésként megjeleníti
+      }
     }
   }
 
@@ -180,12 +183,60 @@ export default function Sidebar({
     }
   }
 
-  // Belső fájl mozgatás Drag & Drop események
+  // Belső fájl és mappa mozgatás Drag & Drop események
   const handleFileDragStart = (e, file) => {
     e.dataTransfer.setData('text/plain', file.path)
-    e.dataTransfer.setData('application/json', JSON.stringify({ type: 'latex-file', path: file.path, name: file.name }))
-    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({
+        type: 'latex-file',
+        path: file.path,
+        name: file.name,
+        relativePath: file.relativePath || file.name,
+        subject: file.subject
+      })
+    )
+    e.dataTransfer.effectAllowed = 'copyMove'
     setDraggedFile(file)
+  }
+
+  const handleFolderDragStart = (e, folder) => {
+    // Ne zavarja meg a belső fájlmozgatást
+    setDraggedFile(null)
+    const folderFiles = []
+    const collectFiles = (node) => {
+      if (!node) return
+      if (Array.isArray(node.files)) {
+        node.files.forEach((f) => {
+          if (f?.path) {
+            folderFiles.push({
+              path: f.path,
+              name: f.name,
+              relativePath: f.relativePath || f.name,
+              subject: f.subject
+            })
+          }
+        })
+      }
+      if (Array.isArray(node.folders)) {
+        node.folders.forEach(collectFiles)
+      }
+    }
+    collectFiles(folder)
+
+    e.dataTransfer.setData('text/plain', folder.path || folder.name)
+    e.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({
+        type: 'latex-folder',
+        path: folder.path,
+        name: folder.name,
+        relativePath: folder.relativePath || folder.name,
+        subject: folder.subject,
+        files: folderFiles
+      })
+    )
+    e.dataTransfer.effectAllowed = 'copy'
   }
 
   const handleFileDragEnd = () => {
@@ -339,7 +390,7 @@ export default function Sidebar({
     return (
       <div
         key={file.path}
-        className={`file-item ${isActive ? 'active' : ''}`}
+        className={`file-item ${isActive ? 'active' : ''} ${isRenaming ? 'renaming' : ''}`}
         style={{ paddingLeft: 12 + depth * 14 }}
         draggable={!isRenaming}
         onDragStart={(e) => handleFileDragStart(e, file)}
@@ -410,54 +461,56 @@ export default function Sidebar({
             </div>
           )}
         </div>
-        <div className="file-item-actions">
-          <button
-            type="button"
-            className="file-action-btn move"
-            onClick={e => {
-              e.stopPropagation()
-              setMoveTargetFile(file)
-            }}
-            title="Dokumentum áthelyezése másik mappába"
-          >
-            <FolderInput size={12} />
-          </button>
-          <button
-            type="button"
-            className="file-action-btn rename"
-            onClick={e => {
-              e.stopPropagation()
-              startSidebarRename(file)
-            }}
-            title="Fájl átnevezése"
-          >
-            <Pencil size={12} />
-          </button>
-          <button
-            type="button"
-            className="file-action-btn tag"
-            onClick={e => {
-              e.stopPropagation()
-              onEditTags?.(file)
-            }}
-            title="Címkék kezelése"
-          >
-            <Tag size={12} />
-          </button>
-          <button
-            type="button"
-            className="file-action-btn delete"
-            onClick={e => {
-              e.stopPropagation()
-              if (window.confirm(`Biztosan törölni szeretnéd a "${file.name}" fájlt?`)) {
-                onDelete(file)
-              }
-            }}
-            title="Fájl törlése"
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
+        {!isRenaming && (
+          <div className="file-item-actions">
+            <button
+              type="button"
+              className="file-action-btn move"
+              onClick={e => {
+                e.stopPropagation()
+                setMoveTargetFile(file)
+              }}
+              title="Dokumentum áthelyezése másik mappába"
+            >
+              <FolderInput size={12} />
+            </button>
+            <button
+              type="button"
+              className="file-action-btn rename"
+              onClick={e => {
+                e.stopPropagation()
+                startSidebarRename(file)
+              }}
+              title="Fájl átnevezése"
+            >
+              <Pencil size={12} />
+            </button>
+            <button
+              type="button"
+              className="file-action-btn tag"
+              onClick={e => {
+                e.stopPropagation()
+                onEditTags?.(file)
+              }}
+              title="Címkék kezelése"
+            >
+              <Tag size={12} />
+            </button>
+            <button
+              type="button"
+              className="file-action-btn delete"
+              onClick={e => {
+                e.stopPropagation()
+                if (window.confirm(`Biztosan törölni szeretnéd a "${file.name}" fájlt?`)) {
+                  onDelete(file)
+                }
+              }}
+              title="Fájl törlése"
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
+        )}
       </div>
     )
   }
@@ -481,6 +534,8 @@ export default function Sidebar({
         <div
           className={`folder-header ${isDragTarget ? 'drop-active' : ''} ${!isRoot ? 'subfolder-header' : ''}`}
           style={{ paddingLeft: 8 + depth * 14 }}
+          draggable={renamingFolderPath !== folder.path}
+          onDragStart={(e) => handleFolderDragStart(e, folder)}
           onClick={() => toggleFolder(key)}
           onDragOver={(e) => handleFolderDragOver(e, folder)}
           onDragLeave={(e) => handleFolderDragLeave(e, folder)}
@@ -538,53 +593,55 @@ export default function Sidebar({
               </button>
             </form>
           ) : (
-            <span
-              style={{
-                flex: 1,
-                color: isRoot ? folderColor : 'var(--text-secondary)',
-                fontWeight: isRoot ? 600 : 500,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {folder.name}
-            </span>
+            <>
+              <span
+                style={{
+                  flex: 1,
+                  color: isRoot ? folderColor : 'var(--text-secondary)',
+                  fontWeight: isRoot ? 600 : 500,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {folder.name}
+              </span>
+
+              <span className="sidebar-count-badge">{totalCount}</span>
+
+              {/* Mappa gyorsgombok */}
+              <div className="folder-header-actions" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className="folder-action-btn create"
+                  onClick={(e) => handleStartCreateFolder(e, folder)}
+                  title="Új almappa létrehozása ebben a mappában"
+                >
+                  <FolderPlus size={13} />
+                </button>
+                {!folder.isRootLoose && (
+                  <>
+                    <button
+                      type="button"
+                      className="folder-action-btn rename"
+                      onClick={(e) => handleStartRenameFolder(e, folder)}
+                      title="Mappa átnevezése"
+                    >
+                      <Pencil size={11} />
+                    </button>
+                    <button
+                      type="button"
+                      className="folder-action-btn delete"
+                      onClick={(e) => handleDeleteFolderClick(e, folder)}
+                      title="Mappa törlése"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
           )}
-
-          <span className="sidebar-count-badge">{totalCount}</span>
-
-          {/* Mappa gyorsgombok */}
-          <div className="folder-header-actions" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="folder-action-btn create"
-              onClick={(e) => handleStartCreateFolder(e, folder)}
-              title="Új almappa létrehozása ebben a mappában"
-            >
-              <FolderPlus size={13} />
-            </button>
-            {!folder.isRootLoose && (
-              <>
-                <button
-                  type="button"
-                  className="folder-action-btn rename"
-                  onClick={(e) => handleStartRenameFolder(e, folder)}
-                  title="Mappa átnevezése"
-                >
-                  <Pencil size={11} />
-                </button>
-                <button
-                  type="button"
-                  className="folder-action-btn delete"
-                  onClick={(e) => handleDeleteFolderClick(e, folder)}
-                  title="Mappa törlése"
-                >
-                  <Trash2 size={11} />
-                </button>
-              </>
-            )}
-          </div>
         </div>
 
         {/* Új almappa létrehozása beviteli sor */}
@@ -679,9 +736,12 @@ export default function Sidebar({
               type="button"
               className="btn-subtle sidebar-expand-btn"
               onClick={onToggleCollapse}
-              title="Fájlkezelő kibontása (⌘B)"
+              title={`Fájlkezelő kibontása (⌘B)${totalFilesCount > 0 ? ` (${totalFilesCount} fájl)` : ''}`}
             >
-              <PanelLeftOpen size={16} color="var(--accent-light)" />
+              <Folder size={16} color="var(--accent-light)" />
+              {totalFilesCount > 0 && (
+                <span className="collapsed-mini-badge">{totalFilesCount}</span>
+              )}
             </button>
           </div>
 
@@ -717,18 +777,6 @@ export default function Sidebar({
 
             <button
               type="button"
-              className="sidebar-collapsed-btn folder-btn"
-              onClick={onToggleCollapse}
-              title={`Fájlok listája (${totalFilesCount}) - Kattints a kibontáshoz`}
-            >
-              <Folder size={16} />
-              {totalFilesCount > 0 && (
-                <span className="collapsed-mini-badge">{totalFilesCount}</span>
-              )}
-            </button>
-
-            <button
-              type="button"
               className="sidebar-collapsed-btn"
               onClick={handleRefresh}
               title="Projektek frissítése"
@@ -754,45 +802,48 @@ export default function Sidebar({
         <div className="sidebar-expanded-wrap">
           {/* Header */}
           <div className="sidebar-header">
-            <div className="sidebar-title">
-              <Folder size={14} />
-              <span>Fájlkezelő</span>
+            <div className="column-header-title-wrap">
+              <div className="column-header-icon-wrap" title="Fájlkezelő">
+                <Folder size={13} />
+              </div>
+              <span className="column-header-title">Fájlkezelő</span>
               <span className="sidebar-count-badge">{totalFilesCount}</span>
             </div>
             <div className="sidebar-header-actions">
               <button
-                className="btn-subtle"
+                type="button"
+                className="btn-subtle sidebar-header-btn"
                 onClick={onPickLocalFolder}
-                style={{ padding: '3px 6px', borderRadius: 4, color: 'var(--accent-light)' }}
+                style={{ color: 'var(--accent-light)' }}
                 title="Mappa megnyitása a számítógépről"
               >
-                <FolderOpen size={13} />
+                <FolderOpen size={14} />
               </button>
               <button
-                className="btn-subtle"
+                type="button"
+                className="btn-subtle sidebar-header-btn"
                 onClick={() => {
                   const name = window.prompt('Új kategória / mappa neve (pl. Informatika, Kémia, Szakdolgozat):')
                   if (name && name.trim() && onCreateFolder) {
                     onCreateFolder(null, name.trim(), '')
                   }
                 }}
-                style={{ padding: '3px 6px', borderRadius: 4 }}
                 title="Új kategória / mappa létrehozása a gyökérben"
               >
-                <FolderPlus size={13} />
+                <FolderPlus size={14} />
               </button>
               <button
-                className="btn-subtle"
+                type="button"
+                className="btn-subtle sidebar-header-btn"
                 onClick={handleRefresh}
-                style={{ padding: '3px 6px', borderRadius: 4 }}
                 title="Projektek újratöltése"
               >
                 <RefreshCw size={13} className={isRefreshing ? 'spinner' : ''} />
               </button>
               <button
-                className="btn-subtle sidebar-collapse-btn"
+                type="button"
+                className="btn-subtle sidebar-header-btn sidebar-collapse-btn"
                 onClick={onToggleCollapse}
-                style={{ padding: '3px 6px', borderRadius: 4 }}
                 title="Fájlkezelő becsukása vékony sávra (⌘B)"
               >
                 <PanelLeftClose size={14} />
@@ -890,6 +941,39 @@ export default function Sidebar({
             </div>
           )}
 
+          {/* Kompakt 28px-es szegmentált akciógomb sor: [ + Üres ] [ ⊞ Sablon ] [ ⤒ Import ] */}
+          <div className="sidebar-actions-segmented-wrap">
+            <div className="sidebar-actions-segmented">
+              <button
+                type="button"
+                className="sidebar-seg-btn sidebar-blank-btn"
+                onClick={onNewBlankDoc}
+                title="Új üres dokumentum létrehozása sablon nélkül"
+              >
+                <Plus size={13} />
+                <span>Üres</span>
+              </button>
+              <button
+                type="button"
+                className="sidebar-seg-btn"
+                onClick={onNewDoc}
+                title="Új dokumentum létrehozása sablonból"
+              >
+                <LayoutTemplate size={12} />
+                <span>Sablon</span>
+              </button>
+              <button
+                type="button"
+                className="sidebar-seg-btn"
+                onClick={onImportDoc}
+                title="Létező .tex fájl importálása a számítógépről"
+              >
+                <Upload size={12} />
+                <span>Import</span>
+              </button>
+            </div>
+          </div>
+
           {/* Keresőmező */}
           <div className="sidebar-search-box">
             <div className="search-input-wrap">
@@ -905,38 +989,7 @@ export default function Sidebar({
 
           {/* Törzs */}
           <div className="sidebar-body">
-            {/* Új dokumentum és Importálás gombok */}
-            <div className="sidebar-actions-wrap">
-              <button
-                className="btn btn-ghost sidebar-blank-btn"
-                onClick={onNewBlankDoc}
-                id="btn-sidebar-blank"
-                title="Új üres dokumentum létrehozása sablon nélkül"
-              >
-                <Plus size={14} />
-                <span>+ Üres dokumentum</span>
-              </button>
-              <div className="sidebar-actions-row">
-                <button
-                  className="btn btn-ghost sidebar-new-btn"
-                  onClick={onNewDoc}
-                  id="btn-sidebar-new"
-                  title="Új dokumentum létrehozása sablonból"
-                >
-                  <LayoutTemplate size={13} />
-                  <span>Új sablon</span>
-                </button>
-                <button
-                  className="btn btn-ghost sidebar-import-btn"
-                  onClick={onImportDoc}
-                  id="btn-sidebar-import"
-                  title="Létező .tex fájl importálása a számítógépről"
-                >
-                  <Upload size={13} />
-                  <span>Importálás</span>
-                </button>
-              </div>
-            </div>
+            {/* Tantárgy / Mappa fa lista */}
 
             {/* Tantárgy / Mappa fa lista */}
             {Object.entries(filteredTree).map(([subject, node]) => {

@@ -1,19 +1,4 @@
 {
-  "Matematika/Gráfok_Mikrotananyag.tex": {
-    "tags": [
-      "Mikrotananyag",
-      "Gráfelmélet",
-      "Interaktív",
-      "Érettségi"
-    ],
-    "updatedAt": "2026-10-27T16:33:24.942Z"
-  },
-  "Matematika/Gráfok.tex": {
-    "tags": [
-      "Összefoglaló",
-      "Gráfelmélet"
-    ]
-  },
   "Matematika/Bevezetés_és_a_trigonometrikus_alapegyenlet.tex": {
     "tags": [
       "Trigonometria",
@@ -32,20 +17,67 @@
       "Alapfogalmak"
     ]
   },
-  "Matematika/Kombinatorika/Ismétlés nélküli permutáció.tex": {
+  "Matematika/Dokumentum_20261104.tex": {
+    "tags": [
+      "Matematika"
+    ],
+    "updatedAt": "2026-11-04T18:40:51.079Z",
+    "createdAt": "2026-11-04T18:40:49.150Z"
+  },
+  "Matematika/Kombinatorika/Elmélet/1. Ismétlés nélküli permutáció.tex": {
     "tags": [
       "Kombinatorika",
       "Permutáció",
       "Alapfogalmak"
     ],
-    "updatedAt": "2026-11-03T09:48:46.469Z"
+    "updatedAt": "2026-11-04T22:21:17.424Z",
+    "createdAt": "2026-11-03T22:36:27.222Z"
   },
-  "Matematika/Kombinatorika/Ismétléses permutáció.tex": {
+  "Matematika/Kombinatorika/Elmélet/2. Ismétléses permutáció.tex": {
     "tags": [
       "Kombinatorika",
       "Permutáció",
       "Ismétléses permutáció"
     ],
-    "updatedAt": "2026-11-02T22:00:00.000Z"
+    "updatedAt": "2026-11-04T22:21:19.855Z",
+    "createdAt": "2026-11-04T10:38:40.635Z"
+  },
+  "Matematika/Kombinatorika/Feladatsor/Permutáció - Megoldókulcs.tex": {
+    "tags": [
+      "Matematika"
+    ],
+    "updatedAt": "2026-11-04T22:35:58.153Z",
+    "createdAt": "2026-11-04T22:19:49.147Z"
+  },
+  "Matematika/Ismétlés_nélküli_permutáció.tex": {
+    "tags": [
+      "Matematika"
+    ],
+    "updatedAt": "2026-11-04T22:52:59.215Z",
+    "createdAt": "2026-11-04T22:36:59.417Z"
+  },
+  "Matematika/Kombinatorika/Feladatsor/Permutáció - feladatsor.tex": {
+    "tags": [
+      "Gyakorló",
+      "Matematika"
+    ],
+    "updatedAt": "2026-11-04T22:50:48.955Z",
+    "createdAt": "2026-11-04T22:12:25.618Z"
+  },
+  "Matematika/Gráfok/Gráfok.tex": {
+    "tags": [
+      "Összefoglaló",
+      "Gráfelmélet"
+    ],
+    "updatedAt": "2026-11-04T22:58:27.657Z"
+  },
+  "Matematika/Gráfok/Gráfok_Mikrotananyag.tex": {
+    "tags": [
+      "Mikrotananyag",
+      "Gráfelmélet",
+      "Interaktív",
+      "Érettségi"
+    ],
+    "updatedAt": "2026-11-04T22:58:39.258Z"
   }
 }

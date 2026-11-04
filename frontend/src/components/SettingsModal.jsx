@@ -267,20 +267,21 @@ export default function SettingsModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-card"
-        style={{ maxWidth: 640, width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+        className="modal settings-modal"
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="modal-header">
-          <div className="modal-header-icon" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
-            <Settings size={18} />
-          </div>
-          <div className="modal-header-text">
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Rendszerbeállítások & Munkakörnyezet</h3>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
-              Projektek főkönyvtára a gépen és egyéni Gemini API kulcs kezelése
-            </p>
+          <div className="settings-header-left">
+            <div className="settings-header-icon">
+              <Settings size={18} />
+            </div>
+            <div>
+              <h3 className="settings-header-title">Rendszerbeállítások &amp; Munkakörnyezet</h3>
+              <p className="settings-header-subtitle">
+                Projektek főkönyvtára a gépen és egyéni Gemini API kulcs kezelése
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -293,32 +294,32 @@ export default function SettingsModal({
         </div>
 
         {/* Modal Tabs */}
-        <div style={{ display: 'flex', gap: 8, padding: '12px 20px 0', borderBottom: '1px solid var(--border-color)' }}>
-          <button
-            type="button"
-            className={`btn ${activeTab === 'workspace' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ fontSize: 12, padding: '6px 14px', borderRadius: '6px 6px 0 0' }}
-            onClick={() => setActiveTab('workspace')}
-          >
-            <Folder size={14} style={{ marginRight: 6 }} />
-            Munkakönyvtár
-          </button>
-          <button
-            type="button"
-            className={`btn ${activeTab === 'apikey' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ fontSize: 12, padding: '6px 14px', borderRadius: '6px 6px 0 0' }}
-            onClick={() => setActiveTab('apikey')}
-          >
-            <Key size={14} style={{ marginRight: 6 }} />
-            Gemini API Kulcs (BYOK)
-            {hasCustomKey && (
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', marginLeft: 6 }} />
-            )}
-          </button>
+        <div className="settings-tabs-strip">
+          <div className="settings-tabs-segmented">
+            <button
+              type="button"
+              className={`settings-tab-btn ${activeTab === 'workspace' ? 'active' : ''}`}
+              onClick={() => setActiveTab('workspace')}
+            >
+              <Folder size={14} />
+              <span>Munkakönyvtár</span>
+            </button>
+            <button
+              type="button"
+              className={`settings-tab-btn ${activeTab === 'apikey' ? 'active' : ''}`}
+              onClick={() => setActiveTab('apikey')}
+            >
+              <Key size={14} />
+              <span>Gemini API Kulcs (BYOK)</span>
+              {hasCustomKey && (
+                <span className="settings-tab-dot" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Modal Body */}
-        <div className="modal-body" style={{ overflowY: 'auto', padding: '16px 20px', flex: 1 }}>
+        <div className="modal-body settings-modal-body">
           {activeTab === 'workspace' && (() => {
             const hasLocalHandle = Boolean(localDirHandle)
             const activePath = hasLocalHandle ? null : serverConfig?.projectsRootDirectory
@@ -334,9 +335,9 @@ export default function SettingsModal({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Status card */}
                 <div style={{
-                  background: activeName ? 'rgba(74, 222, 128, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-                  border: `1px solid ${activeName ? 'rgba(74, 222, 128, 0.25)' : 'var(--border-color)'}`,
-                  borderRadius: 8,
+                  background: activeName ? 'rgba(48, 209, 88, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+                  border: `0.5px solid ${activeName ? 'rgba(48, 209, 88, 0.28)' : 'rgba(255, 255, 255, 0.12)'}`,
+                  borderRadius: 10,
                   padding: '16px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
@@ -381,14 +382,15 @@ export default function SettingsModal({
                       fontSize: 12,
                       color: 'var(--text-muted)',
                       display: 'flex',
-                      gap: 16,
+                      gap: 18,
                       padding: '8px 12px',
-                      background: 'rgba(0, 0, 0, 0.2)',
-                      borderRadius: 6,
+                      background: 'rgba(0, 0, 0, 0.25)',
+                      border: '0.5px solid rgba(255, 255, 255, 0.06)',
+                      borderRadius: 7,
                       marginBottom: 12
                     }}>
-                      <span>Talált almappák: <strong>{activeStats.foldersCount} db</strong></span>
-                      <span>LaTeX (.tex) fájlok: <strong>{activeStats.filesCount} db</strong></span>
+                      <span>Talált almappák: <strong style={{ color: '#f5f5f7' }}>{activeStats.foldersCount} db</strong></span>
+                      <span>LaTeX (.tex) fájlok: <strong style={{ color: '#f5f5f7' }}>{activeStats.filesCount} db</strong></span>
                     </div>
                   )}
 
@@ -440,8 +442,8 @@ export default function SettingsModal({
                 {/* Mappa elérési útja és gyors választó */}
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 8,
+                  border: '0.5px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: 10,
                   padding: '14px 16px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -495,10 +497,10 @@ export default function SettingsModal({
                         disabled={savingPath}
                         style={{
                           fontSize: 11,
-                          padding: '3px 8px',
+                          padding: '3.5px 9px',
                           background: customPathInput === sug.path ? 'var(--accent-dim)' : 'rgba(255, 255, 255, 0.05)',
-                          border: `1px solid ${customPathInput === sug.path ? 'var(--accent)' : 'var(--border-color)'}`,
-                          color: customPathInput === sug.path ? 'var(--accent)' : 'var(--text-muted)',
+                          border: `0.5px solid ${customPathInput === sug.path ? 'var(--accent)' : 'rgba(255, 255, 255, 0.12)'}`,
+                          color: customPathInput === sug.path ? '#ffffff' : 'var(--text-secondary)',
                           borderRadius: 6
                         }}
                       >
@@ -552,19 +554,19 @@ export default function SettingsModal({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '10px 14px',
-                borderRadius: 8,
+                padding: '12px 14px',
+                borderRadius: 10,
                 background: hasCustomKey
-                  ? 'rgba(74, 222, 128, 0.08)'
-                  : 'rgba(239, 68, 68, 0.08)',
-                border: `1px solid ${
+                  ? 'rgba(48, 209, 88, 0.06)'
+                  : 'rgba(255, 69, 58, 0.06)',
+                border: `0.5px solid ${
                   hasCustomKey
-                    ? 'rgba(74, 222, 128, 0.25)'
-                    : 'rgba(239, 68, 68, 0.25)'
+                    ? 'rgba(48, 209, 88, 0.28)'
+                    : 'rgba(255, 69, 58, 0.28)'
                 }`
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <ShieldCheck size={18} color={hasCustomKey ? '#4ade80' : '#f87171'} />
+                  <ShieldCheck size={18} color={hasCustomKey ? '#30d158' : '#ff453a'} />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>
                       {hasCustomKey
@@ -647,7 +649,7 @@ export default function SettingsModal({
                   borderRadius: 6,
                   background: keyValidation.valid ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                   border: `1px solid ${keyValidation.valid ? 'rgba(74, 222, 128, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                  color: keyValidation.valid ? '#4ade80' : '#f87171',
+                  color: keyValidation.valid ? '#30d158' : '#ff453a',
                   fontSize: 12,
                   display: 'flex',
                   alignItems: 'center',
@@ -660,10 +662,10 @@ export default function SettingsModal({
 
               {/* Guide card: How to get an API key */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 8,
-                padding: '12px 14px'
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '0.5px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: 10,
+                padding: '14px 16px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -693,11 +695,12 @@ export default function SettingsModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '12px 20px', display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="settings-modal-footer">
           <button
             type="button"
             className="btn btn-primary"
             onClick={onClose}
+            style={{ padding: '6px 22px' }}
           >
             Kész
           </button>

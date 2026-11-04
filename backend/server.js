@@ -56,7 +56,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-const server = app.listen(PORT, () => {
+process.on('uncaughtException', (err) => {
+  console.error('[Backend Uncaught Exception]:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Backend Unhandled Rejection]:', reason);
+});
+
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 AI LaTeX Backend: http://localhost:${PORT}`);
   console.log(`🔒 AI Mód: BYOK (Kliensoldali egyéni Gemini API kulcsok)`);
 });

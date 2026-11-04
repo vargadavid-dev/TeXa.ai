@@ -1,0 +1,120 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{Madrid}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{tikz}
+\usepackage{xcolor}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Ismétlés nélküli permutáció}
+\author{Varga Dávid}
+\institute{Matematika}
+\date{\today}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{1. A lényeg}
+    \begin{block}{Definíció}
+        Képzeld el, hogy van pár teljesen különböző dolgod, és egyszerűen csak sorba akarod rendezni őket. Az \textbf{ismétlés nélküli permutáció} nem más, mint annak a kiszámítása, hogy hányféleképpen állíthatod sorba ezeket a dolgokat úgy, hogy mindegyiket pontosan egyszer használod fel.
+    \end{block}
+\end{frame}
+
+\begin{frame}{2. Hogyan is működik?}
+    Gondolj arra, hogy van három barát: Anna, Balázs és Csaba, és be akarnak ülni a moziba három egymás melletti székre. Hányféleképpen ülhetnek le?
+    
+    \begin{itemize}
+        \item Az \textbf{első székre} még bárki leülhet (3 lehetőség).
+        \item A \textbf{második székre} már csak a maradék két ember ülhet (2 lehetőség).
+        \item A \textbf{harmadik székhez} érve már nincs választásunk (1 lehetőség).
+    \end{itemize}
+
+    \begin{alertblock}{Miért szorzunk?}
+        Mert ezek a döntések egymásba ágyazódnak, mint egy fa ágai. A végeredmény: $3 \cdot 2 \cdot 1 = 6$ féle sorrend.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{3. Általános képlet és speciális esetek}
+    \begin{block}{Definíció}
+        $n$ különböző elem egy lehetséges sorrendjét az elemek egy \emph{ismétlés nélküli permutációjának} nevezzük. Az $n$ elem összes lehetséges sorrendjének a száma $P_n$.
+    \end{block}
+
+    $$P_n = n! = n \cdot (n - 1) \cdot (n - 2) \cdot \dots \cdot 1$$
+
+    \begin{itemize}
+        \item \textbf{Vigyázz, mikor használod!} Csak akkor működik, ha az elemek \textbf{különböznek}.
+        \item \textbf{A nulla faktoriális:} $0! = 1$ (ha nulla dolgot kell sorbaraknod, azt 1-féleképpen teheted meg).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{4. Dolgozat gyorsteszt}
+    \begin{exampleblock}{3 pontos ellenőrzés}
+        Amikor a dolgozatban meglátsz egy feladatot, futtasd le ezt a 3 pontos ellenőrzést:
+        \begin{itemize}
+            \item \textbf{Ugyanannyi a hely, mint az elem?} (Nem marad ki semmi?)
+            \item \textbf{Számít a sorrend?} (A-B nem ugyanaz, mint B-A?)
+            \item \textbf{Minden elem különbözik?} (Nincsenek egyforma elemek?)
+        \end{itemize}
+        Ha mindháromra \textbf{IGEN} a válasz, a képleted: $n!$.
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{5. Tipikus feladatok: Alapfeladat és "ragasztós" trükk}
+    \begin{block}{1. Alapfeladat (Sorrend a moziban)}
+        \textit{Egy 5 fős társaság moziba megy. Hányféleképpen ülhetnek le egymás mellé egy 5 székből álló sorban?}
+        
+        \textbf{Megoldás:} $5! = 5 \cdot 4 \cdot 3 \cdot 2 \cdot 1 = 120$.
+    \end{block}
+
+    \begin{block}{2. A "ragasztós" trükk (Összetartozó elemek)}
+        \textit{5 fő leül 5 székre, de Béla és Cili egymás mellett akar ülni.}
+        
+        \textbf{Megoldás:} A párost összeragasztjuk (4 egység $\rightarrow$ $4!$), majd szorozzuk a belső helycserével ($2!$). Így: $4! \cdot 2! = 48$.
+    \end{block}
+\end{frame}
+
+\begin{frame}{6. Kizárási és korlátozó feladatok}
+    \begin{block}{3. Kizárási feladat}
+        \textit{Hányféleképpen ülhet le 5 ember úgy, hogy Anna és Béla NEM ülhet egymás mellett?}
+        
+        \textbf{Megoldás:} Összes eset $-$ tiltott esetek $\rightarrow$ $120 - 48 = 72$.
+    \end{block}
+
+    \begin{block}{4. Fixált helyek (Számok képzése)}
+        \textit{A 0, 1, 2, 3, 4 számjegyekből hány darab 5-jegyű szám képezhető?}
+        
+        \textbf{Megoldás:} Az 1. helyre nem jöhet 0 (4 lehetőség), a többi 4 helyre $4!$ féleképpen kerülnek a számok. $4 \cdot 4! = 96$.
+    \end{block}
+\end{frame}
+
+\begin{frame}{7. Körmutáció, Rögzített pozíció, Paritás}
+    \begin{block}{További típusok}
+        \begin{itemize}
+            \item \textbf{Ciklikus / Körmutáció:} $n$ ember kerek asztal körül: $(n-1)!$ (egy embert rögzítünk). 5 főre: $4! = 24$.
+            \item \textbf{Kötött pozíció:} Leggyorsabb futó fixen az 1. helyen $\rightarrow$ $1 \cdot 5! = 120$.
+            \item \textbf{Váltakozó elrendezés:} 3 fiú és 3 lány felváltva $\rightarrow$ $2 \cdot 3! \cdot 3! = 72$.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Köszönöm a figyelmet!}
+    \begin{center}
+        \Large Kérdések?
+    \end{center}
+\end{frame}
+
+\end{document}

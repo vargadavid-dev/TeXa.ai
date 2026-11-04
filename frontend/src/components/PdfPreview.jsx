@@ -111,9 +111,9 @@ export default function PdfPreview({
   const [inverseSyncing, setInverseSyncing] = useState(false)
 
   // ── Terület kijelölés, AI átszerkesztés és beszúrás állapota ──
-  // toolMode: 'insert' (AI beszúrás) | 'select' (átszerkesztés) | 'figure' (ábra szerkesztő) | 'none'
+  // toolMode: 'select' (átszerkesztés) | 'figure' (ábra szerkesztő) | 'none'
   const [toolMode, setToolMode] = useState('none')
-  const [activeTab, setActiveTab] = useState('insert') // 'insert' | 'transform'
+  const [activeTab, setActiveTab] = useState('transform') // 'insert' | 'transform'
   const [insertPosition, setInsertPosition] = useState('after') // 'after' | 'before'
 
   const [selectionState, setSelectionState] = useState(null)
@@ -838,11 +838,13 @@ export default function PdfPreview({
       {/* Fejléc és Vezérlők */}
       <div className="preview-pane-header">
         <div className="preview-header-left">
-          <div className="preview-header-icon-wrap" title="PDF Előnézet">
-            <FileText size={13} />
+          <div className="column-header-title-wrap">
+            <div className="column-header-icon-wrap" title="PDF előnézet">
+              <FileText size={13} />
+            </div>
+            <span className="column-header-title preview-header-title">PDF előnézet</span>
+            <span className="column-header-title-short preview-header-title-short">PDF</span>
           </div>
-          <span className="preview-header-title">PDF Előnézet</span>
-          <span className="preview-header-title-short">PDF</span>
           {numPages > 0 && (
             <span className="preview-page-badge">
               <span className="badge-full">{numPages} oldal</span>
@@ -892,33 +894,7 @@ export default function PdfPreview({
             </button>
           )}
 
-          {/* AI Beszúrás gomb (önálló gomb, egységes stílus a Letöltés mintájára) */}
-          {pdfData && (
-            <button
-              type="button"
-              className={`pdf-header-btn ${toolMode === 'insert' ? 'active' : ''}`}
-              onClick={() => {
-                const next = toolMode === 'insert' ? 'none' : 'insert'
-                setToolMode(next)
-                setActiveTab('insert')
-                if (next === 'none') {
-                  setSelectionState(null)
-                  setSelectedBlock(null)
-                  setIsAiPromptOpen(false)
-                }
-              }}
-              title={
-                toolMode === 'insert'
-                  ? 'AI Beszúrás bekapcsolva (Kattints vagy jelölj ki területet a beszúráshoz)'
-                  : 'AI Tartalom beszúrása a PDF-be'
-              }
-            >
-              <Plus size={13} />
-              <span className="pdf-btn-label">AI Beszúrás</span>
-            </button>
-          )}
-
-                    {/* Ábra szerkesztése gomb (önálló gomb, TikZ ábrák kiemeléséhez) */}
+          {/* Ábra szerkesztése gomb (önálló gomb, TikZ ábrák kiemeléséhez) */}
           {pdfData && (
             <button
               type="button"
@@ -1062,7 +1038,7 @@ export default function PdfPreview({
           <div className="pdf-figures-pills">
             {figuresList.length === 0 ? (
               <div className="pdf-figures-empty">
-                A dokumentumban nem található TikZ ábra. Kattints az „AI Beszúrás”-ra új ábra generálásához!
+                A dokumentumban nem található TikZ ábra. Jelölj ki egy területet az Átszerkesztésben új ábra beszúrásához!
               </div>
             ) : (
               figuresList.map((fig) => (
@@ -1587,7 +1563,7 @@ export default function PdfPreview({
                   </button>
                   <button
                     className="btn btn-primary"
-                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderColor: '#059669' }}
+                    style={{ background: 'linear-gradient(180deg, #34c759 0%, #30d158 100%)', borderColor: '#30d158' }}
                     onClick={() => handleExecuteInsert()}
                     disabled={!inlineInstruction.trim() || isTransforming}
                   >

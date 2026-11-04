@@ -58,8 +58,8 @@
   --text-accent:     #cfe4ff;
 
   /* Méretek & Sugarak */
-  --toolbar-h:       56px;
-  --statusbar-h:     28px;
+  --toolbar-h:       44px;
+  --statusbar-h:     26px;
   --sidebar-w:       270px;
   --ai-panel-w:      400px;
 
@@ -119,55 +119,63 @@ html, body, #root {
   min-height: 0;
 }
 
-/* ── Modern Fejléc / Eszköztár (Toolbar) ── */
+/* ── Modern Fejléc / Eszköztár (Toolbar – 44px Apple Pro stílus) ── */
 .toolbar {
   height: var(--toolbar-h);
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(28, 28, 30, 0.94);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 16px;
+  justify-content: space-between;
+  padding: 0 14px;
   flex-shrink: 0;
   z-index: 20;
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-sizing: border-box;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
 }
 
 .toolbar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   user-select: none;
   cursor: default;
 }
 
 .toolbar-logo-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md);
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   background: var(--accent-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--accent-glow);
   color: #fff;
   font-weight: 700;
-  font-size: 15px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
 }
 
 .toolbar-title-wrap {
   display: flex;
-  flex-direction: column;
+  align-items: center;
 }
 
 .toolbar-title {
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.3px;
   color: #f5f5f7;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   user-select: none;
 }
 
@@ -183,22 +191,203 @@ html, body, #root {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-.toolbar-badge {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: var(--radius-full);
-  background: var(--accent-dim);
-  color: var(--accent-light);
-  border: 1px solid var(--border-subtle);
-  letter-spacing: 0.5px;
+.toolbar-version-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1.5px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: #a1a1a6;
+  font-family: var(--font-mono);
+  letter-spacing: 0.2px;
+}
+
+/* Közép: Aktív dokumentum és finom mentési státusz pill */
+.toolbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.toolbar-doc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  max-width: 340px;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.toolbar-doc-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.toolbar-doc-icon {
+  color: #d1d1d6;
+  flex-shrink: 0;
+}
+
+.toolbar-doc-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f5f5f7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolbar-doc-divider {
+  width: 1px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.toolbar-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #a1a1a6;
+  flex-shrink: 0;
+}
+
+.toolbar-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.toolbar-status-dot.saved {
+  background: #30d158;
+}
+
+.toolbar-status-dot.modified {
+  background: #ff9f0a;
+}
+
+.toolbar-status-dot.saving {
+  background: #0a84ff;
+  animation: pulseGlow 1s infinite alternate;
+}
+
+.toolbar-status-label {
+  white-space: nowrap;
+}
+
+/* Jobb oldal: Globális rendszerfunkciók */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.toolbar-btn {
+  height: 26px;
+  padding: 0 9px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #d1d1d6;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.toolbar-settings-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+/* Súgó Modál stílusok */
+.help-shortcuts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.help-shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+}
+
+.help-shortcut-desc {
+  color: #e5e5ea;
+}
+
+.help-kbd {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f5f5f7;
+  letter-spacing: 0.3px;
+}
+
+.help-hint-tag {
+  font-size: 11px;
+  color: #a1a1a6;
+  font-style: italic;
+}
+
+.help-pro-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(10, 132, 255, 0.08);
+  border: 0.5px solid rgba(10, 132, 255, 0.2);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #d1d1d6;
 }
 
 .toolbar-divider {
   width: 1px;
-  height: 24px;
-  background: var(--border-subtle);
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
   margin: 0 4px;
 }
 
@@ -294,14 +483,29 @@ html, body, #root {
 }
 
 .btn-subtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   color: var(--text-secondary);
-  border-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  line-height: 0;
+  transition: var(--transition);
+  box-sizing: border-box;
 }
 
 .btn-subtle:hover:not(:disabled) {
   background: var(--bg-hover);
   color: var(--text-primary);
+}
+
+.btn svg,
+.btn-subtle svg,
+.btn-icon svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 .btn-icon {
@@ -345,18 +549,14 @@ html, body, #root {
   height: 7px;
   border-radius: 50%;
   background: var(--success);
-  box-shadow: 0 0 8px var(--success);
-  animation: pulse-glow 2s infinite;
 }
 
 .status-pulse-dot.warn {
   background: var(--warning);
-  box-shadow: 0 0 8px var(--warning);
 }
 
 .status-pulse-dot.error {
   background: var(--error);
-  box-shadow: 0 0 8px var(--error);
 }
 
 /* ── Bal Oldalsáv (Sidebar) ── */
@@ -392,6 +592,43 @@ html, body, #root {
   gap: 4px;
 }
 
+.sidebar-header-actions button,
+.sidebar-header-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  max-width: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  line-height: 0 !important;
+}
+
+.sidebar-header-actions button:hover,
+.sidebar-header-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-header-actions button svg,
+.sidebar-header-btn svg {
+  display: block !important;
+  flex-shrink: 0;
+  margin: auto;
+}
+
 .sidebar-collapse-btn {
   color: var(--text-muted);
 }
@@ -425,21 +662,30 @@ html, body, #root {
   box-sizing: border-box;
 }
 
-.sidebar-expand-btn {
+.sidebar-expand-btn,
+.ai-expand-btn {
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--accent-light);
   transition: all 0.15s ease;
+  padding: 0;
 }
 
-.sidebar-expand-btn:hover {
+.sidebar-expand-btn:hover,
+.ai-expand-btn:hover {
   color: var(--accent-light);
   background: var(--bg-elevated);
+  box-shadow: none;
 }
 
 .sidebar-collapsed-body {
@@ -561,15 +807,62 @@ html, body, #root {
   flex-shrink: 0;
 }
 
-.sidebar-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--text-muted);
-  display: flex;
+/* ── Egységes Oszlopfejlécek (Fájlkezelő, AI Asszisztens, TEX szerkesztő, PDF előnézet) ── */
+.column-header-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.column-header-icon-wrap,
+.preview-header-icon-wrap,
+.ai-header-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-light);
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+}
+
+.column-header-title,
+.sidebar-title,
+.preview-header-title,
+.ai-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f5f5f7;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.column-header-title-short,
+.preview-header-title-short {
+  display: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f5f5f7;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.editor-header-title-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .sidebar-count-badge {
@@ -582,8 +875,8 @@ html, body, #root {
 }
 
 .sidebar-search-box {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 4px 10px 10px 10px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
   position: relative;
 }
 
@@ -628,70 +921,64 @@ html, body, #root {
   padding: 10px 8px;
 }
 
-.sidebar-actions-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
-  padding: 0 4px;
+/* ── Fájlkezelő 28px Kompakt Szegmentált Akciógombok: [ + Üres ] [ ⊞ Sablon ] [ ⤒ Import ] ── */
+.sidebar-actions-segmented-wrap {
+  padding: 10px 10px 4px 10px;
+  flex-shrink: 0;
 }
 
-.sidebar-blank-btn {
-  width: 100%;
-  justify-content: center;
-  background: rgba(10, 132, 255, 0.08);
-  border: 1px solid rgba(10, 132, 255, 0.28);
-  color: var(--accent-light);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 7px 10px;
-  border-radius: var(--radius-sm);
+.sidebar-actions-segmented {
   display: flex;
   align-items: center;
-  gap: 6px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.09);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 2px;
+  box-sizing: border-box;
+}
+
+.sidebar-seg-btn {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 5px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
 }
 
-.sidebar-blank-btn:hover {
-  background: rgba(10, 132, 255, 0.18);
-  border-color: var(--accent);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+.sidebar-seg-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.sidebar-actions-row {
-  display: flex;
-  gap: 6px;
-}
-
-.sidebar-new-btn {
-  flex: 1;
-  justify-content: center;
-  background: var(--bg-card);
-  border-color: var(--border-subtle);
-  font-size: 12px;
-  padding: 7px 10px;
-}
-
-.sidebar-new-btn:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border-medium);
-}
-
-.sidebar-import-btn {
-  flex: 1;
-  justify-content: center;
-  background: var(--bg-card);
-  border-color: var(--border-subtle);
-  font-size: 12px;
-  padding: 7px 10px;
-}
-
-.sidebar-import-btn:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border-medium);
+.sidebar-seg-btn.sidebar-blank-btn {
   color: var(--accent-light);
+  font-weight: 600;
+}
+
+.sidebar-seg-btn.sidebar-blank-btn:hover {
+  background: rgba(10, 132, 255, 0.15);
+  color: #ffffff;
+}
+
+.sidebar-seg-btn svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 .sidebar.drag-over {
@@ -720,7 +1007,15 @@ html, body, #root {
 
 /* Mappa / Tantárgy csoport */
 .folder-group {
-  margin-bottom: 14px;
+  margin-bottom: 0;
+}
+
+.folder-group.root-group {
+  margin-bottom: 6px;
+}
+
+.folder-group.subfolder-group {
+  margin-bottom: 0;
 }
 
 .folder-header {
@@ -752,7 +1047,7 @@ html, body, #root {
 .subfolder-header {
   font-size: 11.5px;
   font-weight: 500;
-  margin-top: 1px;
+  margin-top: 0;
 }
 
 .folder-header-actions {
@@ -952,16 +1247,23 @@ html, body, #root {
 }
 
 /* Sidebar inline rename */
+.file-item.renaming .file-item-actions {
+  display: none !important;
+}
+
 .sidebar-rename-form {
   display: flex;
   align-items: center;
   gap: 4px;
   width: 100%;
+  flex: 1;
 }
 
 .sidebar-rename-input {
   flex: 1;
-  background: rgba(28, 28, 30, 0.85);
+  width: 100%;
+  min-width: 0;
+  background: rgba(28, 28, 30, 0.95);
   border: 1px solid var(--accent);
   color: var(--text-primary);
   font-size: 11.5px;
@@ -969,7 +1271,6 @@ html, body, #root {
   padding: 2px 6px;
   border-radius: 4px;
   outline: none;
-  min-width: 0;
   box-shadow: 0 0 0 2px var(--accent-dim);
 }
 
@@ -1251,7 +1552,6 @@ html, body, #root {
   height: 6px;
   border-radius: 50%;
   background: #ff9f0a;
-  box-shadow: 0 0 6px rgba(255, 159, 10, 0.6);
   flex-shrink: 0;
 }
 
@@ -1500,6 +1800,9 @@ html, body, #root {
 
 /* ── Konténer alapú reszponzív viselkedés keskeny szerkesztő nézethez ── */
 @container (max-width: 880px) {
+  .editor-header-left .column-header-title {
+    display: none;
+  }
   .editor-header-btn:not(.editor-header-ai-btn) .editor-btn-label {
     display: none;
   }
@@ -1568,12 +1871,202 @@ html, body, #root {
 
 /* Konzol Panel */
 .console-panel {
+  position: relative;
   background: #121214;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: height 0.2s ease;
+}
+
+.console-panel.resizing {
+  transition: none !important;
+  user-select: none;
+}
+
+.console-resize-handle {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.console-resize-handle-bar {
+  width: 44px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.22);
+  transition: all 0.15s ease;
+  pointer-events: none;
+}
+
+.console-resize-handle:hover .console-resize-handle-bar,
+.console-panel.resizing .console-resize-handle-bar {
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  width: 58px;
+  height: 4px;
+}
+
+/* Konzol nézetválasztó tabok (Hibák vs Nyers napló) */
+.console-view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(118, 118, 128, 0.24);
+  padding: 2px;
+  border-radius: 6px;
+  margin-left: 4px;
+}
+
+.console-view-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.console-view-tab:hover {
+  color: var(--text-primary);
+}
+
+.console-view-tab.active {
+  background: #636366;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Strukturált hibák listanézete */
+.console-structured-errors {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 2px 0 6px 0;
+}
+
+.console-error-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 69, 58, 0.08);
+  border: 1px solid rgba(255, 69, 58, 0.25);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.console-error-card.clickable {
+  cursor: pointer;
+}
+
+.console-error-card.clickable:hover {
+  background: rgba(255, 69, 58, 0.16);
+  border-color: rgba(255, 69, 58, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 10px rgba(255, 69, 58, 0.18);
+}
+
+.console-error-card-badge-col {
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.console-error-line-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 12px;
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.35);
+  letter-spacing: 0.2px;
+}
+
+.console-error-line-pill.general {
+  background: #6b7280;
+}
+
+.console-error-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.console-error-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.console-error-msg {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fca5a5;
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.console-error-jump-link {
+  font-size: 10.5px;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.console-error-card:hover .console-error-jump-link {
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+
+.console-error-hint {
+  font-size: 11.5px;
+  color: #e2e8f0;
+  line-height: 1.35;
+  font-family: var(--font-ui);
+}
+
+.console-error-code-snippet {
+  display: inline-block;
+  padding: 3px 7px;
+  margin-top: 2px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-family: var(--font-mono);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .console-panel.collapsed {
@@ -1605,11 +2098,76 @@ html, body, #root {
 .console-status-dot.idle { background: var(--text-muted); }
 .console-status-dot.compiling { background: var(--warning); animation: pulse-glow 1s infinite; }
 
+.console-header-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.console-header-status-pill {
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 1px 7px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.console-header-status-pill.ok {
+  color: var(--success);
+  background: rgba(48, 209, 88, 0.12);
+}
+
+.console-header-status-pill.compiling {
+  color: var(--warning);
+  background: rgba(255, 159, 10, 0.12);
+}
+
+.console-header-status-pill.error {
+  color: var(--error);
+  background: rgba(255, 69, 58, 0.15);
+  font-weight: 600;
+}
+
 .console-actions {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.console-action-btn,
+.console-actions button {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 5px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 0 !important;
+  box-sizing: border-box;
+}
+
+.console-action-btn:hover,
+.console-actions button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.console-action-btn svg,
+.console-actions button svg {
+  display: block !important;
+  flex-shrink: 0;
+  margin: auto;
 }
 
 .console-body {
@@ -1679,11 +2237,13 @@ html, body, #root {
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 5px;
-  background: rgba(10, 132, 255, 0.12);
-  color: var(--accent-light);
-  border: 1px solid rgba(10, 132, 255, 0.22);
+  min-width: 22px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #d1d1d6;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .preview-header-title {
@@ -1825,8 +2385,8 @@ html, body, #root {
 }
 
 .pdf-header-btn.pdf-header-compile-btn.error:hover:not(:disabled) {
-  filter: brightness(1.08);
-  box-shadow: 0 4px 16px rgba(255, 69, 58, 0.5);
+  filter: brightness(1.05);
+  box-shadow: none;
 }
 
 .pdf-header-compile-btn .pdf-header-kbd {
@@ -2071,21 +2631,41 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+}
+
+.ai-header-model-wrap {
+  width: 155px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .ai-collapse-btn {
-  color: var(--text-muted);
-  padding: 4px;
-  border-radius: var(--radius-sm);
-  display: flex;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  max-width: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  padding: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #a1a1a6;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .ai-collapse-btn:hover {
-  color: var(--accent-light);
-  background: var(--bg-hover);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 /* ── Összecsukott AI Panel (Vékony oszlop) ── */
@@ -2102,23 +2682,7 @@ html, body, #root {
   box-sizing: border-box;
 }
 
-.ai-expand-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  color: var(--accent-light);
-  transition: all 0.15s ease;
-}
-
-.ai-expand-btn:hover {
-  background: var(--bg-elevated);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-}
+/* .ai-expand-btn stílusa a .sidebar-expand-btn-nel közösen van definiálva fent */
 
 .ai-collapsed-body {
   flex: 1;
@@ -2230,24 +2794,65 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
-.ai-header-icon {
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-gradient);
-  color: #fff;
-  display: flex;
+/* AI Header Tantárgy választó csoport (pontosan megegyezik az editor-header-group 26px Apple stílusával) */
+.ai-header-subject-group {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 7px;
+  padding: 1px;
+  box-sizing: border-box;
+  gap: 1px;
 }
+
+.ai-header-subject-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: #a1a1a6;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.ai-header-subject-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ai-header-subject-btn.active {
+  background: #636366;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  font-weight: 600;
+}
+
+/* .ai-header-icon a .column-header-icon-wrap-pal egyutt van definialva fent */
 
 .ai-panel-title {
   font-size: 12px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: 600;
+  color: #f5f5f7;
+  letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
@@ -2269,17 +2874,28 @@ html, body, #root {
   color: var(--text-primary);
 }
 
+.ai-panel-top-controls {
+  padding: 10px 12px 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: var(--bg-panel);
+}
+
 .ai-panel-body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
-  padding: 16px;
+  padding: 6px 12px 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
   max-width: 100%;
+  min-height: 0;
 }
 
 
@@ -2308,16 +2924,32 @@ html, body, #root {
   line-height: 16px;
 }
 
-.form-input, .form-textarea, .form-select {
+.form-input, .form-select {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
-  font-size: 12.5px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
+  font-size: 12px;
+  border-radius: var(--radius-sm, 8px);
   font-family: var(--font-ui);
   transition: var(--transition);
   width: 100%;
+  box-sizing: border-box;
+}
+
+.form-textarea {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 8px);
+  font-family: var(--font-ui);
+  transition: var(--transition);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-input:focus, .form-textarea:focus, .form-select:focus {
@@ -2386,33 +3018,69 @@ html, body, #root {
   color: var(--error);
 }
 
-/* AI Folyamatjelző kártya */
+/* AI Folyamatjelző kártya – Kompakt, 32px-es Apple stílus */
 .ai-progress-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  box-shadow: var(--shadow-md);
+  background: rgba(10, 132, 255, 0.08);
+  border: 0.5px solid rgba(10, 132, 255, 0.25);
+  border-radius: 8px;
+  padding: 6px 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
   animation: fadeIn 0.2s ease;
+  box-sizing: border-box;
 }
 
 .ai-progress-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.ai-progress-header-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ai-progress-title {
   font-weight: 600;
   color: var(--accent-light);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ai-progress-sep {
+  color: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.ai-progress-status-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-progress-pct {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--accent-light);
+  flex-shrink: 0;
 }
 
 .progress-track {
   width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
   overflow: hidden;
   position: relative;
 }
@@ -2420,39 +3088,33 @@ html, body, #root {
 .progress-bar-fill {
   height: 100%;
   background: var(--accent-gradient);
-  border-radius: 3px;
+  border-radius: 2px;
   transition: width 0.35s ease;
   position: relative;
-  box-shadow: var(--accent-glow);
+  box-shadow: 0 0 6px rgba(10, 132, 255, 0.5);
 }
 
 .progress-bar-fill::after {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
   animation: shimmer 1.5s infinite;
-}
-
-.ai-progress-status-text {
-  font-size: 11.5px;
-  color: var(--text-secondary);
-  line-height: 1.4;
-  min-height: 28px;
 }
 
 /* AI Automatikus beillesztés értesítő kártya */
 .ai-inserted-badge {
   background: rgba(48, 209, 88, 0.1);
-  border: 1px solid rgba(48, 209, 88, 0.3);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
+  border: 0.5px solid rgba(48, 209, 88, 0.3);
+  border-radius: 8px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   animation: slideUp 0.25s ease;
-  box-shadow: 0 2px 12px rgba(48, 209, 88, 0.15);
+  box-shadow: 0 2px 10px rgba(48, 209, 88, 0.12);
+  box-sizing: border-box;
 }
 
 .ai-response-actions {
@@ -2460,45 +3122,50 @@ html, body, #root {
   gap: 8px;
 }
 
-/* ── AI Asszisztens: módválasztó fülek, csevegő, források ── */
+/* ── AI Asszisztens: módválasztó fülek, csevegő, források (26px magas kompakt Apple stílus) ── */
 .ai-mode-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
+  gap: 3px;
   background: rgba(118, 118, 128, 0.24);
   padding: 2px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .ai-mode-tab {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 7px 4px;
-  border-radius: 7px;
+  gap: 5px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 6px;
   border: 0.5px solid transparent;
   background: transparent;
-  color: var(--text-secondary);
+  color: #a1a1a6;
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.15s ease;
   font-family: var(--font-ui);
   min-width: 0;
+  box-sizing: border-box;
+  white-space: nowrap;
+  user-select: none;
 }
 
 .ai-mode-tab span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 .ai-mode-tab:hover {
-  color: var(--text-primary);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .ai-mode-tab.active {
@@ -2521,7 +3188,7 @@ html, body, #root {
 .ai-source-tab {
   flex: 1;
   min-width: 0;
-  padding: 5px 6px;
+  padding: 5px 4px;
   border: 0.5px solid transparent;
   border-radius: 6px;
   background: transparent;
@@ -2533,6 +3200,11 @@ html, body, #root {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   transition: var(--transition);
 }
 
@@ -2549,8 +3221,8 @@ html, body, #root {
 
 /* ── Interaktív AI Szerkesztő Csevegő ── */
 .ai-panel-body.chat-mode {
-  padding: 12px;
-  gap: 10px;
+  padding: 4px 12px 12px 12px;
+  gap: 8px;
   overflow: hidden;
   min-height: 0;
 }
@@ -2854,35 +3526,43 @@ html, body, #root {
   word-break: break-word;
 }
 
-.ai-chat-pending-bar {
+/* ── Modern LLM Chat Beviteli Doboz (Claude / ChatGPT / Gemini stílus) ── */
+.ai-chat-input-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.ai-chat-input-box:focus-within {
+  border-color: rgba(10, 132, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.18);
+}
+
+.ai-chat-pending-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-card);
-  border-radius: 10px;
-  padding: 6px 8px;
-  flex-shrink: 0;
-}
-
-.ai-chat-pending-label {
-  font-size: 10.5px;
-  color: var(--accent-light);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.ai-chat-pending-list {
-  display: flex;
-  gap: 6px;
+  padding: 2px 2px 6px 2px;
   overflow-x: auto;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
 }
 
 .ai-chat-pending-thumb {
   position: relative;
   width: 44px;
-  height: 34px;
-  border-radius: 6px;
+  height: 44px;
+  border-radius: 8px;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
 }
 
 .ai-chat-pending-thumb img {
@@ -2893,34 +3573,23 @@ html, body, #root {
 
 .ai-chat-pending-del {
   position: absolute;
-  top: 1px;
-  right: 1px;
-  width: 14px;
-  height: 14px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 69, 58, 0.9);
-  color: #fff;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.ai-chat-input-container {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-card);
-  border: 0.5px solid var(--border-medium);
-  border-radius: 12px;
-  padding: 8px 10px;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.ai-chat-input-container:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
+.ai-chat-pending-del:hover {
+  background: var(--error);
 }
 
 .ai-chat-textarea {
@@ -2933,61 +3602,86 @@ html, body, #root {
   font-size: 12.5px;
   line-height: 1.45;
   resize: none;
+  min-height: 44px;
+  max-height: 160px;
+  padding: 2px 0;
+  box-sizing: border-box;
 }
 
-.ai-chat-toolbar-row {
+.ai-chat-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.ai-chat-bottom-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  border-top: 0.5px solid var(--border-subtle);
-  padding-top: 6px;
+  padding-top: 2px;
 }
 
-.ai-chat-toolbar-left {
+.ai-chat-bottom-left {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
+  gap: 6px;
 }
 
-.ai-chat-attach-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: transparent;
-  border: 0.5px solid var(--border-medium);
+.ai-chat-icon-btn.attach {
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
-  padding: 3px 8px;
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-family: var(--font-ui);
-  cursor: pointer;
-  transition: var(--transition);
-  white-space: nowrap;
-}
-
-.ai-chat-attach-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.ai-chat-paste-tag {
-  font-size: 10px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ai-chat-send-btn {
-  padding: 4px 12px !important;
-  font-size: 11.5px !important;
-  height: 28px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #a1a1a6;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.ai-chat-icon-btn.attach:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.ai-chat-shortcut-hint {
+  font-size: 10.5px;
+  color: #636366;
+  user-select: none;
+}
+
+.ai-chat-send-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: not-allowed;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+}
+
+.ai-chat-send-circle.active {
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4);
+}
+
+.ai-chat-send-circle.active:hover {
+  background: var(--accent-light);
+  transform: scale(1.05);
+}
+
+.ai-chat-send-circle.active:active {
+  transform: scale(0.96);
 }
 
 .ai-chat-typing-body {
@@ -3148,34 +3842,164 @@ html, body, #root {
 }
 
 /* ── Alsó Állapotsor (Status Bar) ── */
+/* ── Alsó Állapotsor (Status Bar) – Szigorúan 26px, csendes, 3 zónás ── */
 .status-bar {
-  height: var(--statusbar-h);
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-subtle);
+  height: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  background: rgba(22, 22, 24, 0.95);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 16px;
-  font-size: 11.5px;
-  color: var(--text-muted);
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 11px;
+  color: #86868b;
   flex-shrink: 0;
+  user-select: none;
+  box-sizing: border-box;
+  z-index: 20;
+}
+
+.status-bar-zone {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.status-bar-left {
+  flex: 0 1 auto;
+}
+
+.status-bar-center {
+  flex: 1 1 auto;
+  justify-content: center;
+  text-align: center;
+}
+
+.status-bar-right {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.status-bar-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.status-bar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.status-bar-folder-name {
+  font-weight: 500;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-bar-local-tag {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent-light);
+  background: rgba(10, 132, 255, 0.15);
+  padding: 0 4px;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+}
+
+.status-bar-compile-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #86868b;
+}
+
+.status-bar-compile-info.ok {
+  color: #86868b;
+}
+
+.status-bar-compile-info.compiling {
+  color: var(--warning);
+}
+
+.status-bar-compile-info.error {
+  color: var(--error);
+  font-weight: 500;
+}
+
+.status-bar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-bar-dot.ok {
+  background: var(--success);
+}
+
+.status-bar-dot.idle {
+  background: #636366;
+}
+
+.status-bar-dot.error {
+  background: var(--error);
+}
+
+.status-bar-doc-stats {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #86868b;
+  white-space: nowrap;
   user-select: none;
 }
 
-.status-bar-item {
-  display: flex;
+.status-bar-shortcuts {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  font-size: 10.5px;
+  color: #6e6e73;
 }
 
-.status-bar-item.highlight {
-  color: var(--text-secondary);
+.status-bar-shortcut-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.status-bar-divider {
-  width: 1px;
-  height: 14px;
-  background: var(--border-subtle);
+.status-bar-shortcut-item kbd {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  padding: 0 4px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  color: #d1d1d6;
+}
+
+.status-bar-shortcut-sep {
+  color: rgba(255, 255, 255, 0.15);
 }
 
 /* ── Modális Ablak (Modal) ── */
@@ -3485,8 +4309,28 @@ html, body, #root {
 }
 
 .custom-select-trigger.sm {
-  padding: 4px 8px;
-  font-size: 11px;
+  height: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #c7c7cc;
+  box-sizing: border-box;
+}
+
+.custom-select-trigger.sm:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.custom-select-trigger.sm .custom-select-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #e5e5ea;
 }
 
 .custom-select-trigger-content {
@@ -4503,14 +5347,12 @@ html, body, #root {
 
 .pdf-insertion-indicator.after {
   bottom: -2px;
-  border-bottom: 3px solid #30d158;
-  box-shadow: 0 3px 10px rgba(48, 209, 88, 0.7);
+  border-bottom: 2px solid #30d158;
 }
 
 .pdf-insertion-indicator.before {
   top: -2px;
-  border-top: 3px solid #30d158;
-  box-shadow: 0 -3px 10px rgba(48, 209, 88, 0.7);
+  border-top: 2px solid #30d158;
 }
 
 .pdf-insertion-badge {
@@ -5356,6 +6198,329 @@ html, body, #root {
   line-height: 1.4;
 }
 
+/* Feladatsor Drag & Drop és könyvtárfájl források */
+.problems-mode-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.problems-drag-fullscreen-overlay {
+  position: absolute;
+  inset: -6px;
+  background: rgba(10, 132, 255, 0.16);
+  border: 2px dashed #0a84ff;
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #ffffff;
+  pointer-events: none;
+  animation: fadeIn 0.12s ease;
+  box-shadow: 0 0 25px rgba(10, 132, 255, 0.35);
+}
+
+.drag-overlay-pulse-icon {
+  color: #38bdf8;
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+.drag-overlay-main-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.drag-overlay-sub-text {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.source-tab-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.mode-tab-dot-badge {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  box-shadow: 0 0 6px var(--accent-light);
+  margin-left: 3px;
+}
+
+.problems-source-files-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.problems-source-files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-text-subtle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.btn-text-subtle:hover {
+  color: #ff453a;
+  text-decoration: underline;
+}
+
+.problems-dropzone {
+  position: relative;
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-sm);
+  background: rgba(28, 28, 30, 0.4);
+  padding: 10px;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.problems-dropzone.drag-active {
+  border-color: var(--accent-light);
+  background: rgba(10, 132, 255, 0.12);
+  box-shadow: 0 0 16px rgba(10, 132, 255, 0.25);
+}
+
+.problems-dropzone-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 6px;
+  cursor: default;
+}
+
+.problems-dropzone-empty-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.problems-quick-add-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(10, 132, 255, 0.1);
+  border: 1px solid rgba(10, 132, 255, 0.28);
+  color: var(--accent-light);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.18s ease;
+}
+
+.problems-quick-add-current:hover {
+  background: rgba(10, 132, 255, 0.2);
+  border-color: rgba(10, 132, 255, 0.45);
+  color: #fff;
+  text-decoration: none;
+}
+
+.problems-dropzone-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-light);
+  flex-shrink: 0;
+}
+
+.problems-dropzone-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.problems-dropzone-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.problems-dropzone-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.problems-file-chip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.problems-file-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.problems-file-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.problems-file-chip-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+}
+
+.problems-file-icon {
+  color: var(--accent-light);
+  flex-shrink: 0;
+}
+
+.problems-file-chip-names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.problems-file-chip-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.problems-file-chip-rel {
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.problems-file-chip-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.problems-file-lines-badge {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  padding: 1px 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.problems-file-loading-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--accent-light);
+}
+
+.problems-file-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.problems-file-remove-btn:hover {
+  color: #ff453a;
+  background: rgba(255, 69, 58, 0.15);
+}
+
+.problems-dropzone-footer-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  padding-top: 4px;
+  padding-left: 2px;
+}
+
+.problems-picker-select-row {
+  margin-top: 2px;
+}
+
+.problems-topic-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.topic-auto-detect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent-light);
+  cursor: pointer;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  background: rgba(10, 132, 255, 0.08);
+  border: 1px solid rgba(10, 132, 255, 0.2);
+  transition: var(--transition);
+}
+
+.topic-auto-detect-btn:hover {
+  background: rgba(10, 132, 255, 0.16);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
 .problem-types-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
@@ -5901,58 +7066,9 @@ html, body, #root {
   border-radius: 8px;
 }
 
-/* ── AI Asszisztens Tantárgy Választó Sáv (Kizárólag Matematika & Fizika) ── */
+/* ── AI Asszisztens Tantárgy Választó Sáv – áthelyezve a fejlécbe (.ai-header-subject-group) ── */
 .ai-subject-strip {
-  padding: 8px 12px;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.ai-subject-switcher {
-  display: flex;
-  gap: 4px;
-  background: rgba(28, 28, 30, 0.65);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 3px;
-}
-
-.ai-subject-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: var(--font-ui);
-  color: var(--text-secondary);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.18s ease;
-  user-select: none;
-}
-
-.ai-subject-btn:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.ai-subject-btn.active {
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.ai-subject-btn.active.math,
-.ai-subject-btn.active.physics {
-  background: #636366;
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  display: none;
 }
 
 
@@ -6055,17 +7171,136 @@ html, body, #root {
 
 /* Modális ablakok */
 .modal-overlay {
-  background: rgba(0, 0, 0, 0.45);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  backdrop-filter: blur(20px) saturate(160%);
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
 }
 .modal {
-  background: rgba(44, 44, 46, 0.92);
+  background: rgba(44, 44, 46, 0.94);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   backdrop-filter: blur(40px) saturate(180%);
-  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+}
+
+.modal.settings-modal {
+  padding: 0;
+  gap: 0;
+  max-width: 640px;
+  width: 92%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-modal .modal-header {
+  padding: 16px 20px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.settings-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.settings-header-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-header-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f5f5f7;
+  letter-spacing: -0.01em;
+}
+
+.settings-header-subtitle {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.settings-tabs-strip {
+  padding: 10px 20px;
+  background: rgba(28, 28, 30, 0.4);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-tabs-segmented {
+  display: inline-flex;
+  gap: 3px;
+  background: rgba(118, 118, 128, 0.24);
+  padding: 2.5px;
+  border-radius: 9px;
+}
+
+.settings-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0.5px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  user-select: none;
+}
+
+.settings-tab-btn:hover {
+  color: #f5f5f7;
+}
+
+.settings-tab-btn.active {
+  background: #636366;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  font-weight: 600;
+}
+
+.settings-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #30d158;
+  margin-left: 2px;
+}
+
+.settings-modal-body {
+  padding: 18px 20px !important;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.settings-modal-footer {
+  border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 /* Oldalsáv, panelek: hajszálvékony elválasztók */
@@ -6081,28 +7316,69 @@ html, body, #root {
 }
 
 /* Szegmentált kapcsolók: iOS/macOS stílus */
-.subject-switcher, .ai-subject-switcher {
+.subject-switcher, .ai-header-subject-group {
   background: rgba(118, 118, 128, 0.24);
   border: none;
   padding: 2px;
-  border-radius: 9px;
+  border-radius: 7px;
 }
-.subject-btn.active, .ai-subject-btn.active {
+.subject-btn.active, .ai-header-subject-btn.active {
   background: #636366;
   border: 0.5px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   color: #ffffff;
 }
-.ai-subject-btn.active.math, .ai-subject-btn.active.physics {
+.ai-subject-strip { display: none; }
+
+/* ── Tantárgy választó kapcsoló (Matematika & Fizika – 26px Apple szegmentált kapcsoló a törzsben) ── */
+.ai-subject-switcher {
+  display: flex;
+  gap: 3px;
+  background: rgba(118, 118, 128, 0.24);
+  padding: 2px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.ai-subject-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  background: transparent;
+  border: 0.5px solid transparent;
+  border-radius: 6px;
+  color: #a1a1a6;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.ai-subject-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ai-subject-btn.active {
   background: #636366;
+  color: #ffffff;
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  color: #ffffff;
+  font-weight: 600;
 }
-.ai-subject-strip { background: transparent; border-bottom: 0.5px solid var(--border-subtle); }
 
-/* Fejlécek (szerkesztő / PDF / AI): egységes, lapos felület */
-.editor-tab-header, .preview-pane-header, .ai-panel-header {
+/* Fejlécek (fájlkezelő / szerkesztő / PDF / AI): egységes, lapos felület */
+.sidebar-header, .editor-tab-header, .preview-pane-header, .ai-panel-header {
   background: rgba(28, 28, 30, 0.92);
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
 }
@@ -6234,4 +7510,605 @@ html, body, #root {
   border-radius: 10px !important;
   border: 0.5px solid rgba(255, 255, 255, 0.14) !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TikZ Ábra generátor: Képbeillesztés & Gyors sablonok
+   ───────────────────────────────────────────────────────────── */
+.tikz-mode-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.tikz-mode-container.drag-over-active {
+  outline: 2px dashed #0a84ff;
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+.tikz-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tikz-dropzone:hover {
+  border-color: rgba(10, 132, 255, 0.5);
+  background: rgba(10, 132, 255, 0.05);
+}
+
+.tikz-dropzone-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(10, 132, 255, 0.12);
+  color: #3b9eff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.tikz-dropzone:hover .tikz-dropzone-icon {
+  transform: scale(1.06);
+  background: rgba(10, 132, 255, 0.2);
+}
+
+.tikz-dropzone-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tikz-dropzone-text .primary-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tikz-dropzone-text .sub-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.tikz-dropzone-text .sub-text strong {
+  color: #70b5ff;
+}
+
+.tikz-image-preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tikz-image-preview-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.tikz-image-preview-card img {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  cursor: pointer;
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.tikz-image-preview-card img:hover {
+  opacity: 0.85;
+  transform: scale(1.04);
+}
+
+.tikz-image-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tikz-image-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tikz-image-remove-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.tikz-image-remove-btn:hover {
+  background: var(--error, #ff453a);
+  color: #ffffff;
+}
+
+.tikz-add-more-img-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tikz-add-more-img-btn:hover {
+  border-color: rgba(10, 132, 255, 0.5);
+  color: #70b5ff;
+  background: rgba(10, 132, 255, 0.06);
+}
+
+.tikz-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.tikz-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-ui);
+}
+
+.tikz-preset-chip:hover {
+  background: rgba(10, 132, 255, 0.15);
+  border-color: rgba(10, 132, 255, 0.35);
+  color: #70b5ff;
+  transform: translateY(-1px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TikZ Mini-Előnézet & Finomhangoló & Beillesztési / Export box (C & D)
+   ───────────────────────────────────────────────────────────── */
+.tikz-preview-card {
+  margin-top: 10px;
+  background: rgba(28, 28, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.2s ease;
+}
+
+.tikz-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 6px;
+}
+
+.tikz-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tikz-preview-title .accent-color {
+  color: #0a84ff;
+}
+
+.tikz-status-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 0 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.tikz-status-badge.ready {
+  background: rgba(48, 209, 88, 0.18);
+  color: #30d158;
+  border: 0.5px solid rgba(48, 209, 88, 0.3);
+}
+
+.tikz-status-badge.error {
+  background: rgba(255, 69, 58, 0.18);
+  color: #ff453a;
+  border: 0.5px solid rgba(255, 69, 58, 0.3);
+}
+
+.tikz-preview-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tikz-preview-tabs {
+  display: flex;
+  background: rgba(118, 118, 128, 0.24);
+  border-radius: 6px;
+  padding: 1.5px;
+  gap: 1px;
+}
+
+.tikz-preview-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 500;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  height: 22px;
+}
+
+.tikz-preview-tab-btn.active {
+  background: #636366;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  font-weight: 600;
+}
+
+.tikz-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: rgba(118, 118, 128, 0.2);
+  border-radius: 6px;
+  padding: 1.5px 3px;
+  height: 22px;
+}
+
+.tikz-zoom-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 3px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tikz-zoom-label:hover {
+  color: #70b5ff;
+}
+
+.tikz-tool-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.tikz-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.tikz-tool-btn.close:hover {
+  background: rgba(255, 69, 58, 0.2);
+  color: #ff453a;
+}
+
+.tikz-preview-body {
+  min-height: 120px;
+  max-height: 250px;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px;
+}
+
+.tikz-mini-canvas-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  cursor: zoom-in;
+  transition: transform 0.15s ease;
+}
+
+.tikz-mini-canvas-container:hover {
+  transform: scale(1.01);
+}
+
+.tikz-mini-canvas-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 24px;
+}
+
+.tikz-compile-error-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 69, 58, 0.08);
+  border: 1px solid rgba(255, 69, 58, 0.25);
+  border-radius: 8px;
+}
+
+.tikz-error-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff453a;
+}
+
+.tikz-error-log {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #ffb4af;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px 10px;
+  border-radius: 6px;
+  max-height: 120px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tikz-fix-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  color: #ffb4af;
+  border-color: rgba(255, 69, 58, 0.35);
+}
+
+.tikz-fix-btn:hover {
+  background: rgba(255, 69, 58, 0.2);
+  color: #ffffff;
+}
+
+.tikz-no-pdf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.tikz-code-editor-box {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.tikz-code-editor {
+  width: 100%;
+  min-height: 160px;
+  max-height: 280px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #79c0ff;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 10px 12px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.tikz-code-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tikz-code-lines-info {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tikz-refine-box {
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tikz-refine-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tikz-refine-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tikz-refine-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-ui);
+  white-space: nowrap;
+}
+
+.tikz-refine-chip:hover:not(:disabled) {
+  background: rgba(10, 132, 255, 0.15);
+  border-color: rgba(10, 132, 255, 0.35);
+  color: #70b5ff;
+}
+
+.tikz-refine-input-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.tikz-insert-options-box {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tikz-options-row {
+  display: flex;
+  gap: 8px;
+}
+
+.tikz-option-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tikz-opt-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tikz-segmented-control {
+  display: flex;
+  background: rgba(118, 118, 128, 0.24);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+  border: none;
+  height: 26px;
+  box-sizing: border-box;
+}
+
+.tikz-segmented-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 22px;
+  font-size: 10.5px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tikz-segmented-btn.active {
+  background: #636366;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.tikz-caption-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tikz-insert-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
 }

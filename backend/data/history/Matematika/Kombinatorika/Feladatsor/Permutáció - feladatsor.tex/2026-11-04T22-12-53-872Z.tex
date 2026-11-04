@@ -1,0 +1,156 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+\usepackage{tikz}
+\usepackage{enumitem}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\title{Permutáció}
+\author{Matematika oktatási segédlet}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Elméleti áttekintés és képletek}
+
+A kombinatorika egyik alapvető kérdése, hogy adott elemeket hányféleképpen tudunk sorba rendezni. Ezt a folyamatot permutációnak nevezzük.
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!75!black,title=1. Ismétlés nélküli permutáció]
+Ha $n$ darab \textbf{különböző} elemünk van, akkor ezek összes lehetséges sorrendjének (azaz ismétlés nélküli permutációjának) a száma ($P_n$):
+\begin{equation}
+    P_n = n! = n \cdot (n - 1) \cdot (n - 2) \cdot \dots \cdot 1
+\end{equation}
+Megállapodás szerint a nulla faktoriális értéke: $0! = 1$.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!75!black,title=2. Ismétléses permutáció]
+Ha $n$ darab elemünk van, de ezek között vannak azonosak is ($k_1$ darab az első fajtából, $k_2$ darab a második fajtából, $\dots$, $k_r$ darab az $r$-edik fajtából, ahol $k_1 + k_2 + \dots + k_r = n$), akkor az ismétléses permutáció száma:
+\begin{equation}
+    P_n^{k_1, k_2, \dots, k_r} = \frac{n!}{k_1! \cdot k_2! \cdot \dots \cdot k_r!}
+\end{equation}
+\end{tcolorbox}
+
+\vspace{0.3cm}
+\noindent\textbf{Fontos módszertani tippek a feladatokhoz:}
+\begin{itemize}
+    \item \textbf{Szomszédsági feltétel („ragasztás”):} Ha bizonyos elemeknek egymás mellett kell lenniük, gondolatban ragasszuk őket egyetlen egységgé (csomaggá), rendezzük a csomagokat, majd szorozzunk be a csomagon belüli elemek lehetséges helycseréivel ($k!$).
+    \item \textbf{Kizárásos feladatok:} Ha azt vizsgáljuk, hogy valami \emph{nem} történhet meg, gyakran egyszerűbb az összes esetből kivonni a tiltott (kívánt ellentétes) esetek számát.
+    \item \textbf{Nulla a számjegyek elején:} Határozottan figyeljünk arra, hogy egy természetes szám legelső helyi értékére (pl. ötjegyű szám tízezresek helyére) a $0$ nem kerülhet!
+\end{itemize}
+
+\newpage
+
+\section*{Gyakorló feladatok}
+
+\begin{enumerate}[label=\arabic*., leftmargin=*]
+    
+    \item \textbf{1. Feladat} \textsf{\small [K1 – Alap]} \\
+    Egy öttagú baráti társaság (Anna, Bea, Cecil, Dani, Efraim) megérkezik a színházba, és egy öt egymás melletti székből álló sorba ül le.
+    \begin{enumerate}[label=\alph*)]
+        item Hányféleképpen ülhetnek le egymás mellé?
+        item Hány olyan ülésrend létezik, amelyben Anna ül a bal szélső (1.) széken?
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{2. Feladat} \textsf{\small [K1 – Alap]} \\
+    Határozd meg az alábbi kifejezések pontos értékét számológép nélkül:
+    \begin{enumerate}[label=\alph*)]
+        item $\frac{8!}{6!}$
+        item $\frac{10!}{8! \cdot 2!}$
+        item $\frac{7! - 6!}{5!}$
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{3. Feladat} \textsf{\small [K1 – Alap]} \\
+    Az \textbf{ANANÁSZ} szó betűit sorba rendezzük. 
+    \begin{enumerate}[label=\alph*)]
+        item Hány betűs a szó, és mennyi az egyes betűk gyakorisága (leltár)?
+        item Hány különböző (értelmes vagy értelmetlen) szót tudunk kirakni a betűiből?
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{4. Feladat} \textsf{\small [K2 – Közepes]} \\
+    Egy könyvespolcon 6 különböző regény sorakozik egymás mellett.
+    \begin{enumerate}[label=\alph*)]
+        item Hányféleképpen helyezhetjük el őket a polcon?
+        item Hány olyan elrendezés létezik, amelyben két adott regény (az A és a B) pontosan egymás mellett van?
+        item Hány olyan elrendezés van, amelyben az A és a B regény \emph{nem} kerül egymás mellé?
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{5. Feladat} \textsf{\small [K2 – Közepes]} \\
+    Írjuk fel az összes olyan négyjegyű számot, amely a $1, 2, 3, 4$ számjegyek felhasználásával készül (minden számjegyet pontosan egyszer használunk fel). 
+    \begin{enumerate}[label=\alph*)]
+        item Hány darab ilyen négyjegyű szám létezik összesen?
+        item Hány olyan szám van ezek között, amely páros?
+        item Hány olyan szám van, amely 2500-nál nagyobb?
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{6. Feladat} \textsf{\small [K2 – Közepes]} \\
+    Egy büfében 4 fiú és 4 lány áll sorban a pénztárnál.
+    \begin{enumerate}[label=\alph*)]
+        item Hányféleképpen állhatnak sorba, ha nincs semmilyen megkötés?
+        item Hányféleképpen állhatnak sorban, ha az összes fiú egymás mellett, és az összes lány is egymás mellett áll?
+        item Hány olyan sorrend létezik, amelyben a fiúk és a lányok felváltva állnak (azaz két azonos nemű személy nem áll közvetlenül egymás mögött)?
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{7. Feladat} \textsf{\small [K2 – Közepes]} \\
+    A $0, 1, 1, 2, 2, 2$ számjegyek felhasználásával hatjegyű számokat képezünk, mind a 6 számjegyet felhasználva egy-egy számban.
+    \begin{enumerate}[label=\alph*)]
+        item Hány darab hatjegyű szám készíthető összesen?
+        item Hány olyan szám van a fenti adatokból, amely nem kezdődhet nullával (azaz valódi hatjegyű szám)?
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{8. Feladat} \textsf{\small [K3 – Nehezebb]} \\
+    Hat barát (három házaspár: Anna és Péter, Eszter és Gábor, Dóra és Tamás) kerek asztal köré ül vacsorázni. A forgatással egymásba átvihető ülésrendek azonosnak számítanak.
+    \begin{enumerate}[label=\alph*)]
+        item Hányféleképpen ülhetnek le a kerek asztal köré összesen?
+        item Hány olyan ülésrend létezik, amelyben minden férj a felesége mellett ül?
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{9. Feladat} \textsf{\small [K3 – Nehezebb]} \\
+    Egy sakktornán 5 magyar és 3 külföldi versenyző indul. A díjkiosztón egyetlen hosszú sorban állnak fel a fotózáshoz.
+    \begin{enumerate}[label=\alph*)]
+        item Hányféle sorrendben állhatnak fel, ha a magyarok és a külföldiek is tetszőleges sorrendben követhetik egymást?
+        item Hány olyan felállási sorrend létezik, amelyben a szélsőséges helyeken (a sor két végén, azaz az 1. és a 8. helyen) egyaránt magyar versenyző áll?
+    \end{enumerate}
+
+    \vspace{0.4cm}
+
+    \item \textbf{10. Feladat} \textsf{\small [K3 – Nehezebb]} \\
+    Adott az $\{1, 2, 3, 4, 5\}$ számhalmaz. Ebből a számjegyekből tetszőleges sorrendben ötjegyű számokat képezünk úgy, hogy mind az 5 számjegyet pontosan egyszer használjuk fel.
+    \begin{enumerate}[label=\alph*)]
+        item Mennyi az összes így képezhető ötjegyű szám összege? (\emph{Útmutatás: Gondold végig, hogy az egyes helyi értékeken – egyesek, tízesek, stb. – az 1, 2, 3, 4, 5 számjegyek egyaránt hányszor fordulnak elő!})
+    \end{enumerate}
+
+\end{enumerate}

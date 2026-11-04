@@ -12,6 +12,13 @@ frontend/node_modules/
 backend/temp/
 backend/uploads/
 *.log
+*.aux
+*.out
+*.synctex.gz
+*.toc
+*.fls
+*.fdb_latexmk
+document.pdf
 
 # Építési fájlok
 frontend/dist/

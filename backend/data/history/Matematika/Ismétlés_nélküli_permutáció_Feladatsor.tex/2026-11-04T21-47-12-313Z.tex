@@ -1,0 +1,269 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+
+\usepackage{hyperref}
+
+\title{Ismétlés nélküli permutáció}
+\author{Mester Pedagógus}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{center}
+    \begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,width=0.9\textwidth,arc=4mm,title=\textbf{Üdvözlet a gyakorlóhoz!}]
+    Ez a feladatsor az \textbf{ismétlés nélküli permutáció} témakörét dolgozza fel a gimnáziumi tananyag és az érettségi követelmények alapján. Oldd meg a feladatokat lépésről lépésre, majd ellenőrizd az eredményeket a dokumentum végén található részletes megoldókulcs segítségével!
+    \end{tcolorbox}
+\end{center}
+
+\vspace{0.5cm}
+
+\section*{Elméleti áttekintés és képletek}
+
+A kombinatorika egyik alapfogalmazása az ismétlés nélküli permutáció, amely azt vizsgálja, hogy hányféleképpen sorbarendezhetünk $n$ darab különböző elemet úgy, hogy mindegyiket pontosan egyszer használjuk fel.
+
+\subsection*{1. Alapfogalom és képlet}
+Ha $n$ darab különböző elemünk van, akkor ezek összes lehetséges sorrendjének (permutációjának) száma ($P_n$):
+\begin{equation}
+    P_n = n! = n \cdot (n - 1) \cdot (n - 2) \cdot \ldots \cdot 1
+\end{equation}
+Ahol a $!$ jelölés a \textbf{faktoriális} műveletet takarja. Megállapodás szerint $0! = 1$.
+
+\subsection*{2. Speciális esetek és technikák}
+\begin{itemize}
+    \item \textbf{Ragasztott (összetartozó) elemek:} Ha bizonyos elemeknek egymás mellett kell lenniük, akkor azokat egyetlen „csomagként” kezeljük. A csomagok sorrendjét megszorozzuk a csomagon belüli elemek lehetséges belső helycseréivel.
+    \item \textbf{Kizárás (komplementer módszer):} Ha azt kérdezik, hogy hány olyan eset van, amikor bizonyos elemek \emph{nem} ülhetnek/állhatnak egymás mellett, kiszámoljuk az összes lehetséges eset számát, és ebből kivonjuk a tiltott (egymás mellett lévő) esetek számát.
+    \item \textbf{Fixált (rögzített) pozíciók:} Ha egy adott elem fix helyre kerül (pl. az első helyre), akkor arra a pozícióra $1$ lehetőségünk van, a maradék elemeket pedig a többi helyen permutáljuk.
+    \item \textbf{Ciklikus sorrend (körmutáció):} Ha $n$ embert ültetünk kör alakú asztal köré, és a forgatással egymásba átvihető helyzeteket azonosnak tekintjük, a lehetséges elrendezések száma:
+    \begin{equation}
+        P_{n,\text{kör}} = (n - 1)!
+    \end{equation}
+\end{itemize}
+
+\subsection*{3. Ellenőrző kérdések (Gyorsteszt)}
+Mielőtt hozzákezdessz egy feladathoz, ellenőrizd a következő három feltételt:
+1. Ugyanannyi a hely, mint az elem? (Mindenkit sorba rakunk?)
+2. Számít a sorrend? (A helycsere újabb esetet ad?)
+3. Minden elem különbözik? (Nincsenek egyforma elemek?)
+Ha mindháromra \textbf{igen} a válasz, használhatod az $n!$ képletet!
+
+\newpage
+
+\section*{Gyakorló feladatok}
+
+\begin{enumerate}
+    
+    \item \textbf{1. Feladat} \textsf{\small [Alapszint]}
+    \begin{enumerate}[label=\alph*)]
+        \item Számítsd ki a következő kifejezések értékét: $4!$, $6!$, valamint $\frac{7!}{5!}$!
+        \item Egy könyvespolcon 5 különböző regény sorakozik egymás mellett. Hányféleképpen rendezhetjük sorba ezeket a könyveket?
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{2. Feladat} \textsf{\small [Alapszint]}
+    Egy 4 fős baráti társaság (Anna, Balázs, Cili, Dani) beül a mozikba egy 4 székből álló sorba.
+    \begin{enumerate}[label=\alph*)]
+        \item Hányféleképpen ülhetnek le egymás mellé?
+        \item Hány olyan ülésrend létezik, amelyben Anna az első széken ül?
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{3. Feladat} \textsf{\small [Alapszint]}
+    Az $1, 2, 3, 4, 5$ számjegyek felhasználásával hány darab 5-jegyű, különböző számjegyekből álló számot készíthetünk? Hány olyan van ezek között, amely páratlan számmal végződik?
+
+    \vspace{0.3cm}
+
+    \item \textbf{4. Feladat} \textsf{\small [Középszint]}
+    Hányféleképpen ülhet le 6 ember (három férfi és három nő) egy egyenes padra úgy, hogy a két neme váltakozva kövesse egymást (azaz F--N--F--N--F--N vagy N--F--N--F--N--F)?
+
+    \vspace{0.3cm}
+
+    \item \textbf{5. Feladat} \textsf{\small [Középszint]}
+    Egy 6 tagú tánccsoport tagjai (köztük Péter és Kata) felállnak egy sorba fotózkodáshoz. Hányféleképpen állhatnak sorba, ha Péter és Kata mindenképpen egymás mellett akarnak állni?
+
+    \vspace{0.3cm}
+
+    \item \textbf{6. Feladat} \textsf{\small [Középszint]}
+    Hányféleképpen ülhet le 5 ember egy kerek asztal köré, ha a forgatással egymásba átvihető ülésrendek megegyeznek?
+
+    \vspace{0.3cm}
+
+    \item \textbf{7. Feladat} \textsf{\small [Emelt szint]}
+    Az $0, 1, 2, 3, 4$ számjegyek felhasználásával hány darab 5-jegyű, különböző számjegyeket tartalmazó számot tudunk képezni? (\emph{Figyelj a nullával kezdődő esetek kiszűrésére!})
+
+    \vspace{0.3cm}
+
+    \item \textbf{8. Feladat} \textsf{\small [Emelt szint]}
+    Hány olyan 5-jegyű szám létezik a $1, 2, 3, 4, 5$ számjegyekből (minden számjegyet pontosan egyszer használva), amelyben az 1-es és a 2-es számjegy \textbf{nem} áll egymás mellett?
+
+    \vspace{0.3cm}
+
+    \item \textbf{9. Feladat} \textsf{\small [Emelt szint]}
+    Egy nyolctagú küldöttség (4 matematikatanár és 4 fizikatanár) sorakozik fel egy emelvényen. Hányféleképpen tehetik ezt meg, ha a matematikatanárok egymás mellett, valamint a fizikatanárok is egymás mellett (zárt csoportokban) kell, hogy álljanak?
+
+    \vspace{0.3cm}
+
+    \item \textbf{10. Feladat} \textsf{\small [Kihívás]}
+    Egy nemzetközi konferencián 3 magyar, 3 angol és 2 német küldött ül le egy kerekasztal köré. Hány olyan körülszülési rend létezik, amelyben az azonos nemzetiségűek egymás mellett (zárt csoportban) foglalnak helyet?
+
+\end{enumerate}
+
+\newpage
+\section*{Részletes megoldókulcs}
+
+\begin{enumerate}
+    \item \textbf{1. Feladat megoldása}
+    \begin{itemize}
+        \item $4! = 4 \cdot 3 \cdot 2 \cdot 1 = 24$.
+        \item $6! = 6 \cdot 5 \cdot 4 \cdot 3 \cdot 2 \cdot 1 = 720$.
+        \item $\frac{7!}{5!} = \frac{7 \cdot 6 \cdot 5!}{5!} = 7 \cdot 6 = 42$.
+        \item 5 különböző könyv sorbarendezése: $P_5 = 5! = 120$ lehetőség.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Faktoriálisok kiszámítása (3 db): $3 \times 1$ pont.
+    - Könyvek sorrendje: 1 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{2. Feladat megoldása}
+    \begin{itemize}
+        \item a) 4 ember sorba rendezése 4 széken: $P_4 = 4! = 24$ lehetőség.
+        \item b) Ha Anna az 1. széken ül (fixált pozíció), akkor a maradék 3 helyre a maradék 3 ember $3!$-féleképpen ülhet le: $1 \cdot 3! = 6$ lehetőség.
+    \end{itemize}
+    \emph{Pontozás:}
+    - a) alpont helyes képlete és eredménye: 2 pont.
+    - b) alpont logikája (fixálás) és számítása: 2 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{3. Feladat megoldása}
+    \begin{itemize}
+        \item Összes 5-jegyű szám: $P_5 = 5! = 120$.
+        \item Páratlan számra végződés: Az utolsó helyre csak a páratlan számjegyek ($1, 3, 5$) kerülhetnek (3 lehetőség). A maradék 4 helyre a fennmaradó 4 számjegy tetszőleges sorrendben jöhet ($4! = 24$). Így a lehetőségek száma: $3 \cdot 4! = 3 \cdot 24 = 72$.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Összes eset: 1 pont.
+    - Páratlan végződés feltétele (3 lehetőség): 2 pont.
+    - Végeredmény: 1 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{4. Feladat megoldása}
+    \begin{itemize}
+        \item Kétféle mintázat lehetséges: F--N--F--N--F--N vagy N--F--N--F--N--F (2 eset).
+        \item Mindkét esetben a 3 fiú a saját 3 helyén $3!$-féleképpen, a 3 lány a saját 3 helyén szintén $3!$-féleképpen rendezhető sorba.
+        \item Összesen: $2 \cdot 3! \cdot 3! = 2 \cdot 6 \cdot 6 = 72$ lehetőség.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Mintázatok számának felismerése (2): 1 pont.
+    - Fiúk és lányok permutációja ($3! \cdot 3!$): 2 pont.
+    - Végeredmény: 1 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{5. Feladat megoldása}
+    \begin{itemize}
+        \item Pétert és Katát összeragasztjuk, így $6-1 = 5$ "csomagunk" lesz, amik $5!$-féleképpen rendezhetők sorba.
+        \item A csomagon belül Péter és Kata helyet cserélhet ($2! = 2$ lehetőség).
+        \item Összesen: $5! \cdot 2! = 120 \cdot 2 = 240$ lehetőség.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Csomagmódszer ($5!$): 2 pont.
+    - Belső helycsere ($2!$): 1 pont.
+    - Végeredmény: 1 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{6. Feladat megoldása}
+    \begin{itemize}
+        \item Körmutáció képlete alapján: $(n-1)! = (5-1)! = 4! = 24$ különböző elrendezés létezik.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Körmutáció képletének ismerete $((n-1)!)$: 2 pont.
+    - Számítás és eredmény: 2 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{7. Feladat megoldása}
+    \begin{itemize}
+        \item Összes lehetséges 5-jegyű sorrend megkötés nélkül: $5! = 120$.
+        \item Hány olyan van, ami 0-val kezdődik? Ha az 1. helyen 0 áll, a maradék 4 helyen a $1, 2, 3, 4$ számjegyek $4! = 24$-féleképpen rendezhetők.
+        \item Megengedett számok: $120 - 24 = 96$.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Összes permutáció ($5!$): 1 pont.
+    - Nullával kezdődő tiltott esetek kiszámítása ($4!$): 2 pont.
+    - Kivonás és végeredmény: 1 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{8. Feladat megoldása}
+    \begin{itemize}
+        \item Összes eset: $5! = 120$.
+        \item Tiltott esetek (1 és 2 egymás mellett): Az 1-est és 2-est összeragasztjuk, így $4! \cdot 2! = 24 \cdot 2 = 48$ tiltott eset van.
+        \item Komplementer kivonás: $120 - 48 = 72$.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Összes eset ($5!$): 1 pont.
+    - Tiltott esetek kiszámítása (ragasztás): 2 pont.
+    - Komplementer számítás: 1 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{9. Feladat megoldása}
+    \begin{itemize}
+        \item A 4 mat-tanár egy blokk ($4!$), a 4 fiz-tanár egy blokk ($4!$). A 2 blokk egymáshoz képest $2!$-féleképpen cserélhet helyet.
+        \item Összesen: $2! \cdot 4! \cdot 4! = 2 \cdot 24 \cdot 24 = 1152$ lehetőség.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Blokkok belső sorrendje ($4! \cdot 4!$): 2 pont.
+    - Blokkok nagysorrendje ($2!$): 1 pont.
+    - Végeredmény: 1 pont.
+    \textbf{Összesen: 4 pont.}
+
+    \vspace{0.3cm}
+
+    \item \textbf{10. Feladat megoldása}
+    \begin{itemize}
+        \item Az asztal körül 3 nemzetiségi csoport (M, A, N) foglal helyet. Első lépésben a 3 csoportot mint egységeket ültetjük le kör alakban: $(3-1)! = 2! = 2$ lehetőség.
+        \item Ezen túlmenően a csoportokon belül a tagok is helyet cserélhetnek: a 3 magyar $3!$, a 3 angol $3!$, a 2 német pedig $2!$-féleképpen.
+        \item Összesen: $(3-1)! \cdot 3! \cdot 3! \cdot 2! = 2 \cdot 6 \cdot 6 \cdot 2 = 144$ lehetőség.
+    \end{itemize}
+    \emph{Pontozás:}
+    - Csoportok körbefuttatása ($(3-1)!$): 2 pont.
+    - Csoporton belüli permutációk ($3! \cdot 3! \cdot 2!$): 2 pont.
+    - Végeredmény: 1 pont.
+    \textbf{Összesen: 5 pont.}
+
+end{enumerate}
+
+end{document}

@@ -90,7 +90,7 @@ export default function StructureFixModal({ result, onClose, onRevert }) {
                         color: 'var(--text-primary)'
                       }}
                     >
-                      <CheckCircle2 size={15} color="var(--success, #10b981)" style={{ flexShrink: 0, marginTop: 1 }} />
+                      <CheckCircle2 size={15} color="var(--success, #30d158)" style={{ flexShrink: 0, marginTop: 1 }} />
                       <span>{item}</span>
                     </div>
                   ))}
@@ -104,13 +104,13 @@ export default function StructureFixModal({ result, onClose, onRevert }) {
               gap: 10,
               padding: '14px',
               borderRadius: 'var(--radius-md, 8px)',
-              background: 'rgba(16, 185, 129, 0.08)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
+              background: 'rgba(48, 209, 88, 0.08)',
+              border: '1px solid rgba(48, 209, 88, 0.22)',
               fontSize: 13,
               color: 'var(--text-secondary)',
               lineHeight: 1.5
             }}>
-              <CheckCircle2 size={18} color="var(--success, #10b981)" style={{ flexShrink: 0, marginTop: 2 }} />
+              <CheckCircle2 size={18} color="var(--success, #30d158)" style={{ flexShrink: 0, marginTop: 2 }} />
               <div>
                 <strong style={{ color: 'var(--text-primary)' }}>
                   A dokumentum szerkezete és számozása már tökéletes!

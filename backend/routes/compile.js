@@ -87,7 +87,7 @@ function extractTexErrors(fullLog) {
 
 // PDF Fordítás végrehajtása SyncTeX generálással
 router.post('/', async (req, res) => {
-  let { content } = req.body;
+  let { content, filePath, fileName, subject } = req.body;
   if (!content) return res.status(400).json({ error: 'Hiányzó LaTeX tartalom' });
 
   // Automatikus preambulum- és csomagkiegészítés a hibátlan megjelenítéshez
@@ -121,31 +121,57 @@ router.post('/', async (req, res) => {
 
     const runLatex = () =>
       new Promise((resolve) => {
-        exec(command, { cwd: jobDir, timeout: 60000 }, (error, stdout, stderr) => {
+        exec(command, { cwd: jobDir, timeout: 20000, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
           resolve({ error, stdout, stderr });
         });
       });
 
     // Első fordítási kör
     const firstResult = await runLatex();
-    let pdfExists = await fs.pathExists(pdfFile);
 
-    let result = firstResult;
-    // Csak akkor futtatjuk a második kört (kereszthivatkozásokhoz), ha az első sikeres volt és létezik a PDF
-    if (pdfExists) {
-      result = await runLatex();
-      pdfExists = await fs.pathExists(pdfFile);
-    }
-
-    if (!pdfExists) {
+    // Időtúllépés ellenőrzése
+    if (firstResult.error && (firstResult.error.killed || firstResult.error.signal === 'SIGTERM')) {
       const logFile = path.join(jobDir, 'document.log');
       let log = '';
       if (await fs.pathExists(logFile)) {
         const full = await fs.readFile(logFile, 'utf8');
         log = extractTexErrors(full);
       }
-      await fs.remove(jobDir);
-      return res.status(422).json({ error: 'Fordítási hiba', log: log || result.stdout || result.stderr });
+      await fs.remove(jobDir).catch(() => {});
+      return res.status(422).json({
+        error: 'Időtúllépés',
+        log: log || 'A LaTeX fordító túllépte a maximális időkorlátot (20 mp). Kérjük, ellenőrizd a lezáratlan környezeteket vagy ciklusokat a kódban!'
+      });
+    }
+
+    let pdfExists = await fs.pathExists(pdfFile);
+    let pdfSize = 0;
+    if (pdfExists) {
+      try {
+        const stat = await fs.stat(pdfFile);
+        pdfSize = stat.size;
+      } catch {}
+    }
+    const isPdfValid = pdfExists && pdfSize > 100;
+
+    let result = firstResult;
+    // Csak akkor futtatjuk a második kört (kereszthivatkozásokhoz), ha az első sikeres volt hiba nélkül és van érvényes PDF
+    if (!firstResult.error && isPdfValid) {
+      result = await runLatex();
+    }
+
+    if (!isPdfValid) {
+      const logFile = path.join(jobDir, 'document.log');
+      let log = '';
+      if (await fs.pathExists(logFile)) {
+        const full = await fs.readFile(logFile, 'utf8');
+        log = extractTexErrors(full);
+      }
+      await fs.remove(jobDir).catch(() => {});
+      return res.status(422).json({
+        error: 'Fordítási hiba',
+        log: log || result.stdout || result.stderr || 'Nem jött létre érvényes PDF fájl a fordítás során.'
+      });
     }
 
     const pdfBuffer = await fs.readFile(pdfFile);
@@ -163,19 +189,32 @@ router.post('/', async (req, res) => {
     }
 
     // Aktív könyvtár frissítése a SyncTeX és az előnézet kiszolgálásához
-    await fs.ensureDir(ACTIVE_DIR);
-    await fs.copy(pdfFile, path.join(ACTIVE_DIR, 'document.pdf'));
-    await fs.copy(texFile, path.join(ACTIVE_DIR, 'document.tex'));
+    try {
+      await fs.ensureDir(ACTIVE_DIR);
+      await fs.copy(pdfFile, path.join(ACTIVE_DIR, 'document.pdf'));
+      await fs.copy(texFile, path.join(ACTIVE_DIR, 'document.tex'));
 
-    const synctexGz = path.join(jobDir, 'document.synctex.gz');
-    const synctexPlain = path.join(jobDir, 'document.synctex');
-    if (await fs.pathExists(synctexGz)) {
-      await fs.copy(synctexGz, path.join(ACTIVE_DIR, 'document.synctex.gz'));
-    } else if (await fs.pathExists(synctexPlain)) {
-      await fs.copy(synctexPlain, path.join(ACTIVE_DIR, 'document.synctex'));
+      const synctexGz = path.join(jobDir, 'document.synctex.gz');
+      const synctexPlain = path.join(jobDir, 'document.synctex');
+      if (await fs.pathExists(synctexGz)) {
+        await fs.copy(synctexGz, path.join(ACTIVE_DIR, 'document.synctex.gz'));
+      } else if (await fs.pathExists(synctexPlain)) {
+        await fs.copy(synctexPlain, path.join(ACTIVE_DIR, 'document.synctex'));
+      }
+
+      // Mentjük a lefordított fájl metaadatait a gyors helyreállításhoz
+      const meta = {
+        filePath: filePath || null,
+        fileName: fileName || (filePath ? path.basename(filePath) : null),
+        subject: subject || null,
+        compiledAt: new Date().toISOString()
+      };
+      await fs.writeJson(path.join(ACTIVE_DIR, 'meta.json'), meta);
+    } catch (activeErr) {
+      console.warn('[Compile] Figyelmeztetés: active mappába másolás sikertelen:', activeErr.message);
     }
 
-    await fs.remove(jobDir);
+    await fs.remove(jobDir).catch(() => {});
 
     res.json({
       success: true,
@@ -184,7 +223,59 @@ router.post('/', async (req, res) => {
       supplementedContent: finalContent !== content ? finalContent : undefined
     });
   } catch (err) {
+    console.error('[Compile] Nem várt fordítási hiba:', err);
     await fs.remove(jobDir).catch(() => {});
+    let texLog = '';
+    try {
+      const logFile = path.join(jobDir, 'document.log');
+      if (await fs.pathExists(logFile)) {
+        const full = await fs.readFile(logFile, 'utf8');
+        texLog = extractTexErrors(full);
+      }
+    } catch {}
+    res.status(422).json({
+      error: 'Fordítási hiba',
+      log: texLog || err.message || 'Belső szerverhiba fordítás közben'
+    });
+  }
+});
+
+// Aktuálisan lefordított dokumentum, PDF és metaadatok lekérdezése (oldalfrissítéskor való visszaállításhoz)
+router.get('/active', async (req, res) => {
+  try {
+    const pdfFile = path.join(ACTIVE_DIR, 'document.pdf');
+    const texFile = path.join(ACTIVE_DIR, 'document.tex');
+    const metaFile = path.join(ACTIVE_DIR, 'meta.json');
+
+    if (!(await fs.pathExists(pdfFile)) || !(await fs.pathExists(texFile))) {
+      return res.json({ success: true, hasActive: false });
+    }
+
+    const pdfBuffer = await fs.readFile(pdfFile);
+    const texContent = await fs.readFile(texFile, 'utf8');
+    let meta = null;
+    if (await fs.pathExists(metaFile)) {
+      meta = await fs.readJson(metaFile).catch(() => null);
+    }
+
+    res.json({
+      success: true,
+      hasActive: true,
+      pdf: pdfBuffer.toString('base64'),
+      content: texContent,
+      meta
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Aktív fordítási adatok törlése (pl. új üres dokumentum nyitásakor)
+router.delete('/active', async (req, res) => {
+  try {
+    await fs.emptyDir(ACTIVE_DIR);
+    res.json({ success: true });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -368,7 +459,7 @@ router.post('/figure-preview', async (req, res) => {
     });
   } catch (compileErr) {
     await fs.remove(jobDir).catch(() => {});
-    return res.status(500).json({
+    return res.status(422).json({
       error: 'Ábra fordítási hiba',
       details: compileErr.message
     });

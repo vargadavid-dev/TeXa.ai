@@ -1,0 +1,168 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+
+\title{Permutáció - Megoldókulcs}
+\author{Részletes kidolgozás és magyarázatok}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+\maketitle
+
+\section*{Részletes megoldások}
+
+\begin{enumerate}[label=\arabic*., leftmargin=*]
+
+    \item \textbf{1. Feladat megoldása} \textsf{\small [K1 – Alap]}
+    \begin{enumerate}[label=\alph*)]
+        \item 5 különböző személy leültetése egy 5 székből álló sorba ismétlés nélküli permutáció:
+        \[
+        P_5 = 5! = 5 \cdot 4 \cdot 3 \cdot 2 \cdot 1 = 120 \text{ lehetőség.}
+        \]
+        \item Ha Anna fixen a bal szélső (1.) széken ül, akkor a maradék 4 székre a maradék 4 ember ülhet tetszőleges sorrendben:
+        \[
+        1 \cdot P_4 = 1 \cdot 4! = 1 \cdot 24 = 24 \text{ lehetőség.}
+        \]
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{2. Feladat megoldása} \textsf{\small [K1 – Alap]}
+    \begin{enumerate}[label=\alph*)]
+        \item $\displaystyle \frac{8!}{6!} = \frac{8 \cdot 7 \cdot 6!}{6!} = 8 \cdot 7 = 56$
+        \item $\displaystyle \frac{10!}{8! \cdot 2!} = \frac{10 \cdot 9 \cdot 8!}{8! \cdot (2 \cdot 1)} = \frac{90}{2} = 45$
+        \item $\displaystyle \frac{7! - 6!}{5!} = \frac{7 \cdot 6 \cdot 5! - 6 \cdot 5!}{5!} = \frac{5!(42 - 6)}{5!} = 42 - 6 = 36$
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{3. Feladat megoldása} \textsf{\small [K1 – Alap]}
+    \begin{enumerate}[label=\alph*)]
+        \item A szó hossza $n = 7$. A betűk gyakorisága (leltár): 
+        A: 3 db, N: 2 db, S: 1 db, Z: 1 db. (Ellenőrzés: $3 + 2 + 1 + 1 = 7$).
+        \item Mivel vannak azonos betűk, ismétléses permutációt kell alkalmaznunk:
+        \[
+        P_7^{3, 2, 1, 1} = \frac{7!}{3! \cdot 2! \cdot 1! \cdot 1!} = \frac{5040}{6 \cdot 2} = \frac{5040}{12} = 420 \text{ szó.}
+        \]
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{4. Feladat megoldása} \textsf{\small [K2 – Közepes]}
+    \begin{enumerate}[label=\alph*)]
+        \item 6 különböző regény sorbarendezése: $P_6 = 6! = 720$ lehetőség.
+        \item Az A és B regényt „összeragasztjuk” egy egységgé. Így 5 csomagunk van, amik $5!$-féleképpen rendezhetők sorba, emellett a csomagon belül A és B helyet cserélhet ($2!$):
+        \[
+        5! \cdot 2! = 120 \cdot 2 = 240 \text{ lehetőség.}
+        \]
+        \item Komplementer módszerrel (összes eset mínusz az azonos helyen lévők esete):
+        \[
+        720 - 240 = 480 \text{ lehetőség.}
+        \]
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{5. Feladat megoldása} \textsf{\small [K2 – Közepes]}
+    \begin{enumerate}[label=\alph*)]
+        \item 4 különböző számjegy sorbarendezése: $4! = 24$ darab szám.
+        \item Páros szám akkor lesz, ha a végződése 2 vagy 4 (2 lehetőség). A maradék 3 számjegy a többi 3 helyre $3!$-féleképpen kerülhet:
+        \[
+        2 \cdot 3! = 2 \cdot 6 = 12 \text{ darab.}
+        \]
+        \item 2500-nál nagyobb szám akkor lehet, ha az első számjegy 3 vagy 4 (2 eset), vagy ha az első számjegy 2, de a második legalább 5 (itt nincs ilyen, mert csak 1,2,3,4 van, így a 2500-nál nagyobbak az 3-mal vagy 4-gyel kezdődőek). Pontosabban: az 1-gyel és 2-vel kezdődőek mind kisebbek 2500-nál. Összesen 24 szám van, ebből 6 db 1-gyel, 6 db 2-vel kezdődik ($12$ darab kisebb). Tehát: $24 - 12 = 12$ darab nagyobb szám van. (Vagy tételesen: 3-assal kezdődő: $3! = 6$, 4-essel kezdődő: $3! = 6$, összesen $6+6=12$).
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{6. Feladat megoldása} \textsf{\small [K2 – Közepes]}
+    \begin{enumerate}[label=\alph*)]
+        \item 8 személy sorbarendezése: $8! = 40\,320$ lehetőség.
+        \item A fiúkat egy csomagba, a lányokat egy csomagba ragasztjuk. 2 csomag van ($2!$). A fiúk egymás között $4!$, a lányok egymás között $4!$-féleképpen cserélhetnek helyet:
+        \[
+        2! \cdot 4! \cdot 4! = 2 \cdot 24 \cdot 24 = 1152 \text{ lehetőség.}
+        \]
+        \item Kétféle mintázat létezik: F-L-F-L-F-L-F-L vagy L-F-L-F-L-F-L-F. Mindkét esetben a fiúk $4!$-féleképpen, a lányok $4!$-féleképpen helyezkedhetnek el:
+        \[
+        2 \cdot 4! \cdot 4! = 2 \cdot 24 \cdot 24 = 1152 \text{ lehetőség.}
+        \]
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{7. Feladat megoldása} \textsf{\small [K2 – Közepes]}
+    \begin{enumerate}[label=\alph*)]
+        \item Összesen 6 elem, leltár: 0: 1 db, 1: 2 db, 2: 3 db ($1+2+3=6$):
+        \[
+        P_6^{1, 2, 3} = \frac{6!}{1! \cdot 2! \cdot 3!} = \frac{720}{1 \cdot 2 \cdot 6} = \frac{720}{12} = 60 \text{ darab.}
+        \]
+        \item Ha a szám 0-val kezdődik, az nem valódi hatjegyű szám. Kivonjuk azokat az eseteket, amikor az első helyen 0 áll. Ha a 0 fixen az elején van, a maradék 5 helyre az 1, 1, 2, 2, 2 számjegyek kerülnek:
+        \[
+        \frac{5!}{2! \cdot 3!} = \frac{120}{2 \cdot 6} = 10 \text{ darab.}
+        \]
+        Ekkor a valódi hatjegyű számok száma: $60 - 10 = 50$ darab.
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{8. Feladat megoldása} \textsf{\small [K3 – Nehezebb]}
+    \begin{enumerate}[label=\alph*)]
+        \item 6 ember kerek asztal körüli ültetése (körmutáció):
+        \[
+        (6 - 1)! = 5! = 120 \text{ lehetőség.}
+        \]
+        \item Mindhárom házaspárt összeragasztjuk (3 páros csomag). 3 csomag kerek asztal körüli elhelyezése: $(3-1)! = 2! = 2$ féleképpen történhet. Ezen kívül mindhárom házaspáron belül a férj és feleség cserélhet helyet ($2! \cdot 2! \cdot 2!$):
+        \[
+        (3-1)! \cdot 2! \cdot 2! \cdot 2! = 2! \cdot 8 = 2 \cdot 8 = 16 \text{ lehetőség.}
+        \]
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{9. Feladat megoldása} \textsf{\small [K3 – Nehezebb]}
+    \begin{enumerate}[label=\alph*)]
+        \item Összesen 8 versenyző sorbarendezése: $8! = 40\,320$ lehetőség.
+        \item Az 1. és a 8. helyre magyar versenyző kerül. Az 5 magyar közül 2-t kiválasztunk a két végpontra ($5 \cdot 4 = 20$ lehetőség), a maradék 6 ember pedig tetszőleges sorrendben áll a belső 6 helyre ($6!$):
+        \[
+        5 \cdot 4 \cdot 6! = 20 \cdot 720 = 14\,400 \text{ lehetőség.}
+        \]
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \item \textbf{10. Feladat megoldása} \textsf{\small [K3 – Nehezebb]}
+    \begin{enumerate}[label=\alph*)]
+        \item Az összes lehetséges ötjegyű számok száma $P_5 = 5! = 120$ darab. 
+        Minden számjegy (1, 2, 3, 4, 5) minden egyes helyi értéken (egyesek, tízesek, százasok, ezresek, tízezresek) egyenlő arányban, azaz pontosan $\frac{120}{5} = 24$-szer fordul elő.
+        Ezért az egyes helyi értékek összesített értéke:
+        \[
+        (1 + 2 + 3 + 4 + 5) \cdot 24 = 15 \cdot 24 = 360.
+        \]
+        Mivel ez minden helyi értéken (1, 10, 100, 1000, 10000) fennáll, az összes szám összege:
+        \[
+        360 \cdot (1 + 10 + 100 + 1000 + 10000) = 360 \cdot 11\,111 = 3\,999\,960.
+        \]
+    \end{enumerate}
+
+\end{enumerate}
+
+\end{document}
