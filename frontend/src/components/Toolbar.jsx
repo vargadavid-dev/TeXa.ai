@@ -108,8 +108,8 @@ export default function Toolbar({
           onClick={onOpenSettings}
           title={
             hasCustomKey
-              ? 'Rendszerbeállítások & Munkakörnyezet (Saját Gemini API kulcs aktív 🟢)'
-              : 'Rendszerbeállítások & Munkakörnyezet (Nincs Gemini API kulcs beállítva! 🔴)'
+              ? 'Rendszerbeállítások & Munkakörnyezet (Saját Gemini API kulcs aktív)'
+              : 'Rendszerbeállítások & Munkakörnyezet (Nincs Gemini API kulcs beállítva)'
           }
           id="btn-settings"
         >
@@ -164,7 +164,17 @@ export default function Toolbar({
               <div className="help-shortcuts-grid">
                 <div className="help-shortcut-row">
                   <span className="help-shortcut-desc">Dokumentum mentése & PDF fordítás</span>
-                  <kbd className="help-kbd">⌘S</kbd>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <kbd className="help-kbd">⌘S</kbd>
+                    <kbd className="help-kbd">Ctrl+S</kbd>
+                  </div>
+                </div>
+                <div className="help-shortcut-row">
+                  <span className="help-shortcut-desc">Teljes LaTeX kód kijelölése a szerkesztőben</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <kbd className="help-kbd">Ctrl+A</kbd>
+                    <kbd className="help-kbd">⌘A</kbd>
+                  </div>
                 </div>
                 <div className="help-shortcut-row">
                   <span className="help-shortcut-desc">AI gyors-kijelölés a szerkesztőben</span>

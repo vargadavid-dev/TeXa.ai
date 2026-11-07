@@ -3,8 +3,17 @@ import axios from 'axios'
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import CustomSelect from './CustomSelect'
+import CustomDocTypesModal from './CustomDocTypesModal'
 import { findSmartReplacement } from '../utils/snippetMatcher'
 import {
+  Bookmark,
+  BookmarkPlus,
+  BookOpen,
+  PenTool,
+  Calculator,
+  FlaskConical,
+  GraduationCap,
+  Compass,
   Sparkles,
   Wand2,
   Shapes,
@@ -36,6 +45,7 @@ import {
   ArrowUp,
   ArrowDown,
   Eye,
+  EyeOff,
   Code,
   ZoomIn,
   ZoomOut,
@@ -72,11 +82,70 @@ const MODEL_OPTIONS = [
 ]
 
 const DOC_TYPE_OPTIONS = [
-  { value: 'osszefoglalo', label: 'Összefoglaló', desc: 'Definíciók, tételek, megoldott példák' },
-  { value: 'microlearning', label: 'Mikrotananyag', desc: 'Elmélet → feladat → megoldás ritmusban' },
-  { value: 'beamer', label: 'Beamer prezentáció', desc: 'Diák bullet pontokkal és képletekkel' },
-  { value: 'leiras', label: 'Részletes leírás', desc: 'Folyó szöveg, példák, TikZ ábrák' }
+  { value: 'osszefoglalo', label: 'Összefoglaló', desc: 'Definíciók, tételek, megoldott példák', icon: BookOpen },
+  { value: 'microlearning', label: 'Mikrotananyag', desc: 'Elmélet → feladat → megoldás ritmusban', icon: Sparkles },
+  { value: 'beamer', label: 'Beamer prezentáció', desc: 'Diák bullet pontokkal és képletekkel', icon: Presentation },
+  { value: 'leiras', label: 'Részletes leírás', desc: 'Folyó szöveg, példák, TikZ ábrák', icon: FileText },
+  { value: 'custom', label: 'Egyéni utasítás', desc: 'Egyedi felépítés, szerkezet és saját szempontok', icon: PenTool }
 ]
+
+const DEFAULT_TYPE_PROMPTS = {
+  osszefoglalo: {
+    title: 'Összefoglaló',
+    summary: 'Részletes összefoglaló elmélettel, tételekkel és megoldott példákkal',
+    prompt: `KÖTELEZŐ METODIKA ÉS FELÉPÍTÉS (ÖSSZEFOGLALÓ):
+1. Részletes, logikailag szigorú, mégis tanulóbarát elméleti összefoglaló a témakörből.
+2. Definíciók, alaptételek és azonosságok kiemelő tcolorbox dobozokban (\\begin{tcolorbox}[title=...]).
+3. Matematikai/fizikai bizonyítások világos levezetése lépésről lépésre.
+4. Részletesen kidolgozott, megoldott típuspéldák indoklással és ellenőrzéssel.
+5. Önálló gyakorló feladatok a fejezet végén végeredménnyel a felkészüléshez.
+6. Szemléltető TikZ ábrák és tiszta táblázatok ott, ahol releváns.`
+  },
+  microlearning: {
+    title: 'Mikrotananyag',
+    summary: 'Aprozódó elmélet → azonnali ellenőrző feladat → megoldás váltakozó ritmusban',
+    prompt: `KÖTELEZŐ MIKROTANANYAG (MICROLEARNING) METODIKA ÉS FELÉPÍTÉS:
+1. Aprózás (Microlearning):
+- Oszd fel az elméleti anyagot a lehető legkisebb, logikus mikroleckékre!
+- Egyszerre KIZÁRÓLAG egy-egy új fogalmat, szabályt vagy képletet mutass be kiemelő dobozban!
+
+2. Azonnali visszacsatolás (Elmélet -> Gyakorlat ritmus):
+- Minden egyes rövid elméleti egység után KÖZVETLENÜL illessz be egy megértést ellenőrző feladatblokkot!
+- Szigorúan tilos az elméletet egybehagyni: a struktúra Elmélet 1 -> Feladat 1 -> Megoldás 1 -> Elmélet 2 -> Feladat 2...
+- Minden feladat után közvetlenül adj világos megoldást és indoklást!
+
+3. Változatos feladattípusok:
+- Feleletválasztós (A/B/C/D) kérdések 4 opcióval
+- Igaz / Hamis állítások indoklással
+- Konkrét számértéket bekérő és többlépcsős levezetős feladatok (a, b, c alkérdések).
+
+4. Formai és ábrázolási követelmények:
+- SZIGORÚAN TILOS A DUPLA SZÁMOZÁS a számozott listákban!
+- Esztétikus, tiszta TikZ ábrák (gráfoknál csúcsok csak pöttyként, betűk és zavaró fokszámok nélkül).`
+  },
+  beamer: {
+    title: 'Beamer prezentáció',
+    summary: 'Prezentációs diák, lényegretörő bullet pointok és Beamer blokkok',
+    prompt: `KÖTELEZŐ BEAMER PREZENTÁCIÓ FELÉPÍTÉS:
+1. \\documentclass{beamer} sablon, Madrid vagy modern elegáns témával.
+2. Minden dia KÖTELEZŐEN külön \\begin{frame}{Dia címe} ... \\end{frame} blokkban legyen!
+3. Áttekinthető, tömör bullet pointok hosszú bekezdések helyett.
+4. Kiemelésekhez a Beamer beépített dobozait használd:
+   - \\begin{block}{Definíció}...\\end{block}
+   - \\begin{alertblock}{Fontos trükk / Szabály}...\\end{alertblock}
+   - \\begin{exampleblock}{Példa / Alkalmazás}...\\end{exampleblock}
+5. Képletek szellős, esztétikus elrendezése.`
+  },
+  leiras: {
+    title: 'Részletes leírás',
+    summary: 'Folyó szöveges részletes magyarázat, szemléltető valós példák és TikZ ábrák',
+    prompt: `KÖTELEZŐ RÉSZLETES LEÍRÁS FELÉPÍTÉS:
+1. Részletes, olvasmányos folyó szöveg a témakör elméleti és gyakorlati hátteréről.
+2. Életszerű analógiák, történelmi kontextus és gyakorlati összefüggések bemutatása.
+3. Tipikus diákhibák és tévhitek részletes elemzése és eloszlatása.
+4. Gazdag TikZ illusztrációk, folyamatábrák és diagramok a magyarázatok támogatására.`
+  }
+}
 
 const PROBLEM_DIFFICULTY_OPTIONS = [
   { value: 'pyramid', label: 'Piramis (fokozatosan nehezedő)', desc: 'K1 (Alap) → K2 (Közepes) → K3 (Összetett)' },
@@ -629,6 +698,101 @@ export default function AiPanel({
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef(null)
 
+  // Saját dokumentumtípusok kezelése
+  const [customDocTypes, setCustomDocTypes] = useState([])
+  const [isCustomDocTypeModalOpen, setIsCustomDocTypeModalOpen] = useState(false)
+  const [selectedCustomDocType, setSelectedCustomDocType] = useState(null)
+
+  const loadCustomDocTypes = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/custom-doc-types')
+      if (res.data?.success && Array.isArray(res.data.docTypes)) {
+        setCustomDocTypes(res.data.docTypes)
+      }
+    } catch (err) {
+      console.error('Hiba a saját dokumentumtípusok betöltésekor:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadCustomDocTypes()
+  }, [loadCustomDocTypes])
+
+  const isCustomMode = docType === 'custom' || docType.startsWith('saved_')
+
+  // Alapértelmezett típusok promptjának mutatása a külön utasítás felett
+  const [showDefaultPrompt, setShowDefaultPrompt] = useState(false)
+
+  const handleCopyDefaultPromptToCustom = () => {
+    const info = DEFAULT_TYPE_PROMPTS[docType]
+    if (info?.prompt) {
+      setCustomPrompt(info.prompt)
+      setDocType('custom')
+      addNotif?.(`"${info.title}" alapértelmezett promptja átmásolva az egyéni utasításba!`, 'info')
+    }
+  }
+
+  const combinedDocTypeOptions = useMemo(() => {
+    const standard = DOC_TYPE_OPTIONS.filter((o) => o.value !== 'custom')
+    const saved = customDocTypes.map((t) => {
+      let IconComponent = Bookmark
+      const n = (t.name || '').toLowerCase()
+      if (t.id === 'formula_sheet' || n.includes('képlet') || n.includes('fogalom')) {
+        IconComponent = Calculator
+      } else if (t.id === 'lab_report' || n.includes('labor') || n.includes('mérés')) {
+        IconComponent = FlaskConical
+      } else if (t.id === 'thesis_proof' || n.includes('tézis') || n.includes('tétel')) {
+        IconComponent = GraduationCap
+      } else if (n.includes('tutor') || n.includes('tanár') || n.includes('oktató')) {
+        IconComponent = Compass
+      } else if (t.subject === 'Matematika') {
+        IconComponent = Sigma
+      } else if (t.subject === 'Fizika') {
+        IconComponent = Atom
+      }
+
+      // Esetleges emojik vagy csillagok eltávolítása a címből a letisztult megjelenésért
+      const cleanName = (t.name || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{2B50}-\u{2B55}]/gu, '').trim() || t.name
+
+      return {
+        value: `saved_${t.id}`,
+        label: cleanName,
+        desc: t.desc || 'Saját mentett sablon',
+        icon: IconComponent
+      }
+    })
+    const customNew = {
+      value: 'custom',
+      label: 'Egyéni utasítás (új)',
+      desc: 'Saját felépítés és egyedi elvárások megadása',
+      icon: PenTool
+    }
+    return [...standard, ...saved, customNew]
+  }, [customDocTypes])
+
+  const handleDocTypeChange = (newVal) => {
+    setDocType(newVal)
+    if (newVal.startsWith('saved_')) {
+      const savedId = newVal.replace('saved_', '')
+      const found = customDocTypes.find((t) => t.id === savedId)
+      if (found) {
+        setSelectedCustomDocType(found)
+        setCustomPrompt(found.prompt || '')
+      }
+    } else if (newVal === 'custom') {
+      setSelectedCustomDocType(null)
+    } else {
+      setSelectedCustomDocType(null)
+    }
+  }
+
+  const handleSelectCustomDocTypeFromModal = (item) => {
+    if (!item) return
+    setSelectedCustomDocType(item)
+    setDocType(`saved_${item.id}`)
+    setCustomPrompt(item.prompt || '')
+  }
+
   const preambleOptions = useMemo(() => {
     const opts = [{ value: 'ai-dynamic', label: 'AI dinamikus preambulum' }]
     preambles.forEach((p) => {
@@ -691,12 +855,14 @@ export default function AiPanel({
   const [withGroupsAB, setWithGroupsAB] = useState(false)
   const [probOutputTarget, setProbOutputTarget] = useState('new_doc') // new_doc | append
   const [selectedProjectFiles, setSelectedProjectFiles] = useState([]) // [{ path, name, relativePath, content, lineCount, isLoading }]
+  const [probCustomPrompt, setProbCustomPrompt] = useState('')
   const [isProbDragOver, setIsProbDragOver] = useState(false)
   const probDragCounterRef = useRef(0)
 
   // Beamer
   const [beamerSource, setBeamerSource] = useState('current') // current | custom
   const [beamerText, setBeamerText] = useState('')
+  const [beamerCustomPrompt, setBeamerCustomPrompt] = useState('')
 
   // Csevegő
   const [chatMessages, setChatMessages] = useState([
@@ -1188,14 +1354,21 @@ export default function AiPanel({
 
   // 1. Generálás
   const handleGenerate = async () => {
-    if (!topic.trim() || loading) return
+    const rawTopic = topic.trim()
+    const effectiveTopic =
+      rawTopic ||
+      (isCustomMode && customPrompt.trim()
+        ? selectedCustomDocType?.name || customPrompt.trim().slice(0, 45).replace(/[\n\r]+/g, ' ')
+        : '')
+    if (!effectiveTopic || loading) return
     setLoading(true)
     setLastInserted(null)
     startProgressTracking()
     try {
+      const effectiveDocType = isCustomMode ? 'custom' : docType
       const fd = buildFormData({
-        topic: topic.trim(),
-        docType,
+        topic: effectiveTopic,
+        docType: effectiveDocType,
         subject: activeSubject.toLowerCase(),
         customPrompt,
         provider,
@@ -1204,8 +1377,8 @@ export default function AiPanel({
       })
       const res = await axios.post('/api/ai/generate', fd)
       remember()
-      const beamerSuffix = docType === 'beamer' && !topic.trim().toLowerCase().endsWith('beamer') ? '_Beamer' : ''
-      const targetTopic = `${topic.trim()}${beamerSuffix}`
+      const beamerSuffix = docType === 'beamer' && !effectiveTopic.toLowerCase().endsWith('beamer') ? '_Beamer' : ''
+      const targetTopic = `${effectiveTopic}${beamerSuffix}`
       onInsert?.(res.data.latex, true, targetTopic)
       setLastInserted({ label: targetTopic })
       stopProgressTracking(true)
@@ -1432,6 +1605,7 @@ export default function AiPanel({
         solutionPlacement,
         withRubric: String(withSolutions && probWithRubric),
         withGroupsAB: String(withGroupsAB),
+        customPrompt: probCustomPrompt.trim(),
         provider,
         model: modelParam || '',
         customPreamble: customPreambleText
@@ -1481,6 +1655,7 @@ export default function AiPanel({
       const res = await axios.post('/api/ai/beamer', {
         content,
         subject: activeSubject.toLowerCase(),
+        customPrompt: beamerCustomPrompt.trim(),
         provider,
         model: modelParam
       })
@@ -1865,12 +2040,12 @@ export default function AiPanel({
         {mode === 'generate' && (
           <>
             <div className="form-group">
-              <label className="form-label">Témakör *</label>
+              <label className="form-label">Témakör {isCustomMode ? '(opcionális)' : '*'}</label>
               <input
                 className="form-input"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="pl. Másodfokú egyenletek, Newton törvényei…"
+                placeholder={isCustomMode ? `pl. ${selectedCustomDocType ? selectedCustomDocType.name : 'Képletgyűjtemény'}, vagy hagyd üresen…` : 'pl. Másodfokú egyenletek, Newton törvényei…'}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleGenerate()
                 }}
@@ -1878,9 +2053,162 @@ export default function AiPanel({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Dokumentum típusa</label>
-              <CustomSelect value={docType} onChange={setDocType} options={DOC_TYPE_OPTIONS} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <label className="form-label" style={{ marginBottom: 0 }}>Dokumentum típusa</label>
+                <button
+                  type="button"
+                  className="btn-subtle"
+                  style={{ border: 'none', cursor: 'pointer', fontSize: 10.5, color: 'var(--accent-light)', background: 'none' }}
+                  onClick={() => setIsCustomDocTypeModalOpen(true)}
+                  title="Saját dokumentumtípusok és sablonok kezelése"
+                >
+                  Saját típusok ({customDocTypes.length})
+                </button>
+              </div>
+              <CustomSelect value={docType} onChange={handleDocTypeChange} options={combinedDocTypeOptions} />
             </div>
+
+            {isCustomMode ? (
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>
+                    <span style={{ fontWeight: 600, color: 'var(--accent-light, #38bdf8)' }}>
+                      {selectedCustomDocType ? `Sablon utasítás: ${selectedCustomDocType.name}` : 'Egyéni utasítás a dokumentumhoz *'}
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    className="btn-text-subtle"
+                    style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                    onClick={() => setIsCustomDocTypeModalOpen(true)}
+                    title="Jelenlegi utasítás elmentése saját típusként"
+                  >
+                    <BookmarkPlus size={12} style={{ color: 'var(--accent-light)' }} />
+                    <span>Mentés saját típusként…</span>
+                  </button>
+                </div>
+                <textarea
+                  className="form-textarea"
+                  style={{ minHeight: 110, borderColor: 'rgba(56, 189, 248, 0.4)' }}
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="Írd le részletesen a dokumentum kívánt szerkezetét, stílusát és fejezeteit (pl. 2 oldalas képletgyűjtemény definíciókkal és táblázatokkal, laboratóriumi jegyzőkönyv mérési adatokkal, beadandó esszé)…"
+                  autoFocus={docType === 'custom'}
+                />
+              </div>
+            ) : (
+              <>
+                {/* Alapértelmezett típus promptjának mutatása a külön utasítás felett */}
+                {DEFAULT_TYPE_PROMPTS[docType] && (
+                  <div
+                    className="default-prompt-box"
+                    style={{
+                      marginBottom: 10,
+                      background: 'rgba(56, 189, 248, 0.04)',
+                      border: '1px solid rgba(56, 189, 248, 0.16)',
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '7px 12px',
+                        background: 'rgba(56, 189, 248, 0.06)',
+                        cursor: 'pointer',
+                        userSelect: 'none'
+                      }}
+                      onClick={() => setShowDefaultPrompt((v) => !v)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+                        <Info size={13} color="var(--accent-light, #38bdf8)" style={{ flexShrink: 0 }} />
+                        <span
+                          style={{
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            color: 'var(--accent-light, #38bdf8)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          Alapértelmezett prompt: {DEFAULT_TYPE_PROMPTS[docType].title}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className="btn-text-subtle"
+                          style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, padding: '2px 7px' }}
+                          onClick={() => setShowDefaultPrompt((v) => !v)}
+                          title={showDefaultPrompt ? 'Prompt elrejtése' : 'Alapértelmezett prompt megjelenítése'}
+                        >
+                          {showDefaultPrompt ? <EyeOff size={12} /> : <Eye size={12} />}
+                          <span>{showDefaultPrompt ? 'Elrejtés' : 'Megtekintés'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn-text-subtle"
+                          style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, padding: '2px 7px' }}
+                          onClick={handleCopyDefaultPromptToCustom}
+                          title="Alapértelmezett prompt átmásolása az egyéni utasításba szerkesztésre és sablonként mentésre"
+                        >
+                          <Copy size={12} />
+                          <span>Másolás egyénihez</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {showDefaultPrompt && (
+                      <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(56, 189, 248, 0.12)' }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
+                          {DEFAULT_TYPE_PROMPTS[docType].summary}
+                        </div>
+                        <pre
+                          style={{
+                            margin: 0,
+                            padding: '8px 10px',
+                            background: 'rgba(0, 0, 0, 0.35)',
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            borderRadius: 6,
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: 11,
+                            lineHeight: 1.48,
+                            color: 'var(--text-subtle, #cbd5e1)',
+                            whiteSpace: 'pre-wrap',
+                            maxHeight: 180,
+                            overflowY: 'auto'
+                          }}
+                        >
+                          {DEFAULT_TYPE_PROMPTS[docType].prompt}
+                        </pre>
+                        <div style={{ marginTop: 8, fontSize: 10.5, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Sparkles size={11} color="var(--accent-light, #38bdf8)" style={{ flexShrink: 0 }} />
+                          <span>
+                            Szeretnéd módosítani a szabályokat? Kattints a <strong>Másolás egyénihez</strong> gombra!
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label className="form-label">Külön utasítás (opcionális)</label>
+                  <textarea
+                    className="form-textarea"
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    placeholder="pl. Legyen benne sok TikZ ábra, érettségi szintű feladatokkal…"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="form-group">
               <label className="form-label">
@@ -1897,16 +2225,6 @@ export default function AiPanel({
                 )}
               </label>
               <CustomSelect value={selectedPreambleId} onChange={setSelectedPreambleId} options={preambleOptions} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Külön utasítás (opcionális)</label>
-              <textarea
-                className="form-textarea"
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder="pl. Legyen benne sok TikZ ábra, érettségi szintű feladatokkal…"
-              />
             </div>
 
             <div className="form-group">
@@ -1951,7 +2269,12 @@ export default function AiPanel({
             {renderProgress()}
             {renderInserted()}
 
-            <button className="btn btn-primary" style={{ justifyContent: 'center' }} disabled={!topic.trim() || loading} onClick={handleGenerate}>
+            <button
+              className="btn btn-primary"
+              style={{ justifyContent: 'center' }}
+              disabled={(!topic.trim() && !(isCustomMode && customPrompt.trim())) || loading}
+              onClick={handleGenerate}
+            >
               {loading ? <Loader2 size={14} className="spinner" /> : <Sparkles size={14} />}
               Dokumentum generálása
             </button>
@@ -2806,6 +3129,18 @@ export default function AiPanel({
               </div>
             </div>
 
+            {/* Egyéni utasítás a feladatsorhoz */}
+            <div className="form-group">
+              <label className="form-label">Külön egyéni utasítás a feladatsorhoz (opcionális)</label>
+              <textarea
+                className="form-textarea"
+                style={{ minHeight: 60 }}
+                value={probCustomPrompt}
+                onChange={(e) => setProbCustomPrompt(e.target.value)}
+                placeholder="pl. A 3. feladat legyen szöveges geometriai példa TikZ ábrával, kerüljük a negatív számokat…"
+              />
+            </div>
+
             {/* 5. Kimenet */}
             <div className="form-group">
               <label className="form-label">Kimenet</label>
@@ -2886,6 +3221,17 @@ export default function AiPanel({
               </div>
             )}
 
+            <div className="form-group">
+              <label className="form-label">Külön egyéni utasítás a diákhoz (opcionális)</label>
+              <textarea
+                className="form-textarea"
+                style={{ minHeight: 60 }}
+                value={beamerCustomPrompt}
+                onChange={(e) => setBeamerCustomPrompt(e.target.value)}
+                placeholder="pl. Maximum 6 dia legyen, Madrid téma kék színekkel, a tételekhez használj külön block környezeteket…"
+              />
+            </div>
+
             {renderProgress()}
             {renderInserted()}
 
@@ -2913,6 +3259,19 @@ export default function AiPanel({
           </div>
         </div>
       )}
+
+      {/* Saját dokumentumtípusok kezelése modal */}
+      <CustomDocTypesModal
+        isOpen={isCustomDocTypeModalOpen}
+        onClose={() => setIsCustomDocTypeModalOpen(false)}
+        customDocTypes={customDocTypes}
+        selectedDocTypeId={selectedCustomDocType?.id}
+        onRefreshCustomDocTypes={loadCustomDocTypes}
+        onSelectCustomDocType={handleSelectCustomDocTypeFromModal}
+        initialCustomPrompt={customPrompt}
+        initialSubject={activeSubject}
+        addNotif={addNotif}
+      />
     </div>
   )
 }

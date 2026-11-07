@@ -3,29 +3,138 @@
  *
  * Intelligens LaTeX számozás-tisztító és duplikáció-megelőző segédprogram.
  *
- * Probléma:
- * Amikor az AI számozott listát (\begin{enumerate}...) hoz létre, a lista környezet
- * eleve automatikusan kirakja az elemek számozását (pl. 1., 2., ... vagy a), b), ...).
- * Ha a modell az \item után kiírja kézzel is a sorszámot:
- *   \item \textbf{1. Feladat} \textsf{\small [K1 – Alap]}
- * akkor a lefordított PDF-ben ronda dupla számozás keletkezik: "1. 1. Feladat [K1 – Alap]".
- * Hasonlóan alpontoknál:
- *   \begin{enumerate}[label=\alph*)]
- *       \item a) Kérdés...
- * eredménye: "a) a) Kérdés...".
+ * Problémák:
+ * 1. Fejezetcímek kettős számozása:
+ *    A LaTeX számozott fejezetparancsai (\part, \chapter, \section, \subsection, \subsubsection,
+ *    \paragraph, \subparagraph) eleve automatikusan kirakják a hierarchikus sorszámot (pl. "1. ", "2. ", "1.1. ").
+ *    Ha az AI vagy sablon a címbe is beírja a sorszámot:
+ *      \section{1. Mikor használjuk?}
+ *    akkor a PDF-ben ronda kettős számozás keletkezik: "1. 1. Mikor használjuk?".
+ *    Ez a modul automatikusan eltávolítja a kézi sorszám-prefixeket a számozott fejezetekből:
+ *      \section{1. Mikor használjuk?} -> \section{Mikor használjuk?}
+ *      \subsection{1.1. Részletek}    -> \subsection{Részletek}
+ *      \section{1. fejezet: Bevezetés} -> \section{Bevezetés}
+ *    A csillagozott címeket (\section*{...}) NEM bántja, mivel azoknak nincs automatikus számlálójuk!
  *
- * Ez a modul felderíti a \begin{enumerate} környezeteket, és megtisztítja az \item elemeket
- * a felesleges redundáns számozástól:
- * - \item \textbf{1. Feladat} -> \item \textbf{Feladat} (ha a label-ben nincs benne a Feladat szó)
- * - \item \textbf{1. Feladat} -> \item (ha a label pl. label=\textbf{\arabic*. Feladat})
- * - \item \textbf{1. Feladat megoldása} -> \item \textbf{Feladat megoldása}
- * - \item \textbf{1.} -> \item
- * - \item 1. Feladat -> \item \textbf{Feladat}
- * - \item 1. -> \item
- * - \item a) -> \item
- * - \item (a) -> \item
- * - \item \textbf{a)} -> \item
+ * 2. Számozott listák (\begin{enumerate}...) kettős számozása:
+ *    Amikor az AI számozott listát hoz létre, az enumerate lista maga kirakja a sorszámot/betűt.
+ *    Ez a modul eltávolítja a redundáns sorszámokat az \item elemek után:
+ *      \item \textbf{1. Feladat} -> \item \textbf{Feladat}
+ *      \item \textbf{1. Feladat megoldása} -> \item \textbf{Feladat megoldása}
+ *      \item \textbf{1.} -> \item
+ *      \item a) Kérdés... -> \item Kérdés...
+ *
+ * 3. AI listaelem elgépelések javítása:
+ *    Ha az AI ritkán elírja az \item parancsot (pl. "utoitem" vagy "\autoitem" lista belsejében),
+ *    azt automatikusan visszajavítja szabványos \item-re.
  */
+
+/**
+ * Megtisztítja a fejezetcímet a manuális sorszám-prefixektől.
+ * Pl.: "1. Mikor használjuk?" -> "Mikor használjuk?"
+ *      "1.1. Alapfogalmak"    -> "Alapfogalmak"
+ *      "1. fejezet: Cím"      -> "Cím"
+ *      "1 - Alapok"           -> "Alapok"
+ *      "I. Bevezetés"         -> "Bevezetés"
+ *      "\textbf{1. Cím}"      -> "\textbf{Cím}"
+ *
+ * Megőrzi a nem-sorszám kifejezéseket: pl. "3D modellezés", "2024-es érettségi", "100 lépés".
+ *
+ * @param {string} title
+ * @returns {string}
+ */
+function cleanSectionTitle(title) {
+  if (!title) return title;
+
+  let t = title.trim();
+
+  // Ha a cím \textbf{...} vagy egyéb formázó dobozba van csomagolva:
+  const boldWrap = t.match(/^\\textbf\{([\s\S]*)\}$/);
+  if (boldWrap) {
+    const innerClean = cleanSectionTitle(boldWrap[1]);
+    return innerClean ? `\\textbf{${innerClean}}` : t;
+  }
+
+  const cleaned = t
+    .replace(/^(\s*)(?:\d{1,2}(?:\.\d{1,2})+\.?|\d{1,2}\.|\b[IVXLCDM]+\.)\s*(?:\b(?:fejezet|rész|szakasz)\b\s*[:.-]?\s*)?/i, '$1')
+    .replace(/^(\s*)\d{1,2}\s*[:\-–—]\s*/, '$1')
+    .trim();
+
+  // Ha véletlenül a teljes cím törlődne (mert pl. csak egy szám volt a cím), tartsuk meg az eredetit
+  return cleaned || t;
+}
+
+/**
+ * Kinyeri a kapcsos zárójelek közötti szöveget a beágyazott zárójelek és escape-ek figyelembevételével.
+ *
+ * @param {string} text
+ * @param {number} startIdx A nyitó kapcsos zárójel utáni karakter indexe
+ * @returns {{ content: string, endIdx: number } | null}
+ */
+function extractBalancedBrace(text, startIdx) {
+  let depth = 1;
+  let i = startIdx;
+  while (i < text.length && depth > 0) {
+    if (text[i] === '\\') {
+      i += 2; // átugorjuk az escape-elt karaktert (pl. \{ vagy \})
+      continue;
+    }
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}') depth--;
+    if (depth === 0) return { content: text.slice(startIdx, i), endIdx: i };
+    i++;
+  }
+  return null;
+}
+
+/**
+ * Eltávolítja a manuális sorszámokat a számozott fejezetcímekből (\section, \subsection, stb.).
+ * Csak a nem-csillagozott parancsokat módosítja!
+ *
+ * @param {string} latex
+ * @returns {string}
+ */
+function sanitizeSectionHeadings(latex) {
+  if (!latex || typeof latex !== 'string') return latex;
+
+  let result = '';
+  let lastIndex = 0;
+  // Csak nem-csillagozott part, chapter, section, subsection, subsubsection, paragraph, subparagraph
+  const secRegex = /\\(part|chapter|section|subsection|subsubsection|paragraph|subparagraph)(?:\s*)(\{)/g;
+  let m;
+
+  while ((m = secRegex.exec(latex)) !== null) {
+    const cmd = m[1];
+    const braceStart = secRegex.lastIndex;
+    const braceResult = extractBalancedBrace(latex, braceStart);
+
+    if (braceResult) {
+      result += latex.slice(lastIndex, m.index);
+      const rawTitle = braceResult.content;
+      const cleaned = cleanSectionTitle(rawTitle);
+      result += `\\${cmd}{${cleaned}}`;
+      lastIndex = braceResult.endIdx + 1;
+      secRegex.lastIndex = lastIndex;
+    }
+  }
+
+  result += latex.slice(lastIndex);
+  return result;
+}
+
+/**
+ * Javítja az AI elgépeléseket a listaelemek elején (pl. "utoitem" vagy "\autoitem" -> "\item").
+ *
+ * @param {string} latex
+ * @returns {string}
+ */
+function sanitizeListTypo(latex) {
+  if (!latex || typeof latex !== 'string') return latex;
+
+  return latex.replace(/(\\begin\{(?:itemize|enumerate)\}[\s\S]*?\\end\{(?:itemize|enumerate)\})/g, (block) => {
+    return block.replace(/(^|\n)(\s*)\\?(?:utoitem|autoitem)\b/g, '$1$2\\item');
+  });
+}
 
 /**
  * Megtisztítja a LaTeX kódot a számozott listákban (\begin{enumerate}) előforduló
@@ -34,7 +143,7 @@
  * @param {string} latex
  * @returns {string}
  */
-function sanitizeLatexNumbering(latex) {
+function sanitizeEnumerateItems(latex) {
   if (!latex || typeof latex !== 'string') return latex;
 
   let result = '';
@@ -176,6 +285,32 @@ function sanitizeLatexNumbering(latex) {
   return result;
 }
 
+/**
+ * Fő számozás-szanáló függvény: megtisztítja a LaTeX kódot mind a fejezetcímek,
+ * mind a számozott listák felesleges dupla számozásaitól és gépelési hibáitól.
+ *
+ * @param {string} latex
+ * @returns {string}
+ */
+function sanitizeLatexNumbering(latex) {
+  if (!latex || typeof latex !== 'string') return latex;
+
+  // 1. Fejezetcímek kettős számozásának szanálása (\section{1. Cím} -> \section{Cím})
+  let cleaned = sanitizeSectionHeadings(latex);
+
+  // 2. Elgépelt listaelemek javítása (utoitem / \autoitem -> \item)
+  cleaned = sanitizeListTypo(cleaned);
+
+  // 3. Számozott listaelemek kettős számozásának szanálása
+  cleaned = sanitizeEnumerateItems(cleaned);
+
+  return cleaned;
+}
+
 module.exports = {
-  sanitizeLatexNumbering
+  sanitizeLatexNumbering,
+  cleanSectionTitle,
+  sanitizeSectionHeadings,
+  sanitizeListTypo,
+  sanitizeEnumerateItems
 };

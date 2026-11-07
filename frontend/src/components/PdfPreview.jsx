@@ -97,7 +97,9 @@ export default function PdfPreview({
   onInverseSync,
   code,
   onTransformSelection,
-  onInsertSelection
+  onInsertSelection,
+  isActive = true,
+  isMobile = false
 }) {
   const containerRef = useRef(null)
   const canvasRefs = useRef({})
@@ -105,7 +107,14 @@ export default function PdfPreview({
 
   const [pdfDoc, setPdfDoc] = useState(null)
   const [numPages, setNumPages] = useState(0)
-  const [scale, setScale] = useState(1.2)
+  const [isAutoFit, setIsAutoFit] = useState(true)
+  const [scale, setScale] = useState(() => {
+    if (typeof window === 'undefined') return 0.8
+    const isMobileInit = window.innerWidth <= 768
+    const estWidth = isMobileInit ? window.innerWidth : (window.innerWidth * 0.5)
+    const margin = isMobileInit ? 16 : 48
+    return Math.min(2.0, Math.max(0.25, +((estWidth - margin) / 595.28).toFixed(2)))
+  })
   const [rendering, setRendering] = useState(false)
   const [highlight, setHighlight] = useState(null)
   const [inverseSyncing, setInverseSyncing] = useState(false)
@@ -124,6 +133,16 @@ export default function PdfPreview({
   const [inlineInstruction, setInlineInstruction] = useState('')
   const [isTransforming, setIsTransforming] = useState(false)
   const [selectionTip, setSelectionTip] = useState(null)
+  const inlineTextareaRef = useRef(null)
+
+  // Automatikus magasságállítás a többsoros prompt beviteli mezőhöz (szövegtördelés és teljes olvashatóság)
+  useEffect(() => {
+    if (inlineTextareaRef.current) {
+      inlineTextareaRef.current.style.height = 'auto'
+      const scrollH = inlineTextareaRef.current.scrollHeight
+      inlineTextareaRef.current.style.height = `${Math.min(Math.max(scrollH, 52), 180)}px`
+    }
+  }, [inlineInstruction, isAiPromptOpen, activeTab])
   // ── Dokumentumban található TikZ ábrák listája és gyorsválasztója ──
   const figuresList = useMemo(() => extractAllFigures(code), [code])
 
@@ -343,6 +362,38 @@ export default function PdfPreview({
   }, [])
 
 
+  // Szélességhez igazított scale kiszámítása (hogy a PDF teljes szélessége vízszintes görgetés nélkül látható legyen)
+  const computeFitScale = useCallback(async (docToMeasure = pdfDoc) => {
+    if (!docToMeasure) return null
+    try {
+      const page = await docToMeasure.getPage(1)
+      const unscaledVp = page.getViewport({ scale: 1.0 })
+      const ptWidth = unscaledVp.viewBox ? (unscaledVp.viewBox[2] - unscaledVp.viewBox[0]) : unscaledVp.width
+      if (!ptWidth || ptWidth <= 0) return null
+
+      const isMobileScreen = isMobile || (typeof window !== 'undefined' && window.innerWidth <= 768)
+
+      let containerWidth = containerRef.current?.clientWidth || 0
+      // Ha a konténer rejtve volt vagy 0 a mérete (pl. rejtett fül alatt), használjuk az ablakméretet
+      if (!containerWidth || containerWidth <= 40) {
+        if (typeof window !== 'undefined') {
+          containerWidth = isMobileScreen ? window.innerWidth : Math.round(window.innerWidth * 0.5)
+        }
+      }
+
+      if (containerWidth > 40) {
+        // Mobilon 16px biztonsági margó (8-8px kétoldalt), asztalin 48px kényelmes margó
+        const margin = isMobileScreen ? 16 : 48
+        const availableWidth = Math.max(120, containerWidth - margin)
+        const newScale = Math.min(2.5, Math.max(0.2, +(availableWidth / ptWidth).toFixed(2)))
+        return newScale
+      }
+    } catch (e) {
+      console.warn('Nem sikerült kiszámolni a szélességhez igazított méretet:', e)
+    }
+    return null
+  }, [pdfDoc, isMobile])
+
   // 1. PDF adat betöltése
   useEffect(() => {
     if (!pdfData) {
@@ -363,6 +414,29 @@ export default function PdfPreview({
         if (!isCancelled) {
           setPdfDoc(doc)
           setNumPages(doc.numPages)
+
+          // Ha az automatikus szélességhez igazítás aktív, azonnal alkalmazzuk a konténer méretéhez
+          if (isAutoFit) {
+            try {
+              const page1 = await doc.getPage(1)
+              const vp1 = page1.getViewport({ scale: 1.0 })
+              const ptW = vp1.viewBox ? (vp1.viewBox[2] - vp1.viewBox[0]) : vp1.width
+              const isMobileScreen = isMobile || (typeof window !== 'undefined' && window.innerWidth <= 768)
+              let cWidth = containerRef.current?.clientWidth || 0
+              if (!cWidth || cWidth <= 40) {
+                if (typeof window !== 'undefined') {
+                  cWidth = isMobileScreen ? window.innerWidth : Math.round(window.innerWidth * 0.5)
+                }
+              }
+              if (cWidth > 40 && ptW > 0) {
+                const margin = isMobileScreen ? 16 : 48
+                const fitScale = Math.min(2.5, Math.max(0.2, +((cWidth - margin) / ptW).toFixed(2)))
+                setScale(fitScale)
+              }
+            } catch (fitErr) {
+              console.warn('Auto-fit hiba PDF betöltésekor:', fitErr)
+            }
+          }
         }
       } catch (err) {
         console.error('PDF.js betöltési hiba:', err)
@@ -373,7 +447,7 @@ export default function PdfPreview({
     return () => {
       isCancelled = true
     }
-  }, [pdfData])
+  }, [pdfData, isAutoFit, isMobile])
 
   // 2. Oldalak kirajzolása vásznakra (canvas)
   const renderPages = useCallback(async () => {
@@ -419,6 +493,103 @@ export default function PdfPreview({
   useEffect(() => {
     renderPages()
   }, [renderPages])
+
+  // Automatikus szélességhez igazítás (ResizeObserver a konténer méretváltozásakor / split-pane húzásakor)
+  useEffect(() => {
+    if (!containerRef.current || !pdfDoc) return
+
+    let debounceTimer = null
+
+    const handleResize = () => {
+      if (!isAutoFit && !isMobile) return
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(async () => {
+        const fitScale = await computeFitScale(pdfDoc)
+        if (fitScale) {
+          setScale((currentScale) => {
+            if (Math.abs(currentScale - fitScale) >= 0.02) {
+              return fitScale
+            }
+            return currentScale
+          })
+          if (containerRef.current) {
+            containerRef.current.scrollLeft = 0
+          }
+        }
+      }, 60)
+    }
+
+    handleResize()
+
+    const observer = new ResizeObserver(handleResize)
+    observer.observe(containerRef.current)
+
+    return () => {
+      clearTimeout(debounceTimer)
+      observer.disconnect()
+    }
+  }, [pdfDoc, isAutoFit, isMobile, computeFitScale])
+
+  // Ha a nézet aktívvá válik (különösen mobilos fülváltáskor), azonnal igazítsuk a méretet a kijelzőhöz
+  useEffect(() => {
+    if (!isActive || !pdfDoc) return
+
+    let cancelled = false
+    const applyAutoFit = async () => {
+      const fitScale = await computeFitScale(pdfDoc)
+      if (fitScale && !cancelled) {
+        setScale(fitScale)
+        setIsAutoFit(true)
+        if (containerRef.current) {
+          containerRef.current.scrollLeft = 0
+        }
+      }
+    }
+
+    applyAutoFit()
+    const t1 = setTimeout(applyAutoFit, 50)
+    const t2 = setTimeout(applyAutoFit, 180)
+
+    return () => {
+      cancelled = true
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [isActive, pdfDoc, computeFitScale])
+
+  // Ablak átméretezése vagy telefon elfordítása (orientationchange) esetén
+  useEffect(() => {
+    let timer = null
+    const handleWinResize = () => {
+      if (!isAutoFit && !isMobile) return
+      clearTimeout(timer)
+      timer = setTimeout(async () => {
+        if (!pdfDoc) return
+        const fitScale = await computeFitScale(pdfDoc)
+        if (fitScale) {
+          setScale(fitScale)
+          if (containerRef.current) {
+            containerRef.current.scrollLeft = 0
+          }
+        }
+      }, 60)
+    }
+
+    window.addEventListener('resize', handleWinResize)
+    window.addEventListener('orientationchange', handleWinResize)
+    return () => {
+      window.removeEventListener('resize', handleWinResize)
+      window.removeEventListener('orientationchange', handleWinResize)
+      clearTimeout(timer)
+    }
+  }, [pdfDoc, isAutoFit, isMobile, computeFitScale])
+
+  // Ha a szélességhez igazítás aktív, tartsuk a vízszintes görgetést a bal szélhez igazítva
+  useEffect(() => {
+    if (isAutoFit && containerRef.current) {
+      containerRef.current.scrollLeft = 0
+    }
+  }, [scale, isAutoFit])
 
   // Ha a zoom vagy az alap PDF változik, a korábbi képpont-alapú kijelölést töröljük
   useEffect(() => {
@@ -827,9 +998,24 @@ export default function PdfPreview({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isAiPromptOpen, isTransforming, selectionState])
 
-  const handleZoomIn = () => setScale((s) => Math.min(2.5, +(s + 0.15).toFixed(2)))
-  const handleZoomOut = () => setScale((s) => Math.max(0.6, +(s - 0.15).toFixed(2)))
-  const handleZoomReset = () => setScale(1.2)
+  const handleZoomIn = () => {
+    setIsAutoFit(false)
+    setScale((s) => Math.min(2.5, +(s + 0.15).toFixed(2)))
+  }
+  const handleZoomOut = () => {
+    setIsAutoFit(false)
+    setScale((s) => Math.max(0.4, +(s - 0.15).toFixed(2)))
+  }
+  const handleZoomReset = async () => {
+    setIsAutoFit(true)
+    const fitScale = await computeFitScale()
+    if (fitScale) {
+      setScale(fitScale)
+    }
+    if (containerRef.current) {
+      containerRef.current.scrollLeft = 0
+    }
+  }
 
   const isSelectActive = toolMode !== 'none'
 
@@ -964,11 +1150,16 @@ export default function PdfPreview({
               </button>
               <button
                 type="button"
-                className="pdf-group-val-btn"
+                className={`pdf-group-val-btn ${isAutoFit ? 'auto-fit-active' : ''}`}
                 onClick={handleZoomReset}
-                title="Eredeti méret visszaállítása (120%)"
+                title={
+                  isAutoFit
+                    ? 'Teljes szélességhez igazítva (Kattints az újraszámoláshoz)'
+                    : 'Visszaállítás teljes szélességre (Fit to Width)'
+                }
               >
-                {Math.round(scale * 100)}%
+                <Maximize2 size={11} style={{ marginRight: 3, opacity: isAutoFit ? 1 : 0.7 }} />
+                <span className="pdf-zoom-pct">{Math.round(scale * 100)}%</span>
               </button>
               <button
                 type="button"
@@ -1381,15 +1572,17 @@ export default function PdfPreview({
 
                 {/* Parancsbeviteli mező */}
                 <div className="inline-ai-input-wrap">
-                  <input
+                  <textarea
+                    ref={inlineTextareaRef}
                     className="inline-ai-input"
                     value={inlineInstruction}
                     onChange={(e) => setInlineInstruction(e.target.value)}
                     placeholder="Mit változtasson az AI az ábrán? (pl. Növeld a méretet 20%-kal, vastagabb nyilak...)"
                     autoFocus
+                    rows={2}
                     disabled={isTransforming}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()
                         handleExecuteTransform()
                       } else if (e.key === 'Escape') {
@@ -1397,6 +1590,9 @@ export default function PdfPreview({
                       }
                     }}
                   />
+                  <div className="inline-ai-input-hint">
+                    <span>↵ Enter: Küldés • Shift+Enter: Új sor</span>
+                  </div>
                 </div>
 
                 {/* Műveleti gombok */}
@@ -1534,15 +1730,17 @@ export default function PdfPreview({
 
                 {/* Parancsbeviteli mező */}
                 <div className="inline-ai-input-wrap">
-                  <input
+                  <textarea
+                    ref={inlineTextareaRef}
                     className="inline-ai-input"
                     value={inlineInstruction}
                     onChange={(e) => setInlineInstruction(e.target.value)}
                     placeholder="Mit szúrjon be az AI? (pl. Készíts 2 részes ellenőrző feladatot a fenti összefüggéshez)"
                     autoFocus
+                    rows={2}
                     disabled={isTransforming}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()
                         handleExecuteInsert()
                       } else if (e.key === 'Escape') {
@@ -1550,6 +1748,9 @@ export default function PdfPreview({
                       }
                     }}
                   />
+                  <div className="inline-ai-input-hint">
+                    <span>↵ Enter: Küldés • Shift+Enter: Új sor</span>
+                  </div>
                 </div>
 
                 {/* Műveleti gombok */}
@@ -1658,15 +1859,17 @@ export default function PdfPreview({
                 </div>
 
                 <div className="inline-ai-input-wrap">
-                  <input
+                  <textarea
+                    ref={inlineTextareaRef}
                     className="inline-ai-input"
                     value={inlineInstruction}
                     onChange={(e) => setInlineInstruction(e.target.value)}
                     placeholder="Írd be a parancsot... (pl. tedd elegáns tcolorbox dobozba és javítsd a képleteket)"
                     autoFocus
+                    rows={2}
                     disabled={isTransforming}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()
                         handleExecuteTransform()
                       } else if (e.key === 'Escape') {
@@ -1674,6 +1877,9 @@ export default function PdfPreview({
                       }
                     }}
                   />
+                  <div className="inline-ai-input-hint">
+                    <span>↵ Enter: Küldés • Shift+Enter: Új sor</span>
+                  </div>
                 </div>
 
                 <div className="inline-ai-actions">

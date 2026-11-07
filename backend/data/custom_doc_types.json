@@ -1,0 +1,39 @@
+[
+  {
+    "id": "formula_sheet",
+    "name": "Képletgyűjtemény & Fogalomtár",
+    "desc": "2 hasábos, tömör referencia képletekkel, definíciókkal és táblázatokkal",
+    "prompt": "Készíts egy tömör, áttekinthető 2 hasábos Képletgyűjteményt és Fogalomtárat a témakörből!\nFormátum és felépítés:\n- Használj kétoszlopos elrendezést (\\begin{multicols}{2} vagy \\documentclass[twocolumn]{article})!\n- Tömör, vizuális összefoglaló a legfontosabb képletekről, definíciókról, azonosságokról és SI mértékegységekről!\n- Kiemelésekhez használj kompakt tcolorbox dobozokat és tiszta táblázatokat (booktabs)!\n- Minden összefüggés mellett röviden szerepeljen a változók jelentése és mértékegysége!\n- Kerüld a hosszú folyószöveget, légy maximálisan lényegretörő és vizuális!",
+    "subject": "Mindkettő",
+    "isBuiltIn": true,
+    "createdAt": "2026-11-06T12:00:00.000Z"
+  },
+  {
+    "id": "lab_report",
+    "name": "Laboratóriumi Mérési Jegyzőkönyv",
+    "desc": "Mérési cél, eszközök, TikZ kapcsolási rajz, adattáblázat, értékelés",
+    "prompt": "Készíts egy hivatalos iskolai Laboratóriumi Mérési Jegyzőkönyv sablont a témakörből!\nKötelező szakaszok és felépítés:\n1. \\section*{A mérés célja és elméleti alapjai} (a vizsgált fizikai/matematikai jelenség, alapképletek)\n2. \\section*{Alkalmazott eszközök és mérési elrendezés} (eszközlista, TikZ kapcsolási/mérési ábra)\n3. \\section*{Mérési adatok és jegyzőkönyvi táblázat} (szép booktabs táblázat mért és számított oszlopokkal, mértékegységekkel)\n4. \\section*{Számítások és hibaszámítás} (mintaszámítás részletesen levezetve, relatív és abszolút hiba)\n5. \\section*{Értékelés és következtetések} (tapasztalatok összegzése, lehetséges hibaforrások megvitatása)",
+    "subject": "Fizika",
+    "isBuiltIn": true,
+    "createdAt": "2026-11-06T12:00:00.000Z"
+  },
+  {
+    "id": "thesis_proof",
+    "name": "Tézislap & Tételbizonyítás",
+    "desc": "Tétel kimondása, feltételek, lépésről-lépésre bizonyítás és alkalmazási példa",
+    "prompt": "Készíts egy didaktikus Tézislapot a témakör legfontosabb tételéről!\nKötelező felépítés:\n1. \\begin{tcolorbox}[title=A tétel precíz kimondása] (feltételek és állítás pontos megfogalmazása)\n2. \\section*{Értelmezés és szemléltetés} (szemléletes magyarázat és TikZ ábra)\n3. \\section*{Részletes bizonyítás} (lépésről-lépésre levezetett, logikailag szigorú bizonyítás indoklásokkal)\n4. \\section*{Alkalmazási típuspélda} (egy konkrét feladat részletes levezetésével, ahol a tétel közvetlenül alkalmazásra kerül)\n5. \\section*{Tipikus buktatók} (mire kell figyelni a feltételek ellenőrzésekor)",
+    "subject": "Matematika",
+    "isBuiltIn": true,
+    "createdAt": "2026-11-06T12:00:00.000Z"
+  },
+  {
+    "id": "custom_1793971044724_s3ur9",
+    "name": "Tutor",
+    "desc": "Egyéni dokumentum sablon",
+    "prompt": "Viselkedj úgy, mint egy tapasztalt, türelmes és közvetlen magántanár (korrepetitor). \n\nA magyarázatod kövesse az alábbi pedagógiai felépítést:\n\n1. Mikor használjuk?\n   - Foglald össze 1-2 mondatban a fogalom valódi, hétköznapi lényegét (kerüld a száraz akadémiai definíciókat).\n\n2. Hogyan működik? \n   - Ne csak közöld a képletet vagy szabályt! Vezesd le a logikáját egy kézzelfogható, hétköznapi példán (pl. dobozok feltöltése, mérleg, zsetonok, hétköznapi szituációk).\n   - Magyarázd el a műveletek mögötti ok-okozatot (pl. miért szorzunk és miért nem összeadunk, miért osztunk le).\n\n3. Általános képlet és speciális esetek:\n   - Írd le a precíz matematikai/tudományos képletet vagy szabályt.\n   - Mutasd be a leggyakoribb csapdákat vagy speciális változatokat (pl. ismétlődések, kizáró feltételek, határesetek).\n\n4. Dolgozat- / Vizsga-gyorsteszt (Döntési fa):\n   - Adj egy 2-3 pontos gyors ellenőrző listát, ami alapján a diák feladatolvasáskor azonnal felismeri, hogy ezzel a módszerrel kell-e számolnia.\n\n5. 2-3 tipikus és trükkös feladat levezetése:\n   - Mutass be valós érettségi/vizsga típusú feladatokat.\n   - Írd le lépésről lépésre a gondolatmenetet: mit látunk, miért gondolkodunk így, hol szokták elrontani a diákok, és mi a hibátlan megoldás.\n\nHangnem:\n- Közvetlen, támogató, magyarázó (nem merev egyetemi jegyzet).\n- A matematikai/tudományos kifejezéseket használj LaTeX jelöléssel ($képlet$), a kulcsszavakat emeld ki félkövérrel.\nA fejecezetek címét igazítsd a témakörhöz. A fejezetcímek megadásakor (\\section{...}) TILOS kézzel sorszámot írni a címbe (pl. \\section{Mikor használjuk?}, NEM \\section{1. Mikor használjuk?}), mert a LaTeX automatikusan számoz. Ne hivatkozz magántanárként vagy tutorként magadra hanem általánosan fogalmazd meg.",
+    "subject": "Matematika",
+    "isBuiltIn": false,
+    "createdAt": "2026-11-06T13:17:24.724Z",
+    "updatedAt": "2026-11-06T13:17:24.725Z"
+  }
+]

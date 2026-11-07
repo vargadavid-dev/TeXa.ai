@@ -17,7 +17,10 @@ import {
   HardDrive,
   FolderCheck,
   Unlink,
-  RotateCcw
+  RotateCcw,
+  Lightbulb,
+  Trash2,
+  Info
 } from 'lucide-react'
 import { apiKeyManager } from '../utils/apiKeyManager'
 import { localWorkspace } from '../utils/localWorkspaceManager'
@@ -334,147 +337,105 @@ export default function SettingsModal({
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Status card */}
-                <div style={{
-                  background: activeName ? 'rgba(48, 209, 88, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-                  border: `0.5px solid ${activeName ? 'rgba(48, 209, 88, 0.28)' : 'rgba(255, 255, 255, 0.12)'}`,
-                  borderRadius: 10,
-                  padding: '16px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 8,
-                        background: activeName ? 'rgba(48, 209, 88, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-                        color: activeName ? 'var(--success)' : 'var(--text-secondary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {activeName ? <FolderCheck size={20} /> : <HardDrive size={20} />}
+                <div className={`settings-status-banner ${activeName ? 'active' : 'inactive'}`}>
+                  <div className="settings-status-banner-left">
+                    <div className="settings-status-banner-icon">
+                      {activeName ? <FolderCheck size={20} /> : <HardDrive size={20} />}
+                    </div>
+                    <div>
+                      <div className="settings-status-banner-title">
+                        {activeName || 'Nincs csatlakoztatva helyi mappa'}
                       </div>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-main)' }}>
-                          {activeName || 'Nincs csatlakoztatva helyi mappa'}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', wordBreak: 'break-all' }}>
-                          {activePath || (hasLocalHandle ? 'Mappa a számítógéped merevlemezén (a böngésző megjegyezte)' : 'Válassz ki egy mappát a saját gépeden (pl. Dokumentumok/LaTeX)')}
-                        </div>
+                      <div className="settings-status-banner-subtitle">
+                        {activePath || (hasLocalHandle ? 'Mappa a számítógéped merevlemezén (a böngésző megjegyezte)' : 'Válassz ki egy mappát a saját gépeden (pl. Dokumentumok/LaTeX)')}
                       </div>
                     </div>
-
-                    <span style={{
-                      fontSize: 11,
-                      padding: '3px 8px',
-                      borderRadius: 10,
-                      background: activeName ? 'rgba(48, 209, 88, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-                      color: activeName ? 'var(--success)' : 'var(--text-muted)',
-                      fontWeight: 500,
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {activeName ? '● Csatlakoztatva' : 'Nincs kiválasztva'}
-                    </span>
                   </div>
 
-                  {activeName && (
-                    <div style={{
-                      fontSize: 12,
-                      color: 'var(--text-muted)',
-                      display: 'flex',
-                      gap: 18,
-                      padding: '8px 12px',
-                      background: 'rgba(0, 0, 0, 0.25)',
-                      border: '0.5px solid rgba(255, 255, 255, 0.06)',
-                      borderRadius: 7,
-                      marginBottom: 12
-                    }}>
-                      <span>Talált almappák: <strong style={{ color: '#f5f5f7' }}>{activeStats.foldersCount} db</strong></span>
-                      <span>LaTeX (.tex) fájlok: <strong style={{ color: '#f5f5f7' }}>{activeStats.filesCount} db</strong></span>
-                    </div>
-                  )}
+                  <span className={`settings-status-badge ${activeName ? 'active' : 'inactive'}`}>
+                    <span className="settings-status-badge-dot" />
+                    {activeName ? 'Csatlakoztatva' : 'Nincs kiválasztva'}
+                  </span>
+                </div>
 
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                {activeName && (
+                  <div className="settings-stats-row">
+                    <span>Talált almappák: <strong style={{ color: '#f5f5f7' }}>{activeStats.foldersCount} db</strong></span>
+                    <span>LaTeX (.tex) fájlok: <strong style={{ color: '#f5f5f7' }}>{activeStats.filesCount} db</strong></span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handlePickLocalDirectory}
+                    disabled={selectingLocalDir}
+                    style={{ fontSize: 12, padding: '7px 14px' }}
+                  >
+                    {selectingLocalDir ? (
+                      <Loader2 size={14} className="spinner" style={{ marginRight: 6 }} />
+                    ) : (
+                      <FolderOpen size={14} style={{ marginRight: 6 }} />
+                    )}
+                    Mappa tallózása a számítógépen
+                  </button>
+
+                  {!isDefaultDir && (
                     <button
                       type="button"
-                      className="btn btn-primary"
-                      onClick={handlePickLocalDirectory}
+                      className="btn btn-ghost"
+                      onClick={handleResetDefault}
                       disabled={selectingLocalDir}
-                      style={{ fontSize: 12, padding: '7px 14px' }}
+                      style={{ fontSize: 12, color: 'var(--text-muted)' }}
+                      title="Visszaállítás az alapértelmezett projektek mappára"
                     >
-                      {selectingLocalDir ? (
-                        <Loader2 size={14} className="spinner" style={{ marginRight: 6 }} />
-                      ) : (
-                        <FolderOpen size={14} style={{ marginRight: 6 }} />
-                      )}
-                      Mappa tallózása a számítógépen
+                      <RotateCcw size={13} style={{ marginRight: 4 }} />
+                      Alapértelmezett visszaállítása
                     </button>
+                  )}
 
-                    {!isDefaultDir && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={handleResetDefault}
-                        disabled={selectingLocalDir}
-                        style={{ fontSize: 12, color: 'var(--text-muted)' }}
-                        title="Visszaállítás az alapértelmezett projektek mappára"
-                      >
-                        <RotateCcw size={13} style={{ marginRight: 4 }} />
-                        Alapértelmezett visszaállítása
-                      </button>
-                    )}
-
-                    {hasLocalHandle && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={handleDisconnectLocalDirectory}
-                        style={{ fontSize: 12, color: '#f87171' }}
-                        title="Mappa leválasztása"
-                      >
-                        <Unlink size={13} style={{ marginRight: 4 }} />
-                        Leválasztás
-                      </button>
-                    )}
-                  </div>
+                  {hasLocalHandle && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={handleDisconnectLocalDirectory}
+                      style={{ fontSize: 12, color: '#f87171' }}
+                      title="Mappa leválasztása"
+                    >
+                      <Unlink size={13} style={{ marginRight: 4 }} />
+                      Leválasztás
+                    </button>
+                  )}
                 </div>
 
                 {/* Mappa elérési útja és gyors választó */}
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '0.5px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: 10,
-                  padding: '14px 16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10
-                }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div className="settings-guide-card">
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>Munkakönyvtár elérési útja a saját gépeden:</span>
                     <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)' }}>Abszolút útvonal vagy ~/</span>
                   </div>
 
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div className="settings-api-input-group">
                     <input
                       type="text"
-                      className="form-input"
+                      className="form-input settings-api-key-input"
                       value={customPathInput}
                       onChange={e => {
                         setCustomPathInput(e.target.value)
                         setWorkspaceError('')
                       }}
                       placeholder="pl. /Users/.../Documents/LaTeX vagy ~/Documents/LaTeX"
-                      style={{ flex: 1, fontSize: 12 }}
+                      style={{ flex: 1 }}
                       onKeyDown={e => {
                         if (e.key === 'Enter') handleSaveCustomPath()
                       }}
                     />
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="btn btn-primary settings-action-btn"
                       onClick={() => handleSaveCustomPath()}
                       disabled={savingPath || !customPathInput.trim()}
-                      style={{ fontSize: 12, padding: '7px 14px' }}
                     >
                       {savingPath ? <Loader2 size={13} className="spinner" /> : 'Alkalmazás'}
                     </button>
@@ -510,39 +471,23 @@ export default function SettingsModal({
                   </div>
                 </div>
 
-              {workspaceError && (
-                <div style={{
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171',
-                  fontSize: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8
-                }}>
-                  <AlertTriangle size={15} style={{ flexShrink: 0 }} />
-                  <span>{workspaceError}</span>
-                </div>
-              )}
+                {workspaceError && (
+                  <div className="settings-val-box invalid">
+                    <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                    <span>{workspaceError}</span>
+                  </div>
+                )}
 
-              {/* Safe storage notice */}
-              <div style={{
-                padding: '12px 14px',
-                borderRadius: 8,
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: 11,
-                color: 'var(--text-muted)',
-                lineHeight: 1.5
-              }}>
-                <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <ShieldCheck size={14} color="var(--accent)" />
-                  100% Adatvédelem és Saját Tárhely:
+                {/* Safe storage notice */}
+                <div className="settings-guide-note">
+                  <ShieldCheck size={16} style={{ flexShrink: 0, color: 'var(--accent-light)', marginTop: 2 }} />
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                      100% Adatvédelem és Saját Tárhely
+                    </div>
+                    A fájljaid kizárólag a te számítógépeden tárolódnak. A szerver soha nem menti el a dokumentumaidat, csak a fordításhoz szükséges pillanatnyi szöveget kapja meg. Legközelebb a böngésző automatikusan felajánlja a folytatást ugyanezzel a mappával.
+                  </div>
                 </div>
-                A fájljaid kizárólag a te számítógépeden tárolódnak. A szerver soha nem menti el a dokumentumaidat, csak a fordításhoz szükséges pillanatnyi szöveget kapja meg. Legközelebb a böngésző automatikusan felajánlja a folytatást ugyanezzel a mappával.
-              </div>
             </div>
             )
           })()}
@@ -550,45 +495,37 @@ export default function SettingsModal({
           {activeTab === 'apikey' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* API Status Banner */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 14px',
-                borderRadius: 10,
-                background: hasCustomKey
-                  ? 'rgba(48, 209, 88, 0.06)'
-                  : 'rgba(255, 69, 58, 0.06)',
-                border: `0.5px solid ${
-                  hasCustomKey
-                    ? 'rgba(48, 209, 88, 0.28)'
-                    : 'rgba(255, 69, 58, 0.28)'
-                }`
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <ShieldCheck size={18} color={hasCustomKey ? '#30d158' : '#ff453a'} />
+              <div className={`settings-status-banner ${hasCustomKey ? 'active' : 'inactive'}`}>
+                <div className="settings-status-banner-left">
+                  <div className="settings-status-banner-icon">
+                    <ShieldCheck size={20} />
+                  </div>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>
+                    <div className="settings-status-banner-title">
                       {hasCustomKey
                         ? 'Saját Gemini API Kulcs Aktív'
                         : 'Nincs Beállítva Gemini API Kulcs'}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    <div className="settings-status-banner-subtitle">
                       {hasCustomKey
-                        ? `Maszkolt kulcs: ${apiKeyManager.getMaskedKey()} (kizárólag a te böngésződben tárolva)`
+                        ? `Maszkolt kulcs: ${apiKeyManager.getMaskedKey()} • Kizárólag a te böngésződben tárolva`
                         : 'Az AI generáláshoz és javításhoz add meg a saját ingyenes Google AI Studio kulcsodat'}
                     </div>
                   </div>
                 </div>
+                <span className={`settings-status-badge ${hasCustomKey ? 'active' : 'inactive'}`}>
+                  <span className="settings-status-badge-dot" />
+                  {hasCustomKey ? 'Aktív' : 'Nincs megadva'}
+                </span>
               </div>
 
               {/* Input field */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-main)', display: 'block', marginBottom: 6 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ marginBottom: 6, fontWeight: 600, color: 'var(--text-primary)' }}>
                   Saját Google Gemini API Kulcs:
                 </label>
-                <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
-                  <div style={{ position: 'relative', flex: 1 }}>
+                <div className="settings-api-input-group">
+                  <div className="settings-api-input-wrap">
                     <input
                       type={showKey ? 'text' : 'password'}
                       value={apiKeyInput}
@@ -597,46 +534,43 @@ export default function SettingsModal({
                         setKeyValidation(null)
                       }}
                       placeholder="AIzaSy... (illeszd be a Google AI Studio kulcsodat)"
-                      className="modal-input"
-                      style={{ width: '100%', paddingRight: 40, fontFamily: 'monospace', fontSize: 12 }}
+                      className="form-input settings-api-key-input"
                     />
                     <button
                       type="button"
-                      className="btn-subtle"
+                      className="settings-eye-btn"
                       onClick={() => setShowKey(!showKey)}
-                      style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', padding: 4 }}
                       title={showKey ? 'Kulcs elrejtése' : 'Kulcs megjelenítése'}
                     >
-                      {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                      {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
 
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-primary settings-action-btn"
                     onClick={handleTestAndSaveKey}
                     disabled={testingKey}
-                    style={{ whiteSpace: 'nowrap' }}
                   >
                     {testingKey ? (
                       <>
-                        <Loader2 size={14} className="spinner" style={{ marginRight: 6 }} />
-                        Tesztelés...
+                        <Loader2 size={14} className="spinner" />
+                        <span>Tesztelés...</span>
                       </>
                     ) : (
-                      'Tesztelés & Mentés'
+                      <span>Tesztelés &amp; Mentés</span>
                     )}
                   </button>
 
                   {apiKeyInput && (
                     <button
                       type="button"
-                      className="btn btn-ghost"
+                      className="btn btn-secondary settings-delete-btn"
                       onClick={handleClearKey}
                       title="Kulcs törlése"
-                      style={{ color: '#f87171' }}
                     >
-                      Törlés
+                      <Trash2 size={13} />
+                      <span>Törlés</span>
                     </button>
                   )}
                 </div>
@@ -644,50 +578,48 @@ export default function SettingsModal({
 
               {/* Validation Result Box */}
               {keyValidation && (
-                <div style={{
-                  padding: '10px 12px',
-                  borderRadius: 6,
-                  background: keyValidation.valid ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                  border: `1px solid ${keyValidation.valid ? 'rgba(74, 222, 128, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                  color: keyValidation.valid ? '#30d158' : '#ff453a',
-                  fontSize: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8
-                }}>
+                <div className={`settings-val-box ${keyValidation.valid ? 'valid' : 'invalid'}`}>
                   {keyValidation.valid ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
                   <span>{keyValidation.message}</span>
                 </div>
               )}
 
               {/* Guide card: How to get an API key */}
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '0.5px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: 10,
-                padding: '14px 16px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                    💡 Nincs még saját Gemini kulcsod?
+              <div className="settings-guide-card">
+                <div className="settings-guide-header">
+                  <div className="settings-guide-title">
+                    <Lightbulb size={15} style={{ color: '#fbbf24' }} />
+                    <span>Nincs még saját Gemini kulcsod?</span>
                   </div>
                   <a
                     href="https://aistudio.google.com/apikey"
                     target="_blank"
                     rel="noreferrer"
-                    className="btn btn-ghost"
-                    style={{ fontSize: 11, padding: '4px 8px', color: 'var(--accent)', textDecoration: 'none' }}
+                    className="settings-guide-link"
                   >
                     <span>Google AI Studio megnyitása</span>
-                    <ExternalLink size={12} style={{ marginLeft: 4 }} />
+                    <ExternalLink size={12} />
                   </a>
                 </div>
 
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                  1. Nyisd meg a fenti linket és jelentkezz be a meglévő Google fiókoddal.<br />
-                  2. Kattints a kék <strong>"Create API key"</strong> gombra.<br />
-                  3. Másold ki az <code>AIzaSy...</code> kezdetű kulcsot és illeszd be a fenti mezőbe!<br />
-                  <em>Megjegyzés: A Google havi bőkezű ingyenes kvótát biztosít bankkártya megadása nélkül! A kulcsod kizárólag a saját böngésződben tárolódik.</em>
+                <div className="settings-guide-steps">
+                  <div className="settings-guide-step">
+                    <span className="settings-guide-step-num">1</span>
+                    <span>Nyisd meg a fenti hivatalos linket és jelentkezz be a meglévő Google fiókoddal.</span>
+                  </div>
+                  <div className="settings-guide-step">
+                    <span className="settings-guide-step-num">2</span>
+                    <span>Kattints a kék <strong>"Create API key"</strong> gombra.</span>
+                  </div>
+                  <div className="settings-guide-step">
+                    <span className="settings-guide-step-num">3</span>
+                    <span>Másold ki az <code className="settings-code-pill">AIzaSy...</code> kezdetű kulcsot és illeszd be a fenti mezőbe!</span>
+                  </div>
+                </div>
+
+                <div className="settings-guide-note">
+                  <Info size={14} style={{ flexShrink: 0, color: 'var(--accent-light)', marginTop: 1 }} />
+                  <span>A Google havi bőkezű <strong>ingyenes kvótát</strong> biztosít bankkártya megadása nélkül! A kulcsod kizárólag a saját böngésződben tárolódik.</span>
                 </div>
               </div>
             </div>

@@ -198,6 +198,16 @@ const EditorPane = forwardRef(function EditorPane({
   const [inlineInstruction, setInlineInstruction] = useState('')
   const [isTransforming, setIsTransforming] = useState(false)
   const [isOutlineOpen, setIsOutlineOpen] = useState(false)
+  const inlineTextareaRef = useRef(null)
+
+  // Automatikus magasságállítás a többsoros prompt beviteli mezőhöz (szövegtördelés és teljes olvashatóság)
+  useEffect(() => {
+    if (inlineTextareaRef.current) {
+      inlineTextareaRef.current.style.height = 'auto'
+      const scrollH = inlineTextareaRef.current.scrollHeight
+      inlineTextareaRef.current.style.height = `${Math.min(Math.max(scrollH, 52), 180)}px`
+    }
+  }, [inlineInstruction, isAiPromptOpen])
 
   // Fájlnév szerkesztési állapot
   const [isEditingName, setIsEditingName] = useState(false)
@@ -372,8 +382,21 @@ const EditorPane = forwardRef(function EditorPane({
       undo: handleUndo,
       redo: handleRedo,
       getEditor: () => editorRef.current,
+      layout: () => {
+        if (editorRef.current) {
+          editorRef.current.layout()
+        }
+      },
       jumpToLine: handleJumpToLine,
       flashLine: flashLine,
+      selectAll: () => {
+        if (!editorRef.current) return
+        const model = editorRef.current.getModel()
+        if (model) {
+          editorRef.current.focus()
+          editorRef.current.setSelection(model.getFullModelRange())
+        }
+      },
       getSelection: () => {
         if (!editorRef.current) return null
         const selection = editorRef.current.getSelection()
@@ -589,6 +612,49 @@ const EditorPane = forwardRef(function EditorPane({
         onForwardSync(pos.lineNumber, pos.column)
       }
     })
+
+    // Ctrl+A és Cmd+A: Teljes kód kijelölése a szerkesztőben (Macen és Windowson egyaránt)
+    const selectAllCode = () => {
+      const model = editor.getModel()
+      if (model) {
+        editor.setSelection(model.getFullModelRange())
+        editor.focus()
+      }
+    }
+
+    // 1. Közvetlen billentyűleütés lehallgatása Monaco szinten
+    // (Macen felülbírálja az alapértelmezett Emacs kurzormozgatást / cursorLineStart viselkedést)
+    editor.onKeyDown((e) => {
+      const isKeyA =
+        e.keyCode === monaco.KeyCode.KeyA ||
+        e.code === 'KeyA' ||
+        e.browserEvent?.key?.toLowerCase() === 'a'
+
+      if (isKeyA && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        e.stopPropagation()
+        selectAllCode()
+      }
+    })
+
+    // 2. Monaco parancsok regisztrálása (Ctrl+A és Cmd+A)
+    editor.addCommand(monaco.KeyMod.WinCtrl | monaco.KeyCode.KeyA, selectAllCode)
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, selectAllCode)
+
+    // 3. Helyi menü (jobb klikk) parancs regisztrálása
+    editor.addAction({
+      id: 'select-all-latex-code',
+      label: 'Összes kód kijelölése (Ctrl+A / ⌘A)',
+      keybindings: [
+        monaco.KeyMod.WinCtrl | monaco.KeyCode.KeyA,
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA
+      ],
+      contextMenuGroupId: 'navigation',
+      contextMenuOrder: 1.5,
+      run: () => {
+        selectAllCode()
+      }
+    })
   }
 
   // AI módosítás végrehajtása
@@ -719,6 +785,7 @@ const EditorPane = forwardRef(function EditorPane({
                   <FileCode size={13} />
                 </div>
                 <span className="column-header-title">TEX szerkesztő</span>
+                <span className="column-header-title-short">TEX</span>
               </div>
 
               <div className="editor-header-title-divider" />
@@ -785,12 +852,12 @@ const EditorPane = forwardRef(function EditorPane({
                       {autoSaveStatus === 'saving' ? (
                         <>
                           <RefreshCw size={10} className="spinner" />
-                          <span>Mentés...</span>
+                          <span className="autosave-label">Mentés...</span>
                         </>
                       ) : autoSaveStatus === 'saved' && !isModified ? (
                         <>
                           <Check size={10} color="#30d158" />
-                          <span>Mentve</span>
+                          <span className="autosave-label">Mentve</span>
                         </>
                       ) : isModified ? (
                         <div className="modified-dot" title="Nem mentett változtatások (auto-mentés hamarosan)" />
@@ -842,12 +909,12 @@ const EditorPane = forwardRef(function EditorPane({
                       {autoSaveStatus === 'saving' ? (
                         <>
                           <RefreshCw size={10} className="spinner" />
-                          <span>Mentés...</span>
+                          <span className="autosave-label">Mentés...</span>
                         </>
                       ) : autoSaveStatus === 'saved' && !isModified ? (
                         <>
                           <Check size={10} color="#30d158" />
-                          <span>Mentve</span>
+                          <span className="autosave-label">Mentve</span>
                         </>
                       ) : isModified ? (
                         <div className="modified-dot" title="Nem mentett változtatások (auto-mentés hamarosan)" />
@@ -884,7 +951,7 @@ const EditorPane = forwardRef(function EditorPane({
               {/* Vázlat (Outline) kapcsoló gomb */}
               <button
                 type="button"
-                className={`editor-header-btn ${isOutlineOpen ? 'active' : ''}`}
+                className={`editor-header-btn editor-outline-btn ${isOutlineOpen ? 'active' : ''}`}
                 onClick={() => setIsOutlineOpen((v) => !v)}
                 title="Dokumentum Szerkezeti Fa (TOC) megjelenítése / elrejtése"
               >
@@ -896,7 +963,7 @@ const EditorPane = forwardRef(function EditorPane({
               {/* SyncTeX Forward gomb */}
               <button
                 type="button"
-                className="editor-header-btn"
+                className="editor-header-btn editor-synctex-btn"
                 onClick={() => {
                   const pos = editorRef.current?.getPosition()
                   if (pos && onForwardSync) onForwardSync(pos.lineNumber, pos.column)
@@ -1245,15 +1312,17 @@ const EditorPane = forwardRef(function EditorPane({
 
             {/* Parancsbeviteli mező */}
             <div className="inline-ai-input-wrap">
-              <input
+              <textarea
+                ref={inlineTextareaRef}
                 className="inline-ai-input"
                 value={inlineInstruction}
                 onChange={(e) => setInlineInstruction(e.target.value)}
                 placeholder="Írd be a parancsot... (pl. tedd tcolorbox-ba és javítsd a képleteket)"
                 autoFocus
+                rows={2}
                 disabled={isTransforming}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
                     handleExecuteTransform()
                   } else if (e.key === 'Escape') {
@@ -1261,6 +1330,9 @@ const EditorPane = forwardRef(function EditorPane({
                   }
                 }}
               />
+              <div className="inline-ai-input-hint">
+                <span>↵ Enter: Küldés • Shift+Enter: Új sor</span>
+              </div>
             </div>
 
             {/* Műveleti gombok */}

@@ -1,0 +1,120 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\geometry{left=25mm, right=25mm, top=25mm, bottom=25mm}
+
+\definecolor{myprimary}{RGB}{41, 128, 185}
+\definecolor{mybackground}{RGB}{245, 247, 250}
+\definecolor{myboxborder}{RGB}{52, 152, 219}
+
+\tcbset{
+    colback=mybackground,
+    colframe=myboxborder,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=10pt,
+    right=10pt,
+    top=10pt,
+    bottom=10pt
+}
+
+\title{Kombináció}
+\author{}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+\usepackage{abstract}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent Egy barátságos, lépésről lépésre haladó útmutató a kombinációk megértéséhez, hogy a matekóra vagy a dolgozat ne stresszforrás, hanem sikerélmény legyen!
+\end{abstract}
+
+\section{Mikor használjuk?}
+Képzeld el, hogy a kedvenc pizzádat rendeled, és a 10-féle feltét közül ki kell választanod 3-at. Lényeges, hogy a szalámisat, a gombásat meg a kukoricásat milyen sorrendben mondod be a telefonba? Egyáltalán nem! Ugyanazt a pizzát kapod mindenesetre. 
+
+Akkor nyúlunk a **kombináció** eszközéhez, amikor egy nagyobb halmazból kell kiválasztanunk egy kisebb csoportot úgy, hogy **a kiválasztás sorrendje NEM számít**, és elemeket **nem ismétlünk**. Ha a sorrend sem számít, és még ismételni is lehet (pl. gombás-gombás-kukorica), akkor az már egy másik történet (ismétléses kombináció), de először nézzük meg a klasszikus, alap esetet!
+
+\section{Hogyan működik?}
+Vegyünk egy nagyon egyszerű példát. Van $4$ darab különböző pizzafeltétünk: sonka ($S$), gomba ($G$), kukorica ($K$) és sajt ($SA$). Ebből szeretnénk kiválasztani pontosan $2$-t a pizzánkra. Hányféleképpen tehetjük ezt meg?
+
+Ha először a sorrendre is figyelnénk (ezt hívjuk \textbf{variációnak}), akkor azt mondanánk, hogy az első helyre választhatunk $4$-félét, a másodikra maradt $3$, azaz $4 \cdot 3 = 12$-féle sorrend jöhetne ki (pl. először a sonka, utána a gomba, az más, mint először a gomba, utána a sonka). 
+
+De nekünk a pizzánkon a sonka-gomba és a gomba-sonka ugyanaz a feltétpár! Hányféleképpen tudunk sorba rendezni $2$ feltétet? Pontosan $2$-féleképpen ($2!$). Mivel minden egyes párost kétszer számoltunk meg (a két lehetséges sorrend miatt), ezért a lihegve kiszámolt $12$-es eredményt egyszerűen el kell osztanunk kettővel: $\frac{12}{2} = 6$.
+
+Általánosan is ez a logika: először kiszámoljuk, hányféleképpen tudnánk sorba rendezni a kiválasztott elemeket, majd osztunk a sorrendek számával, hiszen a kombinációban a sorrend lényegtelen.
+
+\section{Általános képlet és speciális esetek}
+Ha $n$ darab különböző elemből szeretnénk kiválasztani $k$ darabet úgy, hogy a sorrend nem számít, akkor a következő \textbf{kombinációs képletet} használjuk (ezt úgy olvassuk ki, hogy "$n$ alatt a $k$"):
+
+$$\binom{n}{k} = \frac{n!}{k!(n-k)!}$$
+
+Ahol az $n!$ (n faktoriális) nem azt jelenti, hogy izgulunk, hanem azt, hogy $1 \cdot 2 \cdot 3 \dots \cdot n$.
+
+\begin{tcolorbox}[title=Hasznos tulajdonságok és csapdák]
+\begin{itemize}
+    \item \textbf{Szimmetria szabály:} $\binom{n}{k} = \binom{n}{n-k}$. Ha 10 emberből kiválasztunk 8-at a csapatba, az ugyanannyi variáció, mintha azt mondanánk meg, hogy 2 embert hagyunk ki.
+    \item \textbf{A klasszikus csapda:} Mindig tedd fel magadnak a kérdést: \textit{Ha felcserélem a kiválasztott elemek sorrendjét, akkor egy újabb egyedi esetet kaptam, vagy ugyanazt?} Ha ugyanazt, akkor kombináció! Ha számít a rang, a helyezés vagy a sorrend, akkor ez bizony nem kombináció.
+\end{itemize}
+\end{tcolorbox}
+
+\section{Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
+Amikor olvasod a feladatot a dolgozatban, futtasd le ezt a 3 kérdést a fejedben:
+\begin{enumerate}
+    \item \textbf{Minden elemet felhasználunk?} Ha csak egy részét válogatjuk ki (pl. 10-ből 3-at), akkor ez nem permutáció.
+    \item \textbf{Számít a sorrend?} (Pl. elnök és alelnök választás vs. egyszerű ötfős bizottság). Ha \textbf{nem} számít a sorrend, akkor jó helyen jársz, ez kombináció!
+    \item \textbf{Visszatehetjük-e az elemet?} (Ismétlés). Ha a szöveg nem említi az ismétlést, és a tárgyakból/emberekből csak egy van, akkor sima (ismétlés nélküli) kombinációról van szó.
+\end{enumerate}
+
+\section{Tipikus és trükkös feladatok levezetése}
+
+\subsection*{Feladat: A klasszikus bizottság-választás}
+\begin{tcolorbox}
+Egy osztályban $12$ fiú és $8$ lány tanul. Hányféleképpen lehet 5 fős bizottságot küldeni a diákönkormányzatba, ha a bizottságban \textbf{pontosan 3 fiúnak} kell lennie?
+\end{tcolorbox}
+
+\textbf{Gondolatmenet és lépések:}
+1. \textbf{Mit látunk?} Összesen $20$ tanulónkból kell kiválasztani $5$-öt, de van egy szigorú megkötés: a csapatnak pontosan $3$ fiúból és így ugyebár $5 - 3 = 2$ lányból kell állnia.
+2. \textbf{Miért így gondolkodunk?} Külön kell kiválasztanunk a fiúkat a fiúk csoportjából, és a lányokat a lányok csoportjából. Mivel a bizottságon belül a sorrend mindegy (tök mindegy, hogy Jancsi vagy Pistike lép be először a terembe), ez kombináció.
+3. \textbf{A fiúk kiválasztása:} $12$ fiúból kell $3$-at kiválasztani. Ennek a lehetőségei:
+$$\binom{12}{3} = \frac{12 \cdot 11 \cdot 10}{1 \cdot 2 \cdot 3} = 220$$
+4. \textbf{A lányok kiválasztása:} $8$ lányból kell $2$-t kiválasztani. Ennek a lehetőségei:
+$$\binom{8}{2} = \frac{8 \cdot 7}{1 \cdot 2} = 28$$
+5. \textbf{Összeadás vagy szorzás?} Ez egy klasszikus hibaforrás! Sokan összeadják a lehetőségeket. De figyelj: minden egyes fiúcsapathoz \textit{bármelyik} lánycsapat tartozhat. Ezért a kombinatorikai alapelv (szorzási elv) szerint a két eredményt \textbf{össze kell szorozni}:
+$$\text{Összesen} = 220 \cdot 28 = 6160$$
+\textbf{Megoldás:} A bizottságot $6160$-féleképpen lehet összeállítani.
+
+\subsection*{Feladat: Geometriai kombináció}
+\begin{tcolorbox}
+Egy konvex tízszög csúcsai közül kiválasztunk hármat. Hány olyan háromszög van, amelynek a csúcsai a tízszög adott csúcsai közül kerülnek ki?
+\end{tcolorbox}
+
+\textbf{Gondolatmenet és lépések:}
+1. \textbf{Mit látunk?} Van $10$ darab pontunk (a tízszög csúcsai), és ezek közül kell $3$-at összekötnünk, hogy háromszöget kapjunk.
+2. \textbf{Hol a csapda?} A diákok gyakran megijednek, mert ez geometriai feladatnak tűnik, pedig a lényege tiszta kombináció. Ha kiválasztunk pl. az $A$, $B$ és $C$ csúcsokat, azzal máris meghatároztunk egy háromszöget. Számít-e, hogy $ABC$, $BCA$ vagy $CAB$ sorrendben nevezzük meg a csúcsokat? Nem, a háromszög ugyanaz marad!
+3. \textbf{A számítás:} $10$ pontból kell kiválasztanunk $3$-at, sorrend nélkül:
+$$\binom{10}{3} = \frac{10 \cdot 9 \cdot 8}{1 \cdot 2 \cdot 3} = 120$$
+\textbf{Megoldás:} Pontosan $120$ ilyen háromszög létezik. (Nincs is annyi sok, ugye?)
+
+\end{document}

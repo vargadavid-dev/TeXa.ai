@@ -79,5 +79,33 @@
       "Érettségi"
     ],
     "updatedAt": "2026-11-04T22:58:39.258Z"
+  },
+  "Matematika/Kúpszeletek.tex": {
+    "tags": [
+      "Matematika"
+    ],
+    "updatedAt": "2026-11-05T09:29:35.476Z",
+    "createdAt": "2026-11-05T09:10:47.020Z"
+  },
+  "Matematika/Ismétlés_mélküli_variáció.tex": {
+    "tags": [
+      "Matematika"
+    ],
+    "updatedAt": "2026-11-06T15:21:01.745Z",
+    "createdAt": "2026-11-06T13:09:20.590Z"
+  },
+  "Matematika/Ismétlés_nélküli_variáció.tex": {
+    "tags": [
+      "Matematika"
+    ],
+    "updatedAt": "2026-11-06T13:19:27.681Z",
+    "createdAt": "2026-11-06T13:19:27.682Z"
+  },
+  "Matematika/Kombinatorika/Elmélet/5. Ismétlés nélküli kombináció - elmélet.tex": {
+    "tags": [
+      "Matematika"
+    ],
+    "updatedAt": "2026-11-07T18:35:43.298Z",
+    "createdAt": "2026-11-07T17:45:39.632Z"
   }
 }

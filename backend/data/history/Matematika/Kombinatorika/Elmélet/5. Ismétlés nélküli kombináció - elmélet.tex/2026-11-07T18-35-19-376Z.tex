@@ -1,0 +1,158 @@
+\documentclass[a4paper,12pt]{article}
+
+%%% Alapdokumentum beállítások %%%
+\usepackage[hungarian]{babel}     % Magyar nyelvi támogatás
+\usepackage[T1]{fontenc}          % T1 betűtípus kódolás (az utf8 inputenc ma már alapértelmezett)
+\usepackage{geometry}             % Oldalformázás
+\geometry{a4paper, margin=1.5in}  % Papírméret és margók
+
+%%% Szövegformázás és oldalelrendezés (JAVÍTOTT) %%%
+\usepackage{microtype}            % Intelligens sorkizárás, szebb szövegkép
+\usepackage{parskip}              % Bekezdések közötti térköz (behúzás helyett)
+\usepackage{enumitem}             % Lista testreszabáshoz
+\usepackage{multicol}             % Többszörös oszlopokhoz
+\setlength{\emergencystretch}{3em}% Segít a nehezen törhető soroknál (a \sloppy helyett)
+% Az elválasztás tiltása (\hyphenpenalty) kivezetve, mert magyar nyelvben tönkreteszi a sorkizárást!
+
+%%% Matematikai és tudományos csomagok %%%
+\usepackage{amsmath, amssymb, amsfonts, amsthm} % Matematikai csomagok egyben
+\usepackage{stmaryrd}                           % Speciális matematikai szimbólumok
+\usepackage[version=4]{mhchem}                  % Kémiai képletekhez
+\usepackage{esvect}                             % Vektorokhoz (vastag nyilak)
+\usepackage{cancel}                             % Matematikai áthúzáshoz
+
+%%% Színek és Grafikai elemek (JAVÍTOTT) %%%
+\usepackage{xcolor}                             % Színek kezelése (FONTOS!)
+\definecolor{bvred}{rgb}{0.8, 0.0, 0.0}         % Piros szín definiálása
+
+\usepackage{graphicx}                           % Képek beszúrásához
+\usepackage{wrapfig}                            % Képek lebegtetéséhez
+\usepackage{tikz}                               % Vektoros ábrákhoz
+\usetikzlibrary{calc, intersections, decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}                       % PGFPlots kompatibilitás (FONTOS!)
+\usepackage{caption}                            % Ábrafeliratok testreszabásához
+\usepackage{float}                              % Ábrák pozicionálásához
+
+%%% Táblázatok és tömbök %%%
+\usepackage{array}                       % Speciális oszloptípusok
+\setlength{\arrayrulewidth}{0.8pt}       % Táblázatvonalak vastagsága
+\setlength{\tabcolsep}{6pt}              % Oszlopok közötti térköz
+\renewcommand{\arraystretch}{1.8}        % Sorok magassága
+
+%%% Egyedi parancsok és környezetek (JAVÍTOTT) %%%
+\newcommand{\textbfr}[1]{\textbf{\textcolor{bvred}{#1}}} % Piros félkövér szöveg
+
+\usepackage{etoolbox} % LaTeX programozási eszközök
+\newrobustcmd*{\mytriangle}[1]{%                  % Háromszög jelölés
+    \tikz{\filldraw[draw=#1,fill=#1,rotate=-90] (0,0)--(0.2cm,0)--(0.1cm,0.2cm)--cycle;}}
+
+% amsthm környezetek letisztult beállítása
+\theoremstyle{definition} % Ezzel a normál (nem dőlt) betűtípust használja a környezeteken belül
+\newtheorem*{definition}{Definíció}
+\newtheorem*{theorem}{Tétel}
+\newtheorem*{problem}{Feladat}
+\newtheorem*{example}{Példa}
+\newtheorem*{remark}{\mytriangle{bvred} Megjegyzés}
+
+%%% Hiperhivatkozások és PDF-beállítások %%%
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage[utf8]{inputenc}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+\usepackage{booktabs}
+
+%%% Megjelenítéshez kiegészített dobozok és makrók %%%
+\newtcolorbox{definiciodoboz}[1][]{colback=blue!5!white,colframe=blue!75!black,fonttitle=\bfseries,title=Definíció: #1}
+\newtcolorbox{teteldoboz}[1][]{colback=green!10!white,colframe=green!75!black,fonttitle=\bfseries,title=Tétel: #1}
+\newtcolorbox{torvenydoboz}[1][]{colback=purple!5!white,colframe=purple!75!black,fonttitle=\bfseries,title=Fizikai törvény: #1}
+
+\usepackage{hyperref}                    % Mindig utolsóként (vagy majdnem utolsóként) érdemes betölteni
+
+%%% Geometriai jelölések %%%
+\def\dotMarkRightAngle[size=#1](#2,#3,#4){%
+ \draw ($(#3)!#1!(#2)$) -- 
+       ($($(#3)!#1!(#2)$)!#1!90:(#2)$) --
+       ($(#3)!#1!(#4)$);
+ \path (#3)--node[circle,fill,inner sep=.5pt]{} ($($(#3)!#1!(#2)$)!#1!90:(#2)$);
+}
+
+%%% Dokumentum metaadatai %%%
+\title{\textbf{Ismétlés nélküli kombináció}}
+\author{Készítette: Varga Dávid}
+
+
+\begin{document}
+
+\maketitle
+
+
+
+\section{Mikor használjuk?}
+Képzeld el, hogy a kedvenc pizzádat rendeled, és a 10-féle feltét közül ki kell választanod 3-at. Lényeges, hogy a szalámisat, a gombásat meg a kukoricásat milyen sorrendben mondod be a telefonba? Egyáltalán nem! Ugyanazt a pizzát kapod mindenesetre. 
+
+Akkor nyúlunk a \textbf{kombináció} eszközéhez, amikor egy nagyobb halmazból kell kiválasztanunk egy kisebb csoportot úgy, hogy \textbf{a kiválasztás sorrendje NEM számít}, és elemeket \textbf{nem ismétlünk}. 
+
+\section{Hogyan működik?}
+Vegyünk egy nagyon egyszerű példát. Van $4$ darab különböző pizzafeltétünk: paprika ($P$), gomba ($G$), kukorica ($K$) és sajt ($S$). Ebből szeretnénk kiválasztani pontosan $2$-t a pizzánkra. Hányféleképpen tehetjük ezt meg?
+
+Ha először a sorrendre is figyelnénk (ezt hívjuk \textbf{variációnak}), akkor azt mondanánk, hogy az első helyre választhatunk $4$-félét, a másodikra maradt $3$, azaz $4 \cdot 3 = 12$-féle sorrend jöhetne ki (pl. először a paprika, utána a gomba, az más, mint először a gomba, utána a paprika). 
+
+De nekünk a pizzánkon a paprika-gomba és a gomba-paprika ugyanaz a feltétpár! Hányféleképpen tudunk sorba rendezni $2$ feltétet? Pontosan $2$-féleképpen ($2!$). Mivel minden egyes párost kétszer számoltunk meg (a két lehetséges sorrend miatt), ezért a lihegve kiszámolt $12$-es eredményt egyszerűen el kell osztanunk kettővel: $\frac{12}{2} = 6$.
+
+Általánosan is ez a logika: először kiszámoljuk, hányféleképpen tudnánk sorba rendezni a kiválasztott elemeket, majd osztunk a sorrendek számával, hiszen a kombinációban a sorrend lényegtelen.
+
+\section{Általános képlet és speciális esetek}
+Ha $n$ darab különböző elemből szeretnénk kiválasztani $k$ darabet úgy, hogy a sorrend nem számít, akkor a következő \textbf{kombinációs képletet} használjuk (ezt úgy olvassuk ki, hogy "$n$ alatt a $k$"):
+
+$$\binom{n}{k} = \frac{n!}{k!(n-k)!}$$
+
+Ahol az $n!$ (n faktoriális) nem azt jelenti, hogy izgulunk, hanem azt, hogy $1 \cdot 2 \cdot 3 \dots \cdot n$.
+
+\begin{tcolorbox}[title=Hasznos tulajdonságok és csapdák]
+\begin{itemize}
+\item \textbf{Szimmetria szabály:} $\binom{n}{k} = \binom{n}{n-k}$. Ha 10-féle feltétből kiválasztunk 8-at a pizzára, az ugyanannyi lehetőség, mintha azt döntenénk el, hogy melyik 2 feltétet hagyjuk le róla.
+    \item \textbf{A klasszikus csapda:} Mindig tedd fel magadnak a kérdést: \textit{Ha felcserélem a kiválasztott elemek sorrendjét, akkor egy újabb egyedi esetet kaptam, vagy ugyanazt?} Ha ugyanazt, akkor kombináció! Ha számít a rang, a helyezés vagy a sorrend, akkor ez bizony nem kombináció.
+\end{itemize}
+\end{tcolorbox}
+
+\section{Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
+Amikor olvasod a feladatot a dolgozatban, futtasd le ezt a 3 kérdést a fejedben:
+\begin{enumerate}
+    \item \textbf{Minden elemet felhasználunk?} Ha csak egy részét válogatjuk ki (pl. 10-ből 3-at), akkor ez nem permutáció.
+    \item \textbf{Számít a sorrend?} (Pl. elnök és alelnök választás vs. egyszerű ötfős bizottság). Ha \textbf{nem} számít a sorrend, akkor jó helyen jársz, ez kombináció!
+    \item \textbf{Visszatehetjük-e az elemet?} (Ismétlés). Ha a szöveg nem említi az ismétlést, és a tárgyakból/emberekből csak egy van, akkor sima (ismétlés nélküli) kombinációról van szó.
+\end{enumerate}
+
+\section{Tipikus és trükkös feladatok levezetése}
+
+\subsection*{Feladat: A klasszikus bizottság-választás}
+\begin{tcolorbox}
+Egy osztályban $12$ fiú és $8$ lány tanul. Hányféleképpen lehet 5 fős bizottságot küldeni a diákönkormányzatba, ha a bizottságban \textbf{pontosan 3 fiúnak} kell lennie?
+\end{tcolorbox}
+
+\textbf{Gondolatmenet és lépések:}
+1. \textbf{Mit látunk?} Összesen $20$ tanulónkból kell kiválasztani $5$-öt, de van egy szigorú megkötés: a csapatnak pontosan $3$ fiúból és így ugyebár $5 - 3 = 2$ lányból kell állnia.
+2. \textbf{Miért így gondolkodunk?} Külön kell kiválasztanunk a fiúkat a fiúk csoportjából, és a lányokat a lányok csoportjából. Mivel a bizottságon belül a sorrend mindegy (tök mindegy, hogy Jancsi vagy Pistike lép be először a terembe), ez kombináció.
+3. \textbf{A fiúk kiválasztása:} $12$ fiúból kell $3$-at kiválasztani. Ennek a lehetőségei:
+$$\binom{12}{3} = \frac{12 \cdot 11 \cdot 10}{1 \cdot 2 \cdot 3} = 220$$
+4. \textbf{A lányok kiválasztása:} $8$ lányból kell $2$-t kiválasztani. Ennek a lehetőségei:
+$$\binom{8}{2} = \frac{8 \cdot 7}{1 \cdot 2} = 28$$
+5. \textbf{Összeadás vagy szorzás?} Ez egy klasszikus hibaforrás! Sokan összeadják a lehetőségeket. De figyelj: minden egyes fiúcsapathoz \textit{bármelyik} lánycsapat tartozhat. Ezért a kombinatorikai alapelv (szorzási elv) szerint a két eredményt \textbf{össze kell szorozni}:
+$$\text{Összesen} = 220 \cdot 28 = 6160$$
+\textbf{Megoldás:} A bizottságot $6160$-féleképpen lehet összeállítani.
+
+\subsection*{Feladat: Geometriai kombináció}
+\begin{tcolorbox}
+Egy konvex tízszög csúcsai közül kiválasztunk hármat. Hány olyan háromszög van, amelynek a csúcsai a tízszög adott csúcsai közül kerülnek ki?
+\end{tcolorbox}
+
+\textbf{Gondolatmenet és lépések:}
+1. \textbf{Mit látunk?} Van $10$ darab pontunk (a tízszög csúcsai), és ezek közül kell $3$-at összekötnünk, hogy háromszöget kapjunk.
+2. \textbf{Hol a csapda?} A diákok gyakran megijednek, mert ez geometriai feladatnak tűnik, pedig a lényege tiszta kombináció. Ha kiválasztunk pl. az $A$, $B$ és $C$ csúcsokat, azzal máris meghatároztunk egy háromszöget. Számít-e, hogy $ABC$, $BCA$ vagy $CAB$ sorrendben nevezzük meg a csúcsokat? Nem, a háromszög ugyanaz marad!
+3. \textbf{A számítás:} $10$ pontból kell kiválasztanunk $3$-at, sorrend nélkül:
+$$\binom{10}{3} = \frac{10 \cdot 9 \cdot 8}{1 \cdot 2 \cdot 3} = 120$$
+\textbf{Megoldás:} Pontosan $120$ ilyen háromszög létezik. (Nincs is annyi sok, ugye?)
+
+\end{document}

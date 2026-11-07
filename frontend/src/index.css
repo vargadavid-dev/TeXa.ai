@@ -509,7 +509,26 @@ html, body, #root {
 }
 
 .btn-icon {
-  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+  box-sizing: border-box;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
 }
 
 .btn:disabled {
@@ -1414,7 +1433,7 @@ html, body, #root {
   align-items: center;
   gap: 5px;
   min-width: 0;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   overflow: hidden;
 }
 
@@ -1430,7 +1449,7 @@ html, body, #root {
 .editor-file-tab {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   height: 26px;
   padding: 0 8px;
   background: rgba(255, 255, 255, 0.04);
@@ -1443,9 +1462,10 @@ html, body, #root {
   box-sizing: border-box;
   transition: all 0.15s ease;
   white-space: nowrap;
-  flex-shrink: 1;
+  flex: 0 1 auto;
   min-width: 0;
   max-width: 220px;
+  overflow: hidden;
 }
 
 .editor-file-tab:hover {
@@ -1457,11 +1477,15 @@ html, body, #root {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-dim);
   padding: 0 6px;
+  max-width: none;
+  overflow: visible;
 }
 
 .editor-file-tab-name {
   cursor: pointer;
-  max-width: 220px;
+  max-width: 200px;
+  min-width: 24px;
+  flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1479,6 +1503,7 @@ html, body, #root {
   border-radius: 3px;
   opacity: 0.7;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .editor-file-tab:hover .editor-file-tab-rename-btn {
@@ -1623,11 +1648,16 @@ html, body, #root {
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  padding: 1px 6px;
+  padding: 1px 4px;
   border-radius: 4px;
   color: var(--text-muted);
   transition: all 0.2s ease;
   user-select: none;
+  flex-shrink: 0;
+}
+
+.editor-autosave-indicator .autosave-label {
+  white-space: nowrap;
 }
 
 .editor-autosave-indicator.saving {
@@ -1800,9 +1830,6 @@ html, body, #root {
 
 /* ── Konténer alapú reszponzív viselkedés keskeny szerkesztő nézethez ── */
 @container (max-width: 880px) {
-  .editor-header-left .column-header-title {
-    display: none;
-  }
   .editor-header-btn:not(.editor-header-ai-btn) .editor-btn-label {
     display: none;
   }
@@ -1817,7 +1844,7 @@ html, body, #root {
     display: none;
   }
   .editor-file-tab {
-    max-width: 150px;
+    max-width: 180px;
   }
 }
 
@@ -1828,18 +1855,27 @@ html, body, #root {
   .editor-header-kbd {
     display: none;
   }
-  .editor-file-tab {
-    max-width: 120px;
+  .editor-autosave-indicator {
+    padding: 0 2px;
+    gap: 0;
   }
-  .editor-tab-header {
+  .editor-autosave-indicator .autosave-label {
+    display: none;
+  }
+  .editor-file-tab {
+    max-width: 160px;
     padding: 0 6px;
     gap: 4px;
   }
+  .editor-tab-header {
+    padding: 0 8px;
+    gap: 4px;
+  }
   .editor-header-left {
-    gap: 3px;
+    gap: 4px;
   }
   .editor-header-actions {
-    gap: 3px;
+    gap: 4px;
   }
 }
 
@@ -1848,19 +1884,52 @@ html, body, #root {
     display: none;
   }
   .editor-file-tab {
-    max-width: 90px;
+    max-width: 140px;
   }
   .editor-header-badge {
     display: none;
   }
+  .editor-file-tab-rename-btn {
+    display: none;
+  }
+  .editor-file-tab:hover .editor-file-tab-rename-btn {
+    display: inline-flex;
+  }
 }
 
-@container (max-width: 360px) {
+@container (max-width: 380px) {
+  .editor-header-left .column-header-title {
+    display: none;
+  }
+  .editor-header-left .column-header-title-short {
+    display: inline;
+  }
   .editor-file-tab {
-    max-width: 70px;
+    max-width: 125px;
+  }
+}
+
+@container (max-width: 340px) {
+  .editor-header-left .column-header-title-short {
+    display: none;
+  }
+  .editor-header-title-divider {
+    display: none;
+  }
+  .editor-file-tab {
+    max-width: 110px;
   }
   .editor-header-group {
     display: none;
+  }
+}
+
+@container (max-width: 290px) {
+  .editor-synctex-btn {
+    display: none;
+  }
+  .editor-file-tab {
+    max-width: 100px;
   }
 }
 
@@ -2463,6 +2532,15 @@ html, body, #root {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.pdf-group-val-btn.auto-fit-active {
+  color: #38bdf8;
+}
+
+.pdf-group-val-btn.auto-fit-active:hover {
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+}
+
 /* Alapértelmezetten rejtett rövidített feliratok */
 .preview-header-title-short,
 .badge-short,
@@ -2489,12 +2567,6 @@ html, body, #root {
 }
 
 @container (max-width: 660px) {
-  .preview-header-title {
-    display: none;
-  }
-  .preview-header-title-short {
-    display: inline;
-  }
   .badge-full {
     display: none;
   }
@@ -2526,9 +2598,6 @@ html, body, #root {
 }
 
 @container (max-width: 480px) {
-  .preview-header-title-short {
-    display: none;
-  }
   .pdf-header-compile-btn .pdf-btn-label-short {
     display: none;
   }
@@ -2537,11 +2606,26 @@ html, body, #root {
   }
 }
 
+@container (max-width: 380px) {
+  .preview-header-title {
+    display: none;
+  }
+  .preview-header-title-short {
+    display: inline;
+  }
+}
+
 @container (max-width: 360px) {
   .preview-page-badge {
     display: none;
   }
   .pdf-zoom-group {
+    display: none;
+  }
+}
+
+@container (max-width: 300px) {
+  .preview-header-title-short {
     display: none;
   }
 }
@@ -4172,8 +4256,8 @@ html, body, #root {
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-lg);
   padding: 20px;
-  width: 90%;
-  max-width: 520px;
+  width: 92%;
+  max-width: 560px;
   box-shadow: var(--shadow-lg), 0 0 30px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
@@ -4203,11 +4287,13 @@ html, body, #root {
   padding: 8px 12px;
   font-family: var(--font-mono);
   font-size: 11px;
+  line-height: 1.5;
   color: var(--text-secondary);
-  max-height: 80px;
+  max-height: 90px;
   overflow-y: auto;
   white-space: pre-wrap;
-  word-break: break-all;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .inline-ai-chips {
@@ -4238,7 +4324,8 @@ html, body, #root {
 .inline-ai-input-wrap {
   position: relative;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  width: 100%;
 }
 
 .inline-ai-input {
@@ -4248,15 +4335,33 @@ html, body, #root {
   border-radius: var(--radius-md);
   padding: 10px 14px;
   font-size: 13px;
+  line-height: 1.5;
   color: var(--text-primary);
   font-family: var(--font-ui);
-  transition: var(--transition);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  resize: none;
+  min-height: 52px;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .inline-ai-input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.inline-ai-input-hint {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  user-select: none;
 }
 
 .inline-ai-actions {
@@ -5866,6 +5971,317 @@ html, body, #root {
   box-shadow: 0 0 0 2px var(--accent-dim) !important;
 }
 
+/* ── Saját Dokumentumtípusok & Sablonok Modál (Apple Pro Design) ── */
+.custom-doc-types-modal {
+  background: var(--bg-panel, #1c1c1e);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-lg, 14px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+}
+
+.custom-doc-filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.custom-doc-filter-label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.custom-doc-filter-track {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 2px;
+  box-sizing: border-box;
+}
+
+.custom-doc-filter-btn {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 5px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.custom-doc-filter-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.custom-doc-filter-btn.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.custom-doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.custom-doc-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  position: relative;
+}
+
+.custom-doc-card:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+}
+
+.custom-doc-card.active-doc {
+  background: rgba(10, 132, 255, 0.06);
+  border-color: rgba(100, 168, 255, 0.45);
+  box-shadow: 0 0 14px rgba(10, 132, 255, 0.16);
+}
+
+.custom-doc-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.custom-doc-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.custom-doc-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f5f5f7;
+  letter-spacing: -0.01em;
+}
+
+.custom-doc-badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.custom-doc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3.5px;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 1.5px 7px;
+  border-radius: 5px;
+  line-height: 1.35;
+  user-select: none;
+}
+
+.custom-doc-badge.builtin {
+  background: rgba(10, 132, 255, 0.12);
+  border: 1px solid rgba(100, 168, 255, 0.25);
+  color: #64a8ff;
+}
+
+.custom-doc-badge.custom {
+  background: rgba(48, 209, 88, 0.12);
+  border: 1px solid rgba(48, 209, 88, 0.28);
+  color: #30d158;
+}
+
+.custom-doc-badge.subject {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a1a1a6;
+}
+
+.custom-doc-badge.active-indicator {
+  background: rgba(10, 132, 255, 0.2);
+  border: 1px solid rgba(100, 168, 255, 0.5);
+  color: #cfe4ff;
+  font-weight: 600;
+}
+
+.custom-doc-desc {
+  font-size: 12px;
+  color: #a1a1a6;
+  line-height: 1.45;
+}
+
+.custom-doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.doc-action-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.doc-action-btn.select-btn {
+  background: rgba(10, 132, 255, 0.18);
+  border: 1px solid rgba(100, 168, 255, 0.38);
+  color: #cfe4ff;
+  font-weight: 600;
+}
+
+.doc-action-btn.select-btn:hover {
+  background: var(--accent-gradient, linear-gradient(180deg, #2b8fff 0%, #0a84ff 100%));
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.35);
+  transform: translateY(-0.5px);
+}
+
+.doc-action-btn.select-btn.is-active {
+  background: rgba(48, 209, 88, 0.15);
+  border-color: rgba(48, 209, 88, 0.4);
+  color: #30d158;
+  cursor: default;
+  pointer-events: none;
+}
+
+.doc-action-icon-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  color: #a1a1a6;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.doc-action-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.doc-action-icon-btn.delete-btn:hover {
+  background: rgba(255, 69, 58, 0.15);
+  border-color: rgba(255, 69, 58, 0.35);
+  color: #ff6961;
+}
+
+.custom-doc-prompt-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 7px;
+  padding: 8px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.custom-doc-prompt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.custom-doc-prompt-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #8e8e93;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.custom-doc-prompt-toggle {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--accent-light, #64a8ff);
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.15s ease;
+}
+
+.custom-doc-prompt-toggle:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.custom-doc-prompt-text {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: #c7c7cc;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.custom-doc-prompt-text.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Fájl Importálás Modál ── */
 .import-file-meta-box {
   display: flex;
@@ -7266,17 +7682,24 @@ html, body, #root {
   transition: all 0.15s ease;
   font-family: inherit;
   user-select: none;
+  outline: none !important;
 }
 
 .settings-tab-btn:hover {
   color: #f5f5f7;
 }
 
+.settings-tab-btn:focus,
+.settings-tab-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .settings-tab-btn.active {
-  background: #636366;
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
   font-weight: 600;
 }
 
@@ -7286,6 +7709,8 @@ html, body, #root {
   border-radius: 50%;
   background: #30d158;
   margin-left: 2px;
+  display: inline-block;
+  box-shadow: 0 0 6px rgba(48, 209, 88, 0.7);
 }
 
 .settings-modal-body {
@@ -7301,6 +7726,326 @@ html, body, #root {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+}
+
+/* ── Settings Modal Új komponensek és kártyák ── */
+.settings-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.settings-status-banner.active {
+  background: rgba(48, 209, 88, 0.07);
+  border: 1px solid rgba(48, 209, 88, 0.22);
+}
+
+.settings-status-banner.inactive {
+  background: rgba(255, 69, 58, 0.07);
+  border: 1px solid rgba(255, 69, 58, 0.22);
+}
+
+.settings-status-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.settings-status-banner-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-status-banner.active .settings-status-banner-icon {
+  background: rgba(48, 209, 88, 0.16);
+  color: #30d158;
+}
+
+.settings-status-banner.inactive .settings-status-banner-icon {
+  background: rgba(255, 69, 58, 0.16);
+  color: #ff453a;
+}
+
+.settings-status-banner-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.settings-status-banner-subtitle {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.settings-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.settings-status-badge.active {
+  background: rgba(48, 209, 88, 0.16);
+  color: #30d158;
+  border: 0.5px solid rgba(48, 209, 88, 0.3);
+}
+
+.settings-status-badge.inactive {
+  background: rgba(255, 69, 58, 0.16);
+  color: #ff453a;
+  border: 0.5px solid rgba(255, 69, 58, 0.3);
+}
+
+.settings-status-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.settings-status-badge.active .settings-status-badge-dot {
+  background: #30d158;
+  box-shadow: 0 0 5px rgba(48, 209, 88, 0.7);
+}
+
+.settings-status-badge.inactive .settings-status-badge-dot {
+  background: #ff453a;
+}
+
+.settings-stats-row {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 18px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 7px;
+  margin-bottom: 12px;
+}
+
+.settings-api-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-api-input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.settings-api-key-input {
+  width: 100% !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 36px 0 12px !important;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 12px !important;
+  background: rgba(118, 118, 128, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  color: var(--text-primary) !important;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease !important;
+}
+
+.settings-api-key-input:focus {
+  background: rgba(118, 118, 128, 0.24) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.28) !important;
+  outline: none !important;
+}
+
+.settings-eye-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.settings-eye-btn:hover {
+  color: var(--text-primary);
+}
+
+.settings-action-btn {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 16px !important;
+  font-size: 12.5px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.settings-delete-btn {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  color: #ff6961 !important;
+  background: rgba(255, 69, 58, 0.08) !important;
+  border: 1px solid rgba(255, 69, 58, 0.2) !important;
+}
+
+.settings-delete-btn:hover {
+  background: rgba(255, 69, 58, 0.18) !important;
+  border-color: rgba(255, 69, 58, 0.35) !important;
+}
+
+.settings-val-box {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-val-box.valid {
+  background: rgba(48, 209, 88, 0.1);
+  border: 1px solid rgba(48, 209, 88, 0.3);
+  color: #30d158;
+}
+
+.settings-val-box.invalid {
+  background: rgba(255, 69, 58, 0.1);
+  border: 1px solid rgba(255, 69, 58, 0.3);
+  color: #ff453a;
+}
+
+.settings-guide-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-guide-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.settings-guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(10, 132, 255, 0.12);
+  color: var(--accent-light, #64a8ff);
+  border: 1px solid rgba(10, 132, 255, 0.25);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.settings-guide-link:hover {
+  background: rgba(10, 132, 255, 0.2);
+  border-color: rgba(10, 132, 255, 0.4);
+  color: #ffffff;
+}
+
+.settings-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.settings-guide-step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+  font-size: 10.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.settings-code-pill {
+  font-family: var(--font-mono, monospace);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.settings-guide-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  background: rgba(10, 132, 255, 0.06);
+  border: 0.5px solid rgba(10, 132, 255, 0.18);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
 }
 
 /* Oldalsáv, panelek: hajszálvékony elválasztók */
@@ -8111,4 +8856,321 @@ html, body, #root {
   gap: 6px;
   align-items: center;
   margin-top: 2px;
+}
+
+/* ==========================================================================
+   Mobil Elrendezés & Reszponzivitás (4 oszlopos navigáció)
+   ========================================================================== */
+
+/* Asztali nézetben a mobilos oszlopsáv nem jelenik meg */
+.mobile-columns-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Fejléc mobilon (kompakt 44px, Apple Pro stílus) */
+  .toolbar {
+    height: 44px !important;
+    padding: 0 10px !important;
+    gap: 6px !important;
+  }
+
+  .toolbar-brand {
+    gap: 6px !important;
+  }
+
+  .toolbar-logo-icon {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 6px !important;
+  }
+
+  .toolbar-title {
+    font-size: 13px !important;
+  }
+
+  .toolbar-version-badge {
+    display: none !important;
+  }
+
+  .toolbar-center {
+    padding: 0 4px !important;
+  }
+
+  .toolbar-doc-pill {
+    max-width: 140px !important;
+    height: 26px !important;
+    padding: 0 8px !important;
+    gap: 5px !important;
+  }
+
+  .toolbar-doc-divider,
+  .toolbar-status-label {
+    display: none !important;
+  }
+
+  .toolbar-right {
+    gap: 4px !important;
+  }
+
+  .toolbar-btn {
+    height: 26px !important;
+    padding: 0 7px !important;
+  }
+
+  .toolbar-btn span:not(.toolbar-settings-dot) {
+    display: none !important;
+  }
+
+  /* Mobil 4 oszlopos fülsáv (közvetlenül a fejléc alatt) */
+  .mobile-columns-bar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(22, 22, 24, 0.98);
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    flex-shrink: 0;
+    z-index: 18;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .mobile-tab-btn {
+    -webkit-appearance: none;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 0.5px solid rgba(255, 255, 255, 0.09);
+    color: #98989d;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  /* Inaktív állapot: CSAK IKON, kompakt méret */
+  .mobile-tab-btn:not(.active) {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    color: #8e8e93;
+  }
+
+  .mobile-tab-btn:not(.active):hover,
+  .mobile-tab-btn:not(.active):active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+
+  /* Aktív állapot: IKON + KIÍRT SZÖVEG, rugalmas kitöltés, Apple kék kiemelés */
+  .mobile-tab-btn.active {
+    flex: 1;
+    min-width: 0;
+    padding: 0 12px;
+    background: var(--accent);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 2px 8px rgba(10, 132, 255, 0.38);
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+
+  .mobile-tab-icon {
+    flex-shrink: 0;
+  }
+
+  .mobile-tab-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+  }
+
+  /* Alsó állapotsor elrejtése a képernyőterület maximalizálásához mobilon */
+  .status-bar {
+    display: none !important;
+  }
+
+  /* Értesítések pozícionálása mobilon */
+  .notif-container {
+    bottom: 12px !important;
+    right: 12px !important;
+    left: 12px !important;
+    max-width: calc(100% - 24px) !important;
+  }
+
+  /* Oszlopok elrendezése mobilon: az aktív oszlop 100% szélességű */
+  .app-body {
+    flex: 1;
+    width: 100% !important;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 1. Oszlop: Fájlok (Sidebar) */
+  .mobile-tab-files .sidebar {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+    border-right: none !important;
+  }
+  .mobile-tab-files .sidebar-expanded-wrap {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+  .mobile-tab-files .ai-panel,
+  .mobile-tab-files .editor-area {
+    display: none !important;
+  }
+
+  /* 2. Oszlop: AI Asszisztens (AiPanel) */
+  .mobile-tab-ai .ai-panel {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+    border-right: none !important;
+  }
+  .mobile-tab-ai .sidebar,
+  .mobile-tab-ai .editor-area {
+    display: none !important;
+  }
+
+  /* 3. Oszlop: Szerkesztő (EditorPane) */
+  .mobile-tab-editor .sidebar,
+  .mobile-tab-editor .ai-panel {
+    display: none !important;
+  }
+  .mobile-tab-editor .editor-area {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+  }
+  .mobile-tab-editor .split-panes {
+    width: 100% !important;
+  }
+  .mobile-tab-editor .split-panes > .split:first-child,
+  .mobile-tab-editor .split-panes > div:not(.gutter):first-child {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+  }
+  .mobile-tab-editor .split-panes > .gutter,
+  .mobile-tab-editor .split-panes > .split:last-child,
+  .mobile-tab-editor .split-panes > div:not(.gutter):last-child {
+    display: none !important;
+  }
+
+  /* 4. Oszlop: PDF előnézet (PdfPreview) */
+  .mobile-tab-pdf .sidebar,
+  .mobile-tab-pdf .ai-panel {
+    display: none !important;
+  }
+  .mobile-tab-pdf .editor-area {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+  }
+  .mobile-tab-pdf .split-panes {
+    width: 100% !important;
+  }
+  .mobile-tab-pdf .split-panes > .split:first-child,
+  .mobile-tab-pdf .split-panes > div:not(.gutter):first-child,
+  .mobile-tab-pdf .split-panes > .gutter {
+    display: none !important;
+  }
+  .mobile-tab-pdf .split-panes > .split:last-child,
+  .mobile-tab-pdf .split-panes > div:not(.gutter):last-child {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+  }
+
+  /* Modális ablakok reszponzivitása mobilon */
+  .modal {
+    min-width: 0 !important;
+    width: 94% !important;
+    max-width: 95vw !important;
+    padding: 16px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  .template-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Elrejtjük az oldalsáv összecsukó gombokat mobilon */
+  .sidebar-collapse-btn,
+  .ai-collapse-btn {
+    display: none !important;
+  }
+
+  /* PDF Előnézet automatikus szélességhez igazítása mobilon (hogy ne lógjon ki jobbra) */
+  .pdf-canvas-container {
+    padding: 12px 6px 60px 6px !important;
+    overflow-x: hidden !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  .pdf-pages-scroll-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    align-items: center !important;
+    padding-bottom: 80px !important;
+  }
+
+  .pdf-page-card {
+    max-width: calc(100vw - 12px) !important;
+    margin: 0 auto 16px auto !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+    overflow: hidden !important;
+  }
+
+  .pdf-canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .pdf-zoom-group {
+    gap: 2px !important;
+  }
+
+  .pdf-zoom-group .pdf-group-val-btn {
+    display: inline-flex !important;
+    padding: 0 6px !important;
+  }
+
+  .pdf-zoom-group .pdf-zoom-pct {
+    display: none !important;
+  }
 }

@@ -53,7 +53,9 @@ Szabályok:
 - Kötelező csomagok: inputenc(utf8), fontenc(T1), babel(magyar), amsmath, amssymb, geometry
 - Használj tcolorbox, xcolor, tikz csomagokat szép formázáshoz ahol releváns
 - Professzionális, tanulóbarát stílus
-- SZIGORÚAN TILOS a számozott listákban (\\begin{enumerate}) a számozás kézi megismétlése (pl. \\item \\textbf{1. Feladat} vagy \\item 1. vagy alpontoknál \\item a)), mert a LaTeX számozó automatikusan kirakja a sorszámot vagy betűt, és a kézi kiírás csúnya dupla számozást eredményez!
+- SZIGORÚAN TILOS A DUPLA SZÁMOZÁS:
+  * A számozott fejezetek címébe (\\section{...}, \\subsection{...}, \\subsubsection{...}) KIFEJEZETTEN TILOS manuálisan sorszámot írni (pl. TILOS: \\section{1. Bevezetés} vagy \\section{1. Mikor használjuk?}, mert a LaTeX maga számozza a section-öket, és a PDF-ben hibás "1. 1. Bevezetés" jelenne meg! Helyes: \\section{Bevezetés}, \\section{Mikor használjuk?})!
+  * Számozott listákban (\\begin{enumerate}) az \\item mögé SOHA NE írj ki kézzel újra sorszámot vagy betűt (pl. \\item \\textbf{1. Feladat} vagy \\item a)), mert a LaTeX számozó automatikusan kirakja a sorszámot vagy betűt, és a kézi kiírás csúnya dupla számozást eredményez!
 - CSAK LaTeX kódot adj vissza, semmi más szöveget, magyarázatot`;
 
 const BEAMER_SYSTEM = `Te egy professzionális LaTeX és Beamer prezentáció-készítő asszisztens vagy MAGYAR NYELVEN.
@@ -73,7 +75,8 @@ const DOC_TYPES = {
   osszefoglalo: 'részletes összefoglaló (definíciók tcolorbox-ban, tételek, bizonyítások, megoldott példák, önálló feladatok)',
   feladatsor: 'feladatsor (elegáns számozás, több rész a/b/c, opcionálisan megoldókulcs a végén)',
   beamer: 'Beamer prezentáció (\\documentclass{beamer}, szemléletes diák, bullet pointok, képletek)',
-  leiras: 'részletes leírás és magyarázat (folyó szöveg, szemléltető példák, ábrák TikZ-ben)'
+  leiras: 'részletes leírás és magyarázat (folyó szöveg, szemléltető példák, ábrák TikZ-ben)',
+  custom: 'egyéni dokumentum (a felhasználó egyedi utasításai, szerkezete és stílusa alapján)'
 };
 
 // Generikus AI hívás (Kezeli a Gemini és a Helyi LM Studio / Ollama hívásokat is)
@@ -223,6 +226,7 @@ SZABÁLYOK:
 - Tartsd tiszteletben és őrizd meg a megadott saját preambulum stílusát és alapbeállításait!
 - A dokumentum címe (\\title{...}) PONTOSAN a megadott Témakör legyen: \\title{${(topic || '').trim()}} (ne találj ki más címet)!
 - FONTOS: Ha a generált tartalomhoz, feladatokhoz, ábrákhoz vagy az esztétikus, professzionális megjelenítéshez olyan csomagokra vagy környezetekre van szükség, amelyek hiányoznak a megadott preambulumból (pl. tcolorbox, tikz, pgfplots, siunitx, amsmath, amssymb, cancel, booktabs, enumitem, egyedi kiemelő dobozok), a kód elején lévő preambulumot MINDENKÉPPEN egészítsd ki ezekkel a csomagokkal és definíciókkal!
+- SZIGORÚAN TILOS A DUPLA SZÁMOZÁS: A számozott fejezetcímekbe (\\section{...}, \\subsection{...}) KIFEJEZETTEN TILOS manuálisan sorszámot írni (pl. TILOS: \\section{1. Mikor használjuk?}, helyette \\section{Mikor használjuk?} a helyes, mert a LaTeX automatikusan elé teszi a számot)!
 - A generált kód egy teljes, azonnal pdflatex-szel fordítható LaTeX dokumentum legyen (\\documentclass-tól \\end{document}-ig), a kiegészített preambulummal együtt!
 - CSAK LaTeX kódot adj vissza, semmilyen magyarázat nélkül.`
       : `Te egy professzionális LaTeX dokumentumgeneráló asszisztens vagy, aki középiskolai oktatási anyagokat készít MAGYAR NYELVEN.
@@ -232,11 +236,18 @@ Szabályok:
 - Kötelező csomagok: inputenc(utf8), fontenc(T1), babel(magyar), amsmath, amssymb, geometry
 - Használj tcolorbox, xcolor, tikz csomagokat szép formázáshoz ahol releváns
 - Professzionális, tanulóbarát stílus
+- SZIGORÚAN TILOS A DUPLA SZÁMOZÁS: A számozott fejezetcímekbe (\\section{...}, \\subsection{...}) KIFEJEZETTEN TILOS manuálisan sorszámot írni (pl. TILOS: \\section{1. Mikor használjuk?}, helyette \\section{Mikor használjuk?} a helyes, mert a LaTeX automatikusan elé teszi a számot)!
 - CSAK LaTeX kódot adj vissza, semmi más szöveget, magyarázatot`;
 
     let prompt = `Tantárgy: ${subjectName}\nDokumentum típusa: ${typeName}\nTémakör (és a dokumentum címe): ${topic}`;
     if (topic && topic.trim()) {
       prompt += `\nKÖTELEZŐ: A dokumentum címe \\title{${topic.trim()}} legyen!`;
+    }
+    if (docType === 'custom') {
+      prompt += `\n\nKÖTELEZŐ EGYÉNI UTASÍTÁS SZERINTI FELÉPÍTÉS:
+A dokumentum felépítését, szerkezetét, stílusát, fejezeteit és formátumát a felhasználó egyéni utasítása határozza meg!
+Kövesd maximális pontossággal és hiánytalanul az alábbi egyéni elvárásokat:
+"${(customPrompt || topic || '').trim()}"`;
     }
     if (docType === 'microlearning') {
       prompt += `\n\nKÖTELEZŐ MIKROTANANYAG (MICROLEARNING) METODIKA ÉS FELÉPÍTÉS:
@@ -554,6 +565,7 @@ router.post('/problems', upload.array('files', 3), async (req, res) => {
       solutionPlacement = 'separate_page',
       withRubric = 'true',
       withGroupsAB = 'false',
+      customPrompt = '',
       provider,
       model,
       customPreamble
@@ -759,6 +771,8 @@ ${solutionInstruction}
 
 ${groupsInstruction}
 
+${customPrompt && customPrompt.trim() ? `KÜLÖN EGYÉNI UTASÍTÁS A FELADATOKHOZ:\n${customPrompt.trim()}\n` : ''}
+
 ${fileContext ? `Csatolt fájlok tartalma:\n${fileContext}\n` : ''}
 
 ${outputInstruction}
@@ -858,8 +872,11 @@ SZABÁLYOK:
 // POST /api/ai/beamer
 router.post('/beamer', async (req, res) => {
   try {
-    const { content, subject, provider, model } = req.body;
-    const prompt = `Alakítsd át az alábbi LaTeX tananyagot/összefoglalót Beamer prezentációvá!\nTantárgy: ${subject === 'fizika' ? 'Fizika' : 'Matematika'}\n\nForrás:\n${content}\n\nKészíts szemléletes, jól tagolt Beamer prezentációt (pl. \\usetheme{Madrid}). Adj címet minden diának (\\begin{frame}{Dia címe}). Használj átlátható bullet pointokat és Beamer block környezeteket. Ügyelj a frame-ek pontos lezárására!`;
+    const { content, subject, customPrompt, provider, model } = req.body;
+    let prompt = `Alakítsd át az alábbi LaTeX tananyagot/összefoglalót Beamer prezentációvá!\nTantárgy: ${subject === 'fizika' ? 'Fizika' : 'Matematika'}\n\nForrás:\n${content}\n\nKészíts szemléletes, jól tagolt Beamer prezentációt (pl. \\usetheme{Madrid}). Adj címet minden diának (\\begin{frame}{Dia címe}). Használj átlátható bullet pointokat és Beamer block környezeteket. Ügyelj a frame-ek pontos lezárására!`;
+    if (customPrompt && customPrompt.trim()) {
+      prompt += `\n\nKÜLÖN EGYÉNI UTASÍTÁS A PREZENTÁCIÓHOZ:\n${customPrompt.trim()}`;
+    }
 
     let latex = await callAi(prompt, provider, [], BEAMER_SYSTEM, model, req);
     const m = latex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);

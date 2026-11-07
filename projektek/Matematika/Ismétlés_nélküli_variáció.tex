@@ -1,0 +1,128 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{top=25mm, bottom=25mm, left=25mm, right=25mm}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\definecolor{myprimary}{RGB}{41, 128, 185}
+\definecolor{mybackground}{RGB}{245, 247, 250}
+\definecolor{myboxborder}{RGB}{52, 152, 219}
+
+\tcbset{
+    colback=mybackground,
+    colframe=myboxborder,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=10pt,
+    right=10pt,
+    top=10pt,
+    bottom=10pt
+}
+
+\title{Ismétlés nélküli variáció}
+\author{}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+\usepackage{abstract}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent Ez az összefoglaló segít megérteni az \textbf{ismétlés nélküli variáció} fogalmát, logikáját és alkalmazását anélkül, hogy száraz magolásra lenne szükség. Lépésről lépésre vesszük át a feladatok megoldásának kulcsát!
+\end{abstract}
+
+\section{1. Mikor használjuk?}
+Akkor van dolgunk az ismétlés nélküli variációval, amikor egy nagyobb halmazból kell **kiválasztanunk** egy bizonyos darabszámú elemet úgy, hogy a \textbf{kiválasztás sorrendje számít} (vagyis ha a sorrend megváltozik, az egy újabb érvényes lehetőséget ad), és az elemeket \textbf{nem lehet többször felhasználni} (nincs visszatevés). Hétköznapi példa: dobogós helyezések kiosztása versenyen, vagy jelszó készítése különböző számjegyekből.
+
+\section{2. Hogyan működik?}
+Képzeljük el, hogy van $n$ darab különböző tárgyunk (vagy emberünk), és nekünk ki kell töltenünk $k$ darab üres helyet (pozíciót) úgy, hogy egy tárgyat legfeljebb egyszer használhatunk fel. 
+
+Gondolkodjunk el a döntéseinken lépésről lépésre:
+\begin{itemize}
+    utoitem Az \textbf{első helyre} még bárkit választhatunk a rendelkezésre álló $n$ elem közül. Itt $n$-féle lehetőségünk van.
+    \item A \textbf{második helyre} már csak $n-1$ elem maradt, hiszen az első helyre betett elemet nem vehetjük újra (ezért \emph{ismétlés nélküli}).
+    \item A \textbf{harmadik helyre} $n-2$ lehetőség marad, és így tovább...
+    \item Az utolsó, azaz a $k$-adik helyre pedig $n - (k-1) = n - k + 1$ elem közül választhatunk.
+\end{itemize}
+
+Miért \textbf{szorzunk} az egyes lépések között? Mert a kombinatorika alapelvé (kombinatorikus szorzási szabály) szerint, ha az első helyzetet $A$-féleképpen, a másodikat pedig ettől függetlenül $B$-féleképpen tölthetjük ki, akkor az összes lehetőség a kettő szorzata. Minden egyes első választáshoz $n-1$ féle második választás tartozik. Nem adunk össze, hiszen a lehetőségek nem különálló alternatívák, hanem egymás után következő döntési lépések láncolatai.
+
+\section{3. Általános képlet és speciális esetek}
+Ha $n$ elemből kell $k$ elemet kiválasztani úgy, hogy a sorrend számít és nincsen ismétlés, akkor az ismétlés nélküli variációk száma ($V_n^k$):
+\[
+V_n^k = n \cdot (n-1) \cdot (n-2) \cdot \dots \cdot (n-k+1)
+\]
+
+Ezt a kifejezést elegánsan átírhatjuk a faktoriális segítségével is:
+\[
+V_n^k = \frac{n!}{(n-k)!}
+\]
+
+\begin{tcolorbox}[title=Gyakori csapdák és figyelmeztetések]
+\begin{itemize}
+    \item \textbf{Számít-e a sorrend?} Ha az elemek felcserélése ugyanazt az eredményt adja (pl. gyümölcssaláta készítése), akkor ez \emph{nem} variáció, hanem kombináció lesz!
+    \item \textbf{Lehet-e ismételni?} Ha egy elemet többször is felhasználhatunk (pl. négyjegyű PIN-kód, ahol a számjegyek ismétlődhetnek), akkor az már \emph{ismétléses variáció}.
+    \item \textbf{Mit jelöl $n$ és $k$?} Mindig $n$ a nagyobb halmaz (az összes elem), és $k$ a kiválasztottak száma ($k \le n$).
+\end{itemize}
+\end{tcolorbox}
+
+\section{4. Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
+Mielőtt belevágnál egy feladat megoldásába, tedd fel magadnak ezt a 3 gyors kérdést:
+\begin{enumerate}
+    \item \textbf{Az összes elemből választunk?} Ha nem mindet, hanem csak egy részét ($k < n$), akkor válogatunk.
+    \item \textbf{Számít a sorrend?} Ha felcseréljük a kiválasztott elemeket, új eredményt kapunk? (Ha \textbf{igen}, akkor ez variáció).
+    \item \textbf{Lehet-e ismételni az elemeket?} Ha \textbf{nem} lehet ugyanazt az elemet kétszer választani, akkor megtaláltad: ez az \textbf{ismétlés nélküli variáció}!
+\end{enumerate}
+
+\section{5. Tipikus és trükkös feladatok levezetése}
+
+\subsection*{1. Feladat: Dobogós helyek}
+\textit{Egy 10 fős futóversenyen kiadják az arany-, az ezüst- és a bronzérmet. Hányféleképpen alakulhat a dobogósok listája?}
+
+\noindent\textbf{Gondolatmenet:}
+\begin{itemize}
+    \item \emph{Mit látunk?} 10 emberből 3-at választunk ki.
+    \item \emph{Számít a sorrend?} Igen, mert nem mindegy, ki kapja az aranyat (1. hely), az ezüstöt (2. hely) vagy a bronzot (3. hely).
+    \item \emph{Ismétlés?} Egy futó nem kaphat egyszerre aranyat és ezüstöt is, azaz nincs ismétlés.
+\end{itemize}
+\noindent\textbf{Megoldás:} Itt $n=10$ és $k=3$. Alkalmazzuk a képletet:
+\[
+V_{10}^{3} = 10 \cdot 9 \cdot 8 = 720
+\]
+\textbf{Válasz:} A dobogósok listája 720-féleképpen alakulhat.
+
+\subsection*{2. Feladat: Elnök és alelnök választás megszorítással}
+\textit{Egy 12 fős iskolai tanácsból megválasztanak egy elnököt és egy alelnököt. Hányféleképpen történhet ez meg, ha a legfiatalabb tag semmiképpen sem lehet sem elnök, sem alelnök?}
+
+\noindent\textbf{Gondolatmenet:}
+\begin{itemize}
+    \item \emph{A csapda, amibe sokan beleesnek:} Először kiszámolják a teljes variációt, és megpróbálják a végén kivonni a legfiatalabbat, de ez a pozíciók miatt bonyolult.
+    \item \emph{A helyes út:} Először szűrjük ki a problémás elemet! Mivel a legfiatalabb nem tölthet be semmilyen tisztséget, őt egyszerűen kizárjuk a jelöltek közül.
+    \item Így a választható emberek száma $12 - 1 = 11$-re csökken. Ebből a 11 emberből kell 2-t kiválasztani (elnök és alelnök, ahol a sorrend számít).
+\end{itemize}
+\noindent\textbf{Megoldás:} Itt $n=11$ és $k=2$:
+\[
+V_{11}^{2} = 11 \cdot 10 = 110
+\]
+\textbf{Válasz:} 110-féleképpen választhatják meg a tisztségviselőket.
+
+\end{document}

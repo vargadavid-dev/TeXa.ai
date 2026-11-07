@@ -31,8 +31,16 @@ import {
   LayoutTemplate,
   Upload,
   Folder,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react'
+
+const MOBILE_COLUMNS = [
+  { id: 'files', label: 'Fájlok', icon: Folder },
+  { id: 'ai', label: 'AI Asszisztens', icon: Sparkles },
+  { id: 'editor', label: 'Szerkesztő', icon: FileCode },
+  { id: 'pdf', label: 'PDF előnézet', icon: FileText }
+]
 
 export default function App() {
   const [code, setCode] = useState(TEMPLATES[0].content)
@@ -112,6 +120,48 @@ export default function App() {
   const fileInputRef = useRef(null)
   const editorPaneRef = useRef(null)
   const savedCodeRef = useRef(code)
+
+  // Mobilos 4 oszlopos nézet kezelése ('files' | 'ai' | 'editor' | 'pdf')
+  const [mobileActiveTab, setMobileActiveTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('latex_mobile_active_tab')
+      if (['files', 'ai', 'editor', 'pdf'].includes(saved)) return saved
+    } catch {}
+    return 'editor'
+  })
+
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth <= 768
+  })
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  const handleMobileTabSelect = useCallback((tabId) => {
+    setMobileActiveTab(tabId)
+    try {
+      localStorage.setItem('latex_mobile_active_tab', tabId)
+    } catch {}
+    if (tabId === 'editor') {
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'))
+        editorPaneRef.current?.layout?.()
+      }, 50)
+      setTimeout(() => {
+        editorPaneRef.current?.layout?.()
+      }, 200)
+    } else if (tabId === 'pdf') {
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'))
+      }, 50)
+    }
+  }, [])
 
   const toggleSidebarCollapse = useCallback(() => {
     setSidebarCollapsed(prev => {
@@ -765,7 +815,10 @@ export default function App() {
     setCompileLog('')
     axios.delete('/api/compile/active').catch(() => {})
     addNotif('Új üres dokumentum megnyitva!', 'info')
-  }, [isModified, autoSaveEnabled, applyEditorCode, addNotif, rememberActiveFile])
+    if (isMobile) {
+      handleMobileTabSelect('editor')
+    }
+  }, [isModified, autoSaveEnabled, applyEditorCode, addNotif, rememberActiveFile, isMobile, handleMobileTabSelect])
 
   // Dokumentum átnevezése (szerkesztő fülből vagy oldalsávból)
   const handleRenameFile = useCallback(
@@ -894,6 +947,9 @@ export default function App() {
           setCompileStatus('idle')
           setCompileLog('')
           addNotif(`Betöltve a saját gépedről: ${file.name}`, 'info')
+          if (isMobile) {
+            handleMobileTabSelect('editor')
+          }
           return
         }
 
@@ -913,11 +969,14 @@ export default function App() {
         setCompileStatus('idle')
         setCompileLog('')
         addNotif(`Betöltve: ${file.name}`, 'info')
+        if (isMobile) {
+          handleMobileTabSelect('editor')
+        }
       } catch (err) {
         addNotif('Hiba a fájl betöltésekor: ' + (err.message || ''), 'error')
       }
     },
-    [addNotif, applyEditorCode, rememberActiveFile]
+    [addNotif, applyEditorCode, rememberActiveFile, isMobile, handleMobileTabSelect]
   )
 
   // Dokumentum címkéinek frissítése
@@ -1294,8 +1353,11 @@ export default function App() {
       if (autoCompile) {
         compile(newCode)
       }
+      if (isMobile) {
+        handleMobileTabSelect('editor')
+      }
     },
-    [code, compile, addNotif, applyEditorCode]
+    [code, compile, addNotif, applyEditorCode, isMobile, handleMobileTabSelect]
   )
   // Kijelölt kódrészlet átdolgozása AI paranccsal
   const handleTransformSelection = useCallback(
@@ -1391,12 +1453,15 @@ export default function App() {
         setIsModified(true)
         addNotif('Az új tartalom sikeresen beszúrva! Dokumentum újrafordítása...', 'success')
         compile(newCode)
+        if (isMobile) {
+          handleMobileTabSelect('editor')
+        }
       } catch (err) {
         addNotif(err.response?.data?.error || err.message || 'Beszúrási hiba történt', 'error')
         throw err
       }
     },
-    [code, activeModel, currentSubject, compile, addNotif, applyEditorCode]
+    [code, activeModel, currentSubject, compile, addNotif, applyEditorCode, isMobile, handleMobileTabSelect]
   )
 
   // SyncTeX Forward Search (Kódsor -> PDF koordináta)
@@ -1407,12 +1472,15 @@ export default function App() {
         if (r.data?.target) {
           setSyncTarget({ ...r.data.target, timestamp: Date.now() })
           addNotif(`SyncTeX: Ugrás a PDF ${r.data.target.page}. oldalára (Sor: ${line})`, 'info')
+          if (isMobile) {
+            handleMobileTabSelect('pdf')
+          }
         }
       } catch (err) {
         console.warn('SyncTeX forward hiba:', err)
       }
     },
-    [addNotif]
+    [addNotif, isMobile, handleMobileTabSelect]
   )
 
   // SyncTeX Inverse Search (PDF Dupla kattintás -> Kódsor)
@@ -1427,13 +1495,16 @@ export default function App() {
             timestamp: Date.now()
           })
           addNotif(`SyncTeX: Ugrás a forráskód ${r.data.target.line}. sorára`, 'info')
+          if (isMobile) {
+            handleMobileTabSelect('editor')
+          }
         }
       } catch (err) {
         console.warn('SyncTeX inverse hiba:', err)
         addNotif('Nem található kódsor ehhez a pozícióhoz.', 'warning')
       }
     },
-    [addNotif]
+    [addNotif, isMobile, handleMobileTabSelect]
   )
 
   // Fordítási hiba automatikus javítása Gemini AI-val
@@ -1526,11 +1597,55 @@ export default function App() {
     }
   }, [structureFixResult, applyEditorCode, compile, addNotif])
 
-  // Billentyűkombinációk (⌘S: Mentés & Fordítás, ⌘B: Fájlkezelő összecsukása/kibontása, ⌘⌥N: Új üres dokumentum, ⌘Z: Visszavonás, ⌘⇧Z / ⌘Y: Újra)
+  // Billentyűkombinációk (⌘S / Ctrl+S: Mentés & Fordítás, Ctrl+A / ⌘A: Teljes kód kijelölése, ⌘B: Fájlkezelő, ⌘⌥N: Új üres doksi, ⌘Z / ⌘Y: Visszavonás/Újra)
   useEffect(() => {
     const handler = (e) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
-      const modifier = isMac ? e.metaKey : e.ctrlKey
+      const isCtrlOrCmd = isMac ? (e.metaKey || e.ctrlKey) : (e.ctrlKey || e.metaKey)
+
+      // Ctrl+A vagy Cmd+A kezelése a TeX szerkesztőben
+      if (isCtrlOrCmd && !e.altKey && !e.shiftKey && e.key?.toLowerCase() === 'a') {
+        const activeEl = document.activeElement
+        const isInsideMonaco = !!activeEl?.closest?.('.monaco-editor')
+        const tag = activeEl?.tagName?.toLowerCase()
+        const isOtherInput = !isInsideMonaco && (tag === 'input' || tag === 'textarea' || activeEl?.isContentEditable)
+
+        if (isInsideMonaco) {
+          e.preventDefault()
+          const editor = editorPaneRef.current?.getEditor?.()
+          if (editor) {
+            const model = editor.getModel()
+            if (model) {
+              editor.setSelection(model.getFullModelRange())
+            }
+          }
+          return
+        }
+
+        if (isOtherInput) {
+          // Ha nem a Monaco-ban van, hanem más beviteli mezőben (pl. keresés, átnevezés),
+          // és Mac-en a felhasználó Ctrl+A-t nyomott, kijelöljük a beviteli mező szövegét
+          if (e.ctrlKey && isMac) {
+            e.preventDefault()
+            activeEl.select?.()
+          }
+          return
+        }
+
+        // Ha nincs aktív beviteli mező: a TeX szerkesztőt fókuszáljuk és kijelöljük a teljes kódot
+        const editor = editorPaneRef.current?.getEditor?.()
+        if (editor) {
+          e.preventDefault()
+          editor.focus()
+          const model = editor.getModel()
+          if (model) {
+            editor.setSelection(model.getFullModelRange())
+          }
+        }
+        return
+      }
+
+      const modifier = isCtrlOrCmd
 
       if (modifier && e.altKey && e.key.toLowerCase() === 'n') {
         e.preventDefault()
@@ -1703,15 +1818,18 @@ export default function App() {
         setCompileLog('')
         addNotif(`✓ Sikeres importálás: [${itemToOpen.subject}] ${itemToOpen.filename}`, 'success')
         compile(itemToOpen.content)
+        if (isMobile) {
+          handleMobileTabSelect('editor')
+        }
       } else if (importedItems.length > 1) {
         addNotif(`✓ Sikeresen importálva ${importedItems.length} db LaTeX dokumentum!`, 'success')
       }
     },
-    [compile, addNotif, applyEditorCode, rememberActiveFile]
+    [compile, addNotif, applyEditorCode, rememberActiveFile, isMobile, handleMobileTabSelect]
   )
 
   return (
-    <div className="app">
+    <div className={`app ${isMobile ? 'is-mobile' : ''} mobile-tab-${mobileActiveTab}`}>
       {/* Felső Eszköztár (44px kompakt Apple Pro) */}
       <Toolbar
         currentFile={currentFile}
@@ -1722,6 +1840,31 @@ export default function App() {
         onOpenSettings={() => setSettingsModalOpen(true)}
         hasCustomKey={hasCustomKey}
       />
+
+      {/* Mobilos 4 oszlop navigációs sáv (fejléc alatt) */}
+      <nav className="mobile-columns-bar" role="tablist" aria-label="Munkafelület oszlopok">
+        {MOBILE_COLUMNS.map((col) => {
+          const isActive = mobileActiveTab === col.id
+          const IconComponent = col.icon
+          return (
+            <button
+              key={col.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              className={`mobile-tab-btn ${isActive ? 'active' : ''}`}
+              onClick={() => handleMobileTabSelect(col.id)}
+              title={col.label}
+              id={`mobile-tab-${col.id}`}
+            >
+              <IconComponent size={15} className="mobile-tab-icon" />
+              {isActive && (
+                <span className="mobile-tab-label">{col.label}</span>
+              )}
+            </button>
+          )
+        })}
+      </nav>
 
       {/* Fő munkafelület */}
       <div className="app-body">
@@ -1739,7 +1882,7 @@ export default function App() {
           onPickLocalFolder={handlePickLocalFolder}
           onDisconnectLocalFolder={handleDisconnectLocalFolder}
           onOpenSettings={() => setSettingsModalOpen(true)}
-          isCollapsed={sidebarCollapsed}
+          isCollapsed={isMobile ? false : sidebarCollapsed}
           onToggleCollapse={toggleSidebarCollapse}
           onLoad={handleLoad}
           onDelete={handleDelete}
@@ -1758,7 +1901,7 @@ export default function App() {
 
         {/* AI Asszisztens panel */}
         <AiPanel
-          open={aiPanelOpen}
+          open={isMobile ? mobileActiveTab === 'ai' : aiPanelOpen}
           onToggleCollapse={() => setAiPanelOpen(v => !v)}
           subject={currentSubject}
           onSubjectChange={setCurrentSubject}
@@ -1819,6 +1962,8 @@ export default function App() {
               code={code}
               onTransformSelection={handleTransformSelection}
               onInsertSelection={handleInsertSelection}
+              isActive={!isMobile || mobileActiveTab === 'pdf'}
+              isMobile={isMobile}
             />
           </Split>
         </div>

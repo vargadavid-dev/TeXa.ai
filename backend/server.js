@@ -10,6 +10,7 @@ const compileRouter = require('./routes/compile');
 const aiRouter = require('./routes/ai');
 const filesRouter = require('./routes/files');
 const preamblesRouter = require('./routes/preambles');
+const customDocTypesRouter = require('./routes/customDocTypes');
 const configRouter = require('./routes/config');
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api/compile', compileRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/preambles', preamblesRouter);
+app.use('/api/custom-doc-types', customDocTypesRouter);
 app.use('/api/config', configRouter);
 
 // Éles módban közvetlenül kiszolgáljuk a lefordított frontendet

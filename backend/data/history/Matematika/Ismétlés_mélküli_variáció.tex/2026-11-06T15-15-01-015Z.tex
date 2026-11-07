@@ -1,0 +1,119 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+% Színek definíciója a barátságos megjelenéshez
+\definecolor{myprimary}{RGB}{41, 128, 185}
+\definecolor{mysecondary}{RGB}{236, 240, 241}
+\definecolor{myaccent}{RGB}{211, 84, 0}
+\definecolor{myboxbg}{RGB}{249, 249, 249}
+
+\title{Ismétlés mélküli variáció}
+\author{A Te Kedves Magántanárod}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+\maketitle
+
+\begin{tcolorbox}[colback=mysecondary,colframe=myprimary,arc=4pt,title=\textbf{Üdvözöllek, Kedves Diákum!}]
+Ne aggódj, ha a kombinatorika elsőre bonyolultnak tűnik! Sokan megijednek tőle, pedig ez lényegében nem más, mint logikus pakolgatás és számlálás. Vedd úgy, hogy most is csak egy kávé vagy tea mellett beszélgetünk a feladatokról. Vágjunk is bele!
+\end{tcolorbox}
+
+\section{Lélekmegnyugtató, lényegretörő nyitás}
+Az \textbf{ismétlés nélküli variáció} nem más, mint amikor egy nagyobb készletből kiválasztunk néhány elemet, \textbf{számít a sorrend}, és \textbf{egy elemet csak egyszer} használhatunk fel. Képzeld el, hogy egy ötfős baráti társaságból kell kiválasztanod hármat, akik a dobogóra állhatnak (arany-, ezüst- és bronzéremért). Hányféleképpen alakulhat a dobogósok sorrendje? Na, ezt nevezzük ismétlés nélküli variációnak!
+
+\section{Hogyan működik?}
+Ne magoljuk be a képletet azonnal, hanem értsük meg a logikáját! 
+Képzeljük el, hogy egy futóverseny döntőjében 8 versenyző indul ($n = 8$), és nekünk az első 3 helyezettet (arany-, ezüst-, bronzérem) kell kiosztanunk ($k = 3$). 
+
+\begin{itemize}
+    \item Hányféleképpen oszthatjuk ki az \textbf{aranyérmet}? Bármelyik 8 versenyző kaphatja. Ez $8$ lehetőség.
+    \item Miután az aranyat kiosztottuk, hány ember maradt az \textbf{ezüstéremre}? Már csak $7$ versenyző. (Ezért \emph{ismétlés nélküli}, hiszen egy ember nem kaphat két érmet!)
+    \item Végül, hányan maradtak a \textbf{bronzéremre}? Mivel kettőt már díjaztunk, maradt $6$ ember.
+\end{itemize}
+
+Miért szorzunk és nem adunk össze? Mert a kombinatorikai alapelv szerint minden egyes aranyérmes lehetőséghöz $7$ különböző ezüstérmes helyzet tartozik, és az így kapott párok mindegyikéhez még $6$ bronzos leosztás kapcsolódik. Tehát az összes lehetőség:
+\[ 8 \cdot 7 \cdot 6 = 336 \]
+Látod? Nem varázslat, csak tiszta logika!
+
+\section{Általános képlet és speciális esetek}
+Ha $n$ darab elemünk van, és ezek közül választunk ki sorrendben $k$ darabet (ahol $k \le n$), akkor a lehetőségek számát az alábbi \textbf{variációs képlet} adja meg:
+
+\[ V_n^k = n \cdot (n-1) \cdot (n-2) \cdot \dots \cdot (n - k + 1) \]
+
+Ezt a faktoriálisok segítségével sokkal elegánsabban is felírhatjuk:
+\[ V_n^k = \frac{n!}{(n-k)!} \]
+
+\begin{tcolorbox}[colback=myboxbg,colframe=myaccent,title=\textbf{Vigyázz a csapdákra!}]
+\begin{itemize}
+    \item \textbf{Sorrend:} Mindig kérdezd meg magadtól: számít-e, hogy milyen sorrendben húzzuk ki az elemeket? (Itt \textbf{igen}, a 123 nem ugyanaz, mint a 321).
+    \item \textbf{Visszatevés:} Figyelj arra, hogy a szöveg említi-e, hogy visszatesszük az elemet. Ha visszatesszük, akkor az már \emph{ismétléses} variáció (ott $n^k$ a képlet), nem pedig ez!
+\end{itemize}
+\end{tcolorbox}
+
+\section{Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
+Amikor olvasod a feladatot a dolgozatban, tedd fel magadnak ezt a 3 kérdést sorban:
+\begin{enumerate}
+    \item \textbf{A teljes készletből csak egy részét választom ki?} (Ha mindet sorba rendezem, az csak egy sima $n!$ permutáció).
+    \item \textbf{Számít a sorrend?} (Ha a sorrend nem számít, például egymaroknyi kártyánál vagy csapatenkénti összegyűjtésnél, akkor ez \emph{kombináció} lesz, nem variáció!).
+    \item \textbf{Visszakerül az elem a kalapba húzás után?} (Ha igen $\rightarrow$ ismétléses variáció. Ha nem $\rightarrow$ \textbf{ez az ismétlés nélküli variáció}, amiről most tanulunk!).
+\end{enumerate}
+
+\section{3 tipikus és trükkös feladat levezetése}
+
+\subsection*{1. feladat: A klasszikus jelszó-kód}
+\textbf{Feladat:} Hány olyan 4-jegyű szám létezik, amelyben a számjegyek különbözőek, és a 0-val sem kezdődhetnek?
+
+\noindent\textbf{Gondolatmenet:} 
+Mit látunk? Van 10 számjegyünk ($0$-tól $9$-ig), és ki kell választanunk belőle 4-et úgy, hogy számít a sorrend (mert a 1234 nem ugyanaz, mint a 4321) és nem ismétlődhetnek. 
+Itt egy pici csapda van: a szám nem kezdődhet 0-val!
+
+\noindent\textbf{Megoldás lépésről lépésre:}
+\begin{enumerate}
+    $1.$ Válasszuk ki először az \textbf{első jegyet}. Mivel a 0 nem lehet, csak $9$ féle választásunk maradt ($1$-től $9$-ig).
+    $2.$ Most jön a \textbf{második jegy}. Itt már szerepelhet a 0 is, de az első helyre már elhasználtunk egy számjegyet, így a maradék $10 - 1 = 9$ számjegy közül választhatunk.
+    $3.$ A \textbf{harmadik helyre} $8$ féle számjegy jöhet.
+    $4.$ A \textbf{negyedik helyre} pedig $7$ féle számjegy maradt.
+\end{enumerate}
+Az összes lehetséges szám: 
+\[ 9 \cdot 9 \cdot 8 \cdot 7 = 4536 \]
+\emph{Hol rontják el gyakran?} Sok diák elfelejti a 0-ás megkötést, és az első helyre is 10-et ír, vagy elfelejti, hogy a 0 miatt a második helyre mégiscsak visszajön egy opció.
+
+\subsection*{2. feladat: Az elnök és az alelnök esete}
+\textbf{Feladat:} Egy 12 fős baráti társaságból megválasztunk egy elnököt, egy alelnököt és egy pénztárost. Hányféle kimenetele lehet ennek a választásnak?
+
+\noindent\textbf{Gondolatmenet:} 
+Van 12 emberünk ($n=12$), és kiválasztunk 3-at ($k=3$). Mivel a pozíciók különbözőek (az elnöki szék más, mint a pénztárosé), a \textbf{sorrend szigorúan számít}. Egy ember nem kaphat két különböző főtisztséget egyszerre (ismétlés nincs). Ez pont az ismétlés nélküli variáció tankönyvi esete!
+
+\noindent\textbf{Megoldás lépésről lépésre:}
+Használhatjuk a képletünket:
+\[ V_{12}^3 = \frac{12!}{(12-3)!} = \frac{12!}{9!} \]
+Írjuk ezt ki szorzat alakban, és lássuk, hogyan egyszerűsödik:
+\[ \frac{12 \cdot 11 \cdot 10 \cdot 9!}{9!} = 12 \cdot 11 \cdot 10 = 1320 \]
+\textbf{Eredmény:} 1320-féleképpen alakulhat a vezetőség.
+
+\begin{tcolorbox}[colback=mysecondary,colframe=myprimary,arc=4pt,title=\textbf{Záró gondolat}]
+Látod? Ha lépésről lépésre haladsz, és felteszed a helyes kérdéseket, a kombinatorika egy kifejezetten szórakoztató logikai játék. Gyakorolj bátran, és hamarosan rutinná válik!
+\end{tcolorbox}
+
+\end{document}
