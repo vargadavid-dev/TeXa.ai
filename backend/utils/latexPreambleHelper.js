@@ -560,10 +560,19 @@ function supplementFullLatex(fullLatex = '', customPreamble = null, topic = null
   if (docStartIdx !== -1 && cleanBody) {
     finalDoc = `${supplementedPreamble}\n\n${cleanBody}`.trim();
   } else if (!fullLatex.includes('\\begin{document}')) {
-    if (isBeamer) {
-      finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\frame{\\titlepage}\n\n\\begin{frame}{Bevezetés}\nIde jön a tartalom...\n\\end{frame}\n\n\\end{document}`;
+    const rawBody = cleanBody || fullLatex.replace(/\\documentclass[\s\S]*?(?=\\section|\\begin|\\noindent|$)/, '').trim();
+    if (rawBody) {
+      if (isBeamer) {
+        finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\frame{\\titlepage}\n\n${rawBody}\n\n\\end{document}`;
+      } else {
+        finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\maketitle\n\n${rawBody}\n\n\\end{document}`;
+      }
     } else {
-      finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\maketitle\n\n\\section{Bevezetés}\nIde jön a tartalom...\n\n\\end{document}`;
+      if (isBeamer) {
+        finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\frame{\\titlepage}\n\n\\begin{frame}{Bevezetés}\nIde jön a tartalom...\n\\end{frame}\n\n\\end{document}`;
+      } else {
+        finalDoc = `${supplementedPreamble}\n\n\\begin{document}\n\\maketitle\n\n\\section{Bevezetés}\nIde jön a tartalom...\n\n\\end{document}`;
+      }
     }
   } else {
     finalDoc = supplementedPreamble;
@@ -573,7 +582,94 @@ function supplementFullLatex(fullLatex = '', customPreamble = null, topic = null
     finalDoc = replaceLatexTitle(finalDoc, topic.trim());
   }
 
+  // Automatikus táblázatoszlop-javítás és dokumentumstruktúra lezárás
+  finalDoc = sanitizeTabularRows(finalDoc);
+  finalDoc = ensureDocumentStructure(finalDoc);
+
   return finalDoc;
+}
+
+/**
+ * Automatikusan kijavítja a túlzó oszlopszámokat és felesleges '&' jeleket a tabular környezetekben,
+ * amelyek a rettegett "! Extra alignment tab has been changed to \cr" TeX hibát okozzák.
+ */
+function sanitizeTabularRows(latex) {
+  if (!latex || !latex.includes('\\begin{tabular')) return latex;
+
+  return latex.replace(/\\begin\{(tabular\*?|tabularx)\}\s*(\{[^}]+\})?\{([^}]+)\}([\s\S]*?)\\end\{\1\}/g, (match, envName, optWidth, colSpec, tableBody) => {
+    let expanded = colSpec.replace(/\*\{(\d+)\}\{([^{}]+)\}/g, (_, count, cols) => cols.repeat(parseInt(count, 10)));
+    expanded = expanded.replace(/[@!><]\{[^{}]*\}/g, '');
+    expanded = expanded.replace(/[| \t]/g, '');
+    const colMatches = expanded.match(/[lcrXSmb]|p\{[^{}]*\}/g);
+    const expectedCols = colMatches ? colMatches.length : 0;
+    if (expectedCols <= 0) return match;
+
+    const rows = tableBody.split(/\\\\/);
+    const fixedRows = rows.map((row, idx) => {
+      if (idx === rows.length - 1 && !row.trim()) return row;
+
+      const cmdMatch = row.match(/^([\s\S]*?)(\s*\\(?:hline|cline\{[^{}]*\}|toprule|midrule|bottomrule)\s*)*$/);
+      const cellsPart = cmdMatch ? cmdMatch[1] : row;
+      const cmdPart = cmdMatch && cmdMatch[0] ? cmdMatch[0].slice(cellsPart.length) : '';
+
+      const cells = cellsPart.split('&');
+      if (cells.length > expectedCols) {
+        while (cells.length > expectedCols && !cells[cells.length - 1].trim()) {
+          cells.pop();
+        }
+        while (cells.length > expectedCols) {
+          const last = cells.pop();
+          cells[cells.length - 1] += ' ' + last;
+        }
+        return cells.join('&') + cmdPart;
+      }
+      return row;
+    });
+
+    const fixedBody = fixedRows.join('\\\\');
+    return `\\begin{${envName}}${optWidth || ''}{${colSpec}}${fixedBody}\\end{${envName}}`;
+  });
+}
+
+/**
+ * Biztosítja a helyes dokumentumstruktúrát:
+ * 1. Kijavítja a tabular sorokat (nincs Extra alignment tab hiba)
+ * 2. Ha van \begin{document}, de hiányzik a lezáró \end{document}, lezárja a nyitott környezeteket és hozzáilleszti a \end{document}-et.
+ * 3. Ha teljesen hiányzik a \begin{document}, de van törzsszöveg, szépen becsomagolja.
+ */
+function ensureDocumentStructure(latex) {
+  if (!latex) return latex;
+  let code = latex;
+
+  code = sanitizeTabularRows(code);
+
+  if (code.includes('\\begin{document}') && !code.includes('\\end{document}')) {
+    const envStack = [];
+    const envRegex = /\\(begin|end)\{([a-zA-Z0-9*_-]+)\}/g;
+    let m;
+    while ((m = envRegex.exec(code)) !== null) {
+      const type = m[1];
+      const name = m[2];
+      if (name === 'document') continue;
+      if (type === 'begin') {
+        envStack.push(name);
+      } else if (type === 'end') {
+        const lastIdx = envStack.lastIndexOf(name);
+        if (lastIdx !== -1) {
+          envStack.splice(lastIdx, 1);
+        }
+      }
+    }
+
+    let closers = '';
+    while (envStack.length > 0) {
+      const unclosed = envStack.pop();
+      closers += `\n\\end{${unclosed}}`;
+    }
+    code = code.trimEnd() + closers + '\n\n\\end{document}\n';
+  }
+
+  return code;
 }
 
 module.exports = {
@@ -583,5 +679,7 @@ module.exports = {
   supplementFullLatex,
   replaceLatexTitle,
   sanitizeLatexNumbering,
+  sanitizeTabularRows,
+  ensureDocumentStructure,
   CORE_DISPLAY_PACKAGES
 };

@@ -50,15 +50,15 @@
 \noindent Ez az összefoglaló segít megérteni az \textbf{ismétlés nélküli variáció} fogalmát, logikáját és alkalmazását anélkül, hogy száraz magolásra lenne szükség. Lépésről lépésre vesszük át a feladatok megoldásának kulcsát!
 \end{abstract}
 
-\section{1. Mikor használjuk?}
-Akkor van dolgunk az ismétlés nélküli variációval, amikor egy nagyobb halmazból kell **kiválasztanunk** egy bizonyos darabszámú elemet úgy, hogy a \textbf{kiválasztás sorrendje számít} (vagyis ha a sorrend megváltozik, az egy újabb érvényes lehetőséget ad), és az elemeket \textbf{nem lehet többször felhasználni} (nincs visszatevés). Hétköznapi példa: dobogós helyezések kiosztása versenyen, vagy jelszó készítése különböző számjegyekből.
+\section{Mikor használjuk?}
+Akkor van dolgunk az ismétlés nélküli variációval, amikor egy nagyobb halmazból kell \textbf{kiválasztanunk} egy bizonyos darabszámú elemet úgy, hogy a \textbf{kiválasztás sorrendje számít} (vagyis ha a sorrend megváltozik, az egy újabb érvényes lehetőséget ad), és az elemeket \textbf{nem lehet többször felhasználni} (nincs visszatevés). Hétköznapi példa: dobogós helyezések kiosztása versenyen, vagy jelszó készítése különböző számjegyekből.
 
-\section{2. Hogyan működik?}
+\section{Hogyan működik?}
 Képzeljük el, hogy van $n$ darab különböző tárgyunk (vagy emberünk), és nekünk ki kell töltenünk $k$ darab üres helyet (pozíciót) úgy, hogy egy tárgyat legfeljebb egyszer használhatunk fel. 
 
 Gondolkodjunk el a döntéseinken lépésről lépésre:
 \begin{itemize}
-    utoitem Az \textbf{első helyre} még bárkit választhatunk a rendelkezésre álló $n$ elem közül. Itt $n$-féle lehetőségünk van.
+    \item Az \textbf{első helyre} még bárkit választhatunk a rendelkezésre álló $n$ elem közül. Itt $n$-féle lehetőségünk van.
     \item A \textbf{második helyre} már csak $n-1$ elem maradt, hiszen az első helyre betett elemet nem vehetjük újra (ezért \emph{ismétlés nélküli}).
     \item A \textbf{harmadik helyre} $n-2$ lehetőség marad, és így tovább...
     \item Az utolsó, azaz a $k$-adik helyre pedig $n - (k-1) = n - k + 1$ elem közül választhatunk.
@@ -66,7 +66,7 @@ Gondolkodjunk el a döntéseinken lépésről lépésre:
 
 Miért \textbf{szorzunk} az egyes lépések között? Mert a kombinatorika alapelvé (kombinatorikus szorzási szabály) szerint, ha az első helyzetet $A$-féleképpen, a másodikat pedig ettől függetlenül $B$-féleképpen tölthetjük ki, akkor az összes lehetőség a kettő szorzata. Minden egyes első választáshoz $n-1$ féle második választás tartozik. Nem adunk össze, hiszen a lehetőségek nem különálló alternatívák, hanem egymás után következő döntési lépések láncolatai.
 
-\section{3. Általános képlet és speciális esetek}
+\section{Általános képlet és speciális esetek}
 Ha $n$ elemből kell $k$ elemet kiválasztani úgy, hogy a sorrend számít és nincsen ismétlés, akkor az ismétlés nélküli variációk száma ($V_n^k$):
 \[
 V_n^k = n \cdot (n-1) \cdot (n-2) \cdot \dots \cdot (n-k+1)
@@ -85,7 +85,7 @@ V_n^k = \frac{n!}{(n-k)!}
 \end{itemize}
 \end{tcolorbox}
 
-\section{4. Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
+\section{Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
 Mielőtt belevágnál egy feladat megoldásába, tedd fel magadnak ezt a 3 gyors kérdést:
 \begin{enumerate}
     \item \textbf{Az összes elemből választunk?} Ha nem mindet, hanem csak egy részét ($k < n$), akkor válogatunk.
@@ -93,7 +93,7 @@ Mielőtt belevágnál egy feladat megoldásába, tedd fel magadnak ezt a 3 gyors
     \item \textbf{Lehet-e ismételni az elemeket?} Ha \textbf{nem} lehet ugyanazt az elemet kétszer választani, akkor megtaláltad: ez az \textbf{ismétlés nélküli variáció}!
 \end{enumerate}
 
-\section{5. Tipikus és trükkös feladatok levezetése}
+\section{Tipikus és trükkös feladatok levezetése}
 
 \subsection*{1. Feladat: Dobogós helyek}
 \textit{Egy 10 fős futóversenyen kiadják az arany-, az ezüst- és a bronzérmet. Hányféleképpen alakulhat a dobogósok listája?}

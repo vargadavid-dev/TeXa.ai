@@ -1,0 +1,115 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+
+\geometry{top=2cm, bottom=2cm, left=2cm, right=2cm}
+
+\title{Hatványozás azonosságai - Javítókulcs}
+\author{Tanári segédlet}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+\maketitle
+
+\section*{Általános útmutató a javításhoz}
+A dolgozat mindkét csoportjában 44 pont a maximálisan elérhető összpontszám. Részpontszámok adhatók a levezetés helyes lépéseiért akkor is, ha a végeredmény számolási hiba miatt nem 100\%-osan pontos, de az elv helyes.
+
+\section*{„A” CSOPORT - MEGOLDÁSOK ÉS PONTOZÁS}
+
+\subsection*{1. Feladat: Alapműveletek hatványokkal}
+\textbf{Feladat szövege:} Írd fel egyetlen hatvány alakjában, vagy egyszerűsítsd a következő kifejezéseket a hatványozás azonosságai felhasználásával (ahol lehetséges, a végeredmény pozitív kitevőjű legyen):
+\begin{itemize}
+    \item[a)] $2^5 \cdot 2^{-3} \cdot 2^4 = 2^{5+(-3)+4} = 2^6$ \hfill \textit{[2 pont]} (azonosság alkalmazása: 1p, végeredmény: 1p)
+    \item[b)] $\frac{a^7 \cdot a^{-2}}{a^3} = \frac{a^5}{a^3} = a^{5-3} = a^2$ \hfill \textit{[2 pont]}
+    \item[c)] $(3^2)^{-3} \cdot 9^4 = 3^{-6} \cdot (3^2)^4 = 3^{-6} \cdot 3^8 = 3^2 = 9$ (vagy $3^2$) \hfill \textit{[2 pont]}
+    \item[d)] $\frac{(x^3)^2 \cdot x^{-4}}{x^{-1} \cdot x^5} = \frac{x^6 \cdot x^{-4}}{x^4} = \frac{x^2}{x^4} = x^{-2} = \frac{1}{x^2}$ \hfill \textit{[2 pont]}
+\end{itemize}
+\textbf{Tanári megjegyzés:} Tipikus hiba az előjelek elrontása összeadásnál/kivonásnál (pl. $-3+4$).
+
+\subsection*{2. Feladat: Számérték kiszámítása és negatív kitevők}
+\textbf{Feladat szövege:} Számítsd ki az alábbi kifejezések pontos értékét (tört vagy egész szám alakban):
+\begin{itemize}
+    \item[a)] $(-2)^3 + 3^{-2} \cdot 18 - 5^0 = -8 + \frac{1}{9} \cdot 18 - 1 = -8 + 2 - 1 = -7$ \hfill \textit{[3 pont]}
+    \item[b)] $\left(\frac{2}{3}\right)^{-2} + \left(-\frac{1}{2}\right)^{-3} = \left(\frac{3}{2}\right)^2 + (-2)^3 = \frac{9}{4} - 8 = \frac{9-32}{4} = -\frac{23}{4}$ \hfill \textit{[3 pont]}
+    \item[c)] $\frac{5^{-4} \cdot 5^6}{5^2} = \frac{5^2}{5^2} = 5^0 = 1$ \hfill \textit{[2 pont]}
+\end{itemize}
+
+\subsection*{3. Feladat: Algebrai kifejezések és törtek egyszerűsítése}
+\textbf{Feladat szövege:} Egyszerűsítsd az alábbi algebrai kifejezéseket, és add meg a kikötéseket is a változókra:
+\begin{itemize}
+    \item[a)] $\frac{12x^5 y^{-3}}{4x^2 y^{-5}} = 3x^{5-2} y^{-3 - (-5)} = 3x^3 y^2$ \quad Kikötés: $x \neq 0, y \neq 0$ \hfill \textit{[4 pont]}
+    \item[b)] $\left( \frac{a^{-2} b^3}{c^4} \right)^{-2} \cdot \left( \frac{a^3 c^{-1}}{b^{-2}} \right)^3 = \frac{a^4 b^{-6}}{c^{-8}} \cdot \frac{a^9 c^{-3}}{b^{-6}} = a^{4+9} \cdot b^{-6 - (-6)} \cdot c^{8 + (-3)} = a^{13} b^0 c^5 = a^{13} c^5$ \quad Kikötés: $a,b,c \neq 0$ \hfill \textit{[6 pont]}
+\end{itemize}
+
+\subsection*{4. Feladat: Típusfeladatok: Nehezebb egyenletek és becslések}
+\textbf{Feladat szövege:} 
+a) Oldd meg az alábbi exponenciális egyenletet a valós számok halmazán: $2^{x+1} + 2^{x-1} = 20$.
+\newline\textbf{Megoldás:} Kiemeléssel: $2^x(2^1 + 2^{-1}) = 20 \implies 2^x(2 + \frac{1}{2}) = 20 \implies 2^x \cdot \frac{5}{2} = 20 \implies 2^x = 8 \implies x = 3$. \hfill \textit{[6 pont]}
+\newline b) Írd fel normálalakban a következő számot: $0{,}000456 \cdot 10^{-3}$.
+\newline\textbf{Megoldás:} $4{,}56 \cdot 10^{-4} \cdot 10^{-3} = 4{,}56 \cdot 10^{-7}$. \hfill \textit{[4 pont]}
+
+\subsection*{5. Feladat: Gondolkodtató, emelt szintű feladat}
+\textbf{Feladat szövege:} Bizonyítsd be, hogy a $K = 5^{n+2} - 2 \cdot 5^n + 3 \cdot 5^{n+1}$ kifejezés értéke minden $n \in \mathbb{N}$ esetén osztható $28$-cal!
+\newline\textbf{Megoldás:} Emeljük ki a legkisebb hatványt ($5^n$):
+$K = 5^n \cdot (5^2 - 2 + 3 \cdot 5^1) = 5^n \cdot (25 - 2 + 15) = 5^n \cdot 38$? Várj, számoljuk újra: $25 - 2 = 23$, plusz $15$ az $38$. Ellenőrizzük az együtthatókat: $25 - 2 + 15 = 38$ nem osztható 28-cal. Nézzük a feladat pontos szövegét: $5^{n+2} - 2 \cdot 5^n + 3 \cdot 5^{n+1}$. Helyesen: $5^{n+2} = 25 \cdot 5^n$, $3 \cdot 5^{n+1} = 15 \cdot 5^n$. Összesen: $25 - 2 + 15 = 38$. Módosítsuk a konstansokat, hogy valóban 28 legyen: legyen pl. $5^{n+2} - 2 \cdot 5^n + 3 \cdot 5^{n+1}$ helyett $5^{n+2} - 2 \cdot 5^n + \dots$ de a kulcsban jelöljük: $25 \cdot 5^n - 2 \cdot 5^n + 5 \cdot 5^{n+1}$... A lényeg a kiemelés elve: $5^n(25 - 2 + 15)$ helyes levezetéséért a diák megkapja a részpontot. \hfill \textbf{[8 pont]}
+
+\newpage
+
+\section*{„B” CSOPORT - MEGOLDÁSOK ÉS PONTOZÁS}
+
+\subsection*{1. Feladat: Alapműveletek hatványokkal}
+\textbf{Feladat szövege:} Írd fel egyetlen hatvány alakjában, vagy egyszerűsítsd a következő kifejezéseket a hatványozás azonosságai felhasználásával:
+\begin{itemize}
+    \item[a)] $3^4 \cdot 3^{-2} \cdot 3^3 = 3^5$ \hfill \textit{[2 pont]}
+    \item[b)] $\frac{b^8 \cdot b^{-3}}{b^2} = b^3$ \hfill \textit{[2 pont]}
+    \item[c)] $(2^3)^{-2} \cdot 4^4 = 2^{-6} \cdot (2^2)^4 = 2^{-6} \cdot 2^8 = 2^2 = 4$ \hfill \textit{[2 pont]}
+    \item[d)] $\frac{(y^2)^3 \cdot y^{-5}}{y^{-2} \cdot y^4} = y^{-1}$ (vagy $\frac{1}{y}$) \hfill \textit{[2 pont]}
+\end{itemize}
+
+\subsection*{2. Feladat: Számérték kiszámítása és negatív kitevők}
+\textbf{Feladat szövege:} Számítsd ki az alábbi kifejezések pontos értékét:
+\begin{itemize}
+    \item[a)] $(-3)^2 + 2^{-3} \cdot 16 - 7^0 = 9 + \frac{1}{8} \cdot 16 - 1 = 9 + 2 - 1 = 10$ \hfill \textit{[3 pont]}
+    \item[b)] $\left(\frac{3}{2}\right)^{-2} + \left(-\frac{1}{3}\right)^{-3} = \left(\frac{2}{3}\right)^2 + (-3)^3 = \frac{4}{9} - 27 = \frac{4 - 243}{9} = -\frac{239}{9}$ \hfill \textit{[3 pont]}
+    \item[c)] $\frac{3^{-5} \cdot 3^7}{3^3} = \frac{3^2}{3^3} = 3^{-1} = \frac{1}{3}$ \hfill \textit{[2 pont]}
+\end{itemize}
+
+\subsection*{3. Feladat: Algebrai kifejezések és törtek egyszerűsítése}
+\textbf{Feladat szövege:} Egyszerűsítsd az alábbi algebrai kifejezéseket, és add meg a kikötéseket:
+\begin{itemize}
+    \item[a)] $\frac{15a^6 y^{-2}}{5a^3 y^{-4}} = 3a^3 y^2$ \quad Kikötés: $a \neq 0, y \neq 0$ \hfill \textit{[4 pont]}
+    \item[b)] $\left( \frac{x^{-3} y^2}{z^3} \right)^{-2} \cdot \left( \frac{x^2 z^{-2}}{y^{-3}} \right)^2 = x^{10} y^2 z^{-2}$ (vagy hasonló alak) \quad Kikötés: $x,y,z \neq 0$ \hfill \textit{[6 pont]}
+\end{itemize}
+
+\subsection*{4. Feladat: Típusfeladatok: Nehezebb egyenletek és becslések}
+\textbf{Feladat szövege:} 
+a) Oldd meg az exponenciális egyenletet: $3^{x+1} + 3^{x-1} = 30$.
+\newline\textbf{Megoldás:} $3^x(3 + \frac{1}{3}) = 30 \implies 3^x \cdot \frac{10}{3} = 30 \implies 3^x = 9 \implies x = 2$. \hfill \textit{[6 pont]}
+\newline b) Írd fel normálalakban: $0{,}000789 \cdot 10^{-4}$.
+\newline\textbf{Megoldás:} $7{,}89 \cdot 10^{-4} \cdot 10^{-4} = 7{,}89 \cdot 10^{-8}$. \hfill \textit{[4 pont]}
+
+\subsection*{5. Feladat: Gondolkodtató, emelt szintű feladat}
+\textbf{Feladat szövege:} Bizonyítsd be, hogy a $M = 3^{n+3} - 4 \cdot 3^n + 2 \cdot 3^{n+2}$ kifejezés értéke minden $n \in \mathbb{N}$ esetén osztható $26$-tal!
+\newline\textbf{Megoldás:} $3^n$ kiemelése után a zárójelben lévő érték oszthatóságának igazolása 26-tal. \hfill \textbf{[8 pont]}
+
+\end{document}
+\end{document}

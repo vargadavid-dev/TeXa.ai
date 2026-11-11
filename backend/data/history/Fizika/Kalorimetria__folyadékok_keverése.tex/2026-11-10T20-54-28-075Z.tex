@@ -1,0 +1,153 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\definecolor{myprimary}{RGB}{0, 102, 204}
+\definecolor{mybackground}{RGB}{240, 248, 255}
+\definecolor{myalert}{RGB}{204, 0, 0}
+
+\tcbset{
+    colback=mybackground,
+    colframe=myprimary,
+    fonttitle=\bfseries,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=6pt,
+    right=6pt,
+    top=6pt,
+    bottom=6pt
+}
+
+\title{Kalorimetria, folyadékok keverése}
+\author{Fizika oktatási segédanyag}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+\usepackage{abstract}
+\definecolor{bvred}{rgb}{0.8, 0.0, 0.0}  
+
+%%% Megjelenítéshez kiegészített dobozok és makrók %%%
+\providecommand{\textbfr}[1]{\textbf{\textcolor{red}{#1}}}
+
+\usepackage{hyperref}
+
+\begin{document}
+\title{\textbfr{Kalorimetria}}
+\author{Készítette:\\Varga Dávid}
+\date{}
+\maketitle
+
+\begin{abstract}
+Ez az összefoglaló segít átlátni a kalorimetria és a folyadékok keverésének rejtelmeit. Célunk, hogy képletek bemagolása helyett valóban megértsd, mi történik a fazekakban, poharakban és a hőmérőkben, amikor különböző hőmérsékletű anyagokat összeöntünk.
+\end{abstract}
+
+\section{Mikor használjuk?}
+A kalorimetriát akkor vesszük elő, amikor eltérő hőmérsékletű anyagokat – leggyakrabban folyadékokat – összeöntünk, vagy egy forró tárgyat hideg vízbe dobunk, és arra vagyunk kíváncsiak, hogy végül \textbf{mekkora lesz a közös hőmérséklet}, vagy mennyi hő áramlott át a rendszerek között. A hétköznapokban is ezt használjuk, amikor a forró teához hideg tejet öntünk, hogy rögtön megihassuk, vagy amikor megkeverjük a fürdővizet.
+
+\section{Hogyan működik?}
+Képzelj el két teli vödröt: az egyikben $50\,^\circ\text{C}$-os meleg víz van, a másikban pedig $10\,^\circ\text{C}$-os hideg víz. Ha összeöntjük őket, a meleg víz \textbf{hőt ad le} (energiát veszít), míg a hideg víz \textbf{hőt vesz fel} (energiát nyer). 
+
+Miért nem adódnak csak úgy össze egyszerűen a hőmérsékletek? Azért, mert a hőmérséklet nem egy „mennyiség”, amit csak úgy össze lehet adni, hanem a molekulák átlagos mozgási energiájának a mértéke. A meleg víz molekulái vadul táncolnak, a hidegeké lustábban mozognak. Amikor összeérnek, a gyorsak ütköznek a lassan mozgókkal, és lassan átadják nekik a lökéseiket, amíg be nem áll a \textbf{hőmérsékleti egyensúly} – vagyis amíg mindenki ugyanakkora átlagos sebességgel nem mozog.
+
+A legfontosabb természeti szabály itt a \textbf{hőmennyiségek megmaradása} (ideális esetben, ha nem fűtjük a szobát, és az edény sem nyel el hőt):
+$$\text{Q}_{\text{leadott}} = \text{Q}_{\text{felvett}}$$
+A meleg anyag által leadott hő pontosan megegyezik a hideg anyag által felvett hővel. Ezért tesszük őket egy egyenlet két oldalára.
+
+\section{Általános képlet és speciális esetek}
+A hőtani számítások alapképlete az egyes anyagok hőmérséklet-változásakor:
+$$Q = c \cdot m \cdot \Delta T$$
+Ahol:
+\begin{itemize}
+    \item $Q$: a felvett vagy leadott hő (mértékegysége joule, $\text{J}$),
+    \item $c$: a fajhő (megmutatja, mennyi hő kell $1\,\text{kg}$ anyag $1\,^\circ\text{C}$-os melegítéséhez, $\text{J}/(\text{kg}\cdot^\circ\text{C})$),
+    \item $m$: a tömeg ($\text{kg}$),
+    \item $\Delta T$: a hőmérséklet-változás ($|T_{\text{kezdeti}} - T_{\text{végső}}|$).
+\end{itemize}
+
+A keverési egyenlet felírásakor a következőt tesszük:
+$$c_1 \cdot m_1 \cdot (T_1 - T_{\text{közös}}) = c_2 \cdot m_2 \cdot (T_{\text{közös}} - T_2)$$
+Ahol $T_1$ a melegebb test kezdeti hőmérséklete, $T_2$ a hidegebbé, $T_{\text{közös}}$ pedig a közös végső hőmérséklet (ami a kettő közé esik: $T_2 < T_{\text{közös}} < T_1$).
+
+\begin{tcolorbox}[colframe=myalert, colback=red!5!white, title=Gyakori csapdák és speciális esetek]
+\begin{itemize}
+    \item \textbf{Az edény elhanyagolása:} Ha a feladat megemlíti a kalorimétert (vagy az edényt), amelyben a keverés történik, akkor \textbf{az edény is felvesz hőt} a meleg folyadéktól! Olyan, mintha lenne egy harmadik résztvevő is a játékban, amelynek a tömegét és fajhőjét ($c_{\text{edény}} \cdot m_{\text{edény}}$) hozzá kell adni a hideg oldalhoz.
+    \item \textbf{Mértékegységek:} Soha ne keverd a grammot a kilogrammal, vagy a Celsius-fokot a Kelvinnel (bár $\Delta T$-nél mindegy, de a biztonság kedvéért maradj a Celsiusnál, ha a fajhő is abban van megadva).
+\end{itemize}
+\end{tcolorbox}
+
+\section{Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
+Ha a feladat olvasásakor az alábbi három kérdésre igennel válaszolsz, akkor biztosan kaloriméteres egyenletet kell felírnod:
+\begin{enumerate}
+    \item Két vagy több különböző hőmérsékletű anyagot (folyadékot, netán szilárd testet) összehoznak?
+    \item Az anyagok között hőáramlás történik, de a rendszer magára van hagyva (nem forralják folyamatosan tűzhelyen, és nem hűtik hűtőben)?
+    \item A cél a végső egyensúlyi hőmérséklet vagy az egyik anyag ismeretlen tömegének/hőmérsékletének meghatározása?
+\end{enumerate}
+
+\section{Tipikus és trükkös feladatok levezetése}
+
+\subsection{Feladat: A klasszikus tea és tej keverése}
+\textit{Feladat:} $2\,\text{kg}$, $80\,^\circ\text{C}$-os vizet ($c_{\text{víz}} = 4200\,\text{J}/(\text{kg}\cdot^\circ\text{C})$) összeöntünk $0{,}5\,\text{kg}$, $20\,^\circ\text{C}$-os tejjel. Feltételezzük, hogy a tej fajhője megegyezik a vízévelel. Mennyi lesz a keverék végső hőmérséklete?
+
+\begin{tcolorbox}[title=Megoldási lépések]
+\textbf{1. Lépés: Gondolkodási stratégia}\\
+A meleg víz hőt ad le, a hideg tej hőt vesz fel. A veszteség egyenlő a nyereséggel. Legyen a keresett végső hőmérséklet $T$.\\[6pt]
+\textbf{2. Lépés: A hőmennyiségek felírása}\\
+A leadott hő (víz): 
+$$Q_{\text{leadott}} = c \cdot m_1 \cdot (80 - T)$$
+A felvett hő (tej): 
+$$Q_{\text{felvett}} = c \cdot m_2 \cdot (T - 20)$$
+\textbf{3. Lépés: Az egyenlet felírása és megoldása}\\
+Mivel $Q_{\text{leadott}} = Q_{\text{felvett}}$, és a $c$ mindkét oldalon szerepel, leoszthatunk vele:
+$$m_1 \cdot (80 - T) = m_2 \cdot (T - 20)$$
+Helyettesítsük be az adatokat:
+$$2 \cdot (80 - T) = 0{,}5 \cdot (T - 20)$$
+Zárójelbontás:
+$$160 - 2T = 0{,}5T - 10$$
+Rendezzük az egyenletet (adjunk hozzá $2T$-t és $10$-et):
+$$170 = 2{,}5T$$
+Osztás $2{,}5$-tel:
+$$T = \frac{170}{2{,}5} = 68\,^\circ\text{C}$$
+\textbf{Hibaforrás, amit kerülj el:} A zárójelben mindig a \textit{nagyobb mínusz kisebb} elvet követjük a hőmérsékleteknél, hogy pozitív számokat kapjunk, hiszen a $T$ a melegebbnél alacsonyabb, de a hidegebbnél magasabb lesz!
+\end{tcolorbox}
+
+\subsection{Feladat: Az ismeretlen kezdeti hőmérséklet kiszámítása}
+\textit{Feladat:} Összeöntünk $1{,}5\,\text{kg}$, $90\,^\circ\text{C}$-os meleg vizet $1\,\text{kg}$ ismeretlen hőmérsékletű hideg vízzel. A keverés után a közös egyensúlyi hőmérséklet $60\,^\circ\text{C}$ lett. Mennyi volt a hideg víz kezdeti hőmérséklete? (A környezettel és az edénnyel való hőcserétől tekintsünk el.)
+
+\begin{tcolorbox}[title=Megoldási lépések]
+\textbf{1. Lépés: Gondolkodási stratégia}\\
+A meleg víz hőt ad le, miközben $90\,^\circ\text{C}$-ról $60\,^\circ\text{C}$-ra hűl. A hideg víz hőt vesz fel, miközben az ismeretlen $T_{\text{hideg}}$ hőmérsékletről $60\,^\circ\text{C}$-ra melegszik. A leadott és felvett hőmennyiségek nagysága megegyezik.\\[6pt]
+\textbf{2. Lépés: A hőmennyiségek felírása}\\
+A meleg víz által leadott hő: 
+$$Q_{\text{leadott}} = c_{\text{víz}} \cdot m_1 \cdot (90 - 60)$$
+A hideg víz által felvett hő: 
+$$Q_{\text{felvett}} = c_{\text{víz}} \cdot m_2 \cdot (60 - T_{\text{hideg}})$$
+\textbf{3. Lépés: Az egyenlet felírása és megoldása}\\
+A hőmegmaradás törvénye alapján:
+$$c_{\text{víz}} \cdot m_1 \cdot (90 - 60) = c_{\text{víz}} \cdot m_2 \cdot (60 - T_{\text{hideg}})$$
+Mivel a víz $c_{\text{víz}}$ fajhője mindkét oldalon szerepel, leoszthatunk vele:
+$$m_1 \cdot (90 - 60) = m_2 \cdot (60 - T_{\text{hideg}})$$
+Behelyettesítve az ismert tömegeket ($m_1 = 1{,}5\,\text{kg}$, $m_2 = 1\,\text{kg}$):
+$$1{,}5 \cdot 30 = 1 \cdot (60 - T_{\text{hideg}})$$
+$$45 = 60 - T_{\text{hideg}}$$
+Rendezzük az egyenletet az ismeretlenre:
+$$T_{\text{hideg}} = 60 - 45 = 15\,^\circ\text{C}$$
+\textbf{Hibaforrás, amit kerülj el:} Vigyázz a hőmérséklet-különbségek sorrendjére! A hideg víz hőmérséklet-változása $(T_{\text{közös}} - T_{\text{hideg}})$, mivel a közös hőmérséklet a magasabb. Ha felcseréled a tagokat, negatív előjelekbe vagy hibás végeredménybe futhatsz bele!
+\end{tcolorbox}
+
+\end{document}

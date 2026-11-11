@@ -1,0 +1,172 @@
+\documentclass[10pt,a4paper,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{top=2cm, bottom=2cm, left=1.5cm, right=1.5cm}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multicol}
+
+\title{deriválás, elemi függvények deriválása, aarkuszfüggvények, hiperbolikus függvények deriváltja, deriválási szabályok, inverz függvények deriválás, láncszabály}
+\author{Matematika Képletgyűjtemény}
+\date{}
+
+\tcbuselibrary{skins,breakable}
+
+\newtcolorbox{fogalombox}[1]{
+  colback=blue!5!white,
+  colframe=blue!75!black,
+  fonttitle=\bfseries,
+  title=#1,
+  boxrule=0.5mm,
+  arc=2mm,
+  left=2mm,
+  right=2mm,
+  top=2mm,
+  bottom=2mm,
+  toptitle=1mm,
+  bottomtitle=1mm
+}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+\maketitle
+\vspace{-1em}
+\noindent\rule{\linewidth}{0.5pt}
+
+\section{Bevezetés és Alapfogalmak}
+
+\begin{fogalombox}{Derivált fogalma}
+A differenciálhányados (derivált) szemléletesen a függvény grafikonjának adott pontbeli érintőjének meredeksége.
+\[ f'(x_0) = \frac{df}{dx}\Big|_{x=x_0} = \lim_{h \to 0} \frac{f(x_0+h) - f(x_0)}{h} \]
+\textbf{Változók és dimenziók:}
+\begin{itemize}
+    \item $x \in \mathbb{R}$ – független változó (dimenziómentes vagy $[m]$, $[s]$ stb.)
+    \item $f(x)$ – függő változó (függ a kontextustól)
+    \item $h$ – kis eltolódás ($[x]$)
+\end{itemize}
+\end{fogalombox}
+
+\section{Deriválási Szabályok}
+
+\begin{fogalombox}{Alapműveletek deriváltjai}
+Legyenek $f, g$ differenciálható függvények, $c \in \mathbb{R}$ konstans.
+\begin{align*}
+    (c \cdot f)' &= c \cdot f' \\
+    (f \pm g)' &= f' \pm g' \\
+    (f \cdot g)' &= f'g + fg' \quad \text{(szorzatszabály)} \\
+    \left(\frac{f}{g}\right)' &= \frac{f'g - fg'}{g^2} \quad (g \neq 0, \text{ hányados})
+\end{align*}
+\end{fogalombox}
+
+\begin{fogalombox}{Láncszabály és Inverz}
+\textbf{Láncszabály (összetett függvény):}
+\[ [f(g(x))]' = f'(g(x)) \cdot g'(x) \]
+\textbf{Inverz függvény deriváltja:}
+Ha $f$ invertálható és $f'(g(x)) \neq 0$:
+\[ (f^{-1})'(x) = \frac{1}{f'(f^{-1}(x))} \]
+\end{fogalombox}
+
+\section{Elemi Függvények Deriváltjai}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Függvény $f(x)$} & \textbf{Deriváltja $f'(x)$} \\
+\midrule
+$c$ (konstans) & $0$ \\
+$x^n$ ($n \in \mathbb{R}$) & $n x^{n-1}$ \\
+$e^x$ & $e^x$ \\
+$a^x$ ($a > 0$) & $a^x \ln(a)$ \\
+$\ln(x)$ ($x > 0$) & $\frac{1}{x}$ \\
+$\log_a(x)$ & $\frac{1}{x \ln(a)}$ \\
+$\sin(x)$ & $\cos(x)$ \\
+$\cos(x)$ & $-\sin(x)$ \\
+$\operatorname{tg}(x)$ & $\frac{1}{\cos^2(x)}$ \\
+$\operatorname{ctg}(x)$ & $-\frac{1}{\sin^2(x)}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{-1em}
+*(A trigonometrikus függvényeknél a szöveg radiánban értendő).*
+
+\section{Arkuszfüggvények Deriváltjai}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Inverz trigl. $f(x)$} & \textbf{Deriváltja $f'(x)$} \\
+\midrule
+$\arcsin(x)$ ($|x|<1$) & $\frac{1}{\sqrt{1-x^2}}$ \\
+$\arccos(x)$ ($|x|<1$) & $-\frac{1}{\sqrt{1-x^2}}$ \\
+$\operatorname{arctg}(x)$ & $\frac{1}{1+x^2}$ \\
+$\operatorname{arcctg}(x)$ & $-\frac{1}{1+x^2}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{-1em}
+\begin{fogalombox}{Arkuszfüggvények megjegyzés}
+Az arkuszfüggvények az elemi trigonometrikus függvények korlátozott tartományon vett inverzei. Változók: $x$ dimenziómentes (vagy szögfüggvény értéke).
+\end{fogalombox}
+
+\section{Hiperbolikus Függvények}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hiperbolikus $f(x)$} & \textbf{Deriváltja $f'(x)$} \\
+\midrule
+$\operatorname{sh}(x)$ ($\sinh$) & $\operatorname{ch}(x)$ ($\cosh$) \\
+$\operatorname{ch}(x)$ ($\cosh$) & $\operatorname{sh}(x)$ ($\sinh$) \\
+$\operatorname{th}(x)$ ($\tanh$) & $\frac{1}{\operatorname{ch}^2(x)}$ \\
+$\operatorname{cth}(x)$ ($\coth$) & $-\frac{1}{\operatorname{sh}^2(x)}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{-1em}
+
+\section{Area-függvények}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Area-függvény $f(x)$} & \textbf{Deriváltja $f'(x)$} \\
+\midrule
+$\operatorname{arsh}(x)$ & $\frac{1}{\sqrt{x^2+1}}$ \\
+$\operatorname{arch}(x)$ ($x>1$) & $\frac{1}{\sqrt{x^2-1}}$ \\
+$\operatorname{arth}(x)$ ($|x|<1$) & $\frac{1}{1-x^2}$ \\
+$\operatorname{arcth}(x)$ ($|x|>1$) & $\frac{1}{1-x^2}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{fogalombox}{Fontos azonosságok}
+\begin{align*}
+    \operatorname{ch}^2(x) - \operatorname{sh}^2(x) &= 1 \\
+    \operatorname{th}(x) &= \frac{\operatorname{sh}(x)}{\operatorname{ch}(x)}
+\end{align*}
+A hiperbolikus függvények exponenciális kifejezésekkel adhatók meg:
+\[ \operatorname{sh}(x) = \frac{e^x - e^{-x}}{2}, \quad \operatorname{ch}(x) = \frac{e^x + e^{-x}}{2} \]
+\end{fogalombox}
+
+\end{document}

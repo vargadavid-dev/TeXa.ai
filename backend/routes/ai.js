@@ -6,7 +6,7 @@ const fs = require('fs-extra');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const axios = require('axios');
-const { supplementFullLatex, sanitizeLatexNumbering } = require('../utils/latexPreambleHelper');
+const { supplementFullLatex, sanitizeLatexNumbering, sanitizeTabularRows, ensureDocumentStructure } = require('../utils/latexPreambleHelper');
 const { compileStandaloneTikz } = require('../utils/tikzCompiler');
 
 const router = express.Router();
@@ -80,7 +80,7 @@ const DOC_TYPES = {
 };
 
 // Generikus AI hívás (Kezeli a Gemini és a Helyi LM Studio / Ollama hívásokat is)
-async function callAi(prompt, provider, imageParts = [], systemPrompt = SYSTEM, requestedModel = null, req = null) {
+async function callAi(prompt, provider, imageParts = [], systemPrompt = SYSTEM, requestedModel = null, req = null, options = {}) {
   if (provider === 'local') {
     const combinedPrompt = `${systemPrompt}\n\nFONTOS HELYI MODELL UTASÍTÁS: Mivel helyi számítógépen futsz, légy lényegretörő, rendkívül tömör és törekedj a gyors generálásra (maximum 600-800 szó). Ne ismételd önmagad! Mindenképpen fejezd be a dokumentumot és zárd le a \\end{document} paranccsal!\n\nKérés:\n${prompt}`;
 
@@ -124,11 +124,10 @@ async function callAi(prompt, provider, imageParts = [], systemPrompt = SYSTEM, 
     const candidateModels = [
       requestedModel,
       process.env.GEMINI_MODEL,
-      'gemini-3.5-flash',
+      'gemini-3.8-flash',
       'gemini-3.5-flash-lite',
-      'gemini-flash-lite-latest',
       'gemini-2.5-flash',
-      'gemini-3.8-flash'
+      'gemini-3.5-flash'
     ].filter(Boolean);
 
     const uniqueModels = [...new Set(candidateModels)];
@@ -136,12 +135,28 @@ async function callAi(prompt, provider, imageParts = [], systemPrompt = SYSTEM, 
     const parts = [{ text: `${systemPrompt}\n\n${prompt}` }, ...imageParts];
     if (imageParts.length > 0) parts.push({ text: '\nA fenti képeket is vedd figyelembe.' });
 
+    const thinkingLevel = options?.thinkingLevel || 'low';
+    const timeoutMs = options?.timeoutMs || 30000;
+
     for (const modelName of uniqueModels) {
       try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        // 25 másodperces időkeret, hogy ha egy modell 429 kvótakorlátot vagy hálózati hibát ad,
-        // azonnal átváltson a következő elérhető modellre
-        const timeoutMs = 25000;
+        const genConfig = {};
+        // Thinking konfiguráció beállítása (Gemini 2.5 / 3.x / 4.x modelleknél)
+        const supportsThinking = !modelName.includes('gemini-1.') && !modelName.includes('gemini-2.0');
+        if (supportsThinking && thinkingLevel) {
+          genConfig.thinkingConfig = { thinkingLevel };
+        }
+
+        let model;
+        try {
+          model = genAI.getGenerativeModel({
+            model: modelName,
+            ...(Object.keys(genConfig).length > 0 ? { generationConfig: genConfig } : {})
+          });
+        } catch (_) {
+          model = genAI.getGenerativeModel({ model: modelName });
+        }
+
         const resultPromise = model.generateContent(parts);
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error(`Időtúllépés (${timeoutMs / 1000}s) a(z) ${modelName} modellnél`)), timeoutMs)
@@ -149,7 +164,22 @@ async function callAi(prompt, provider, imageParts = [], systemPrompt = SYSTEM, 
         const result = await Promise.race([resultPromise, timeoutPromise]);
         return result.response.text();
       } catch (err) {
-        lastError = err;
+        // Ha a modell nem fogadta el a thinkingConfig-ot, azonnali próbálkozás anélkül
+        if (err.message && (err.message.includes('thinking') || err.message.includes('ThinkingConfig') || err.message.includes('generationConfig'))) {
+          try {
+            const fallbackModel = genAI.getGenerativeModel({ model: modelName });
+            const resultPromise = fallbackModel.generateContent(parts);
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error(`Időtúllépés (${timeoutMs / 1000}s) a(z) ${modelName} modellnél`)), timeoutMs)
+            );
+            const result = await Promise.race([resultPromise, timeoutPromise]);
+            return result.response.text();
+          } catch (retryErr) {
+            lastError = retryErr;
+          }
+        } else {
+          lastError = err;
+        }
         console.warn(`[Gemini API] '${modelName}' nem elérhető (${err.message}). Következő modell kipróbálása...`);
       }
     }
@@ -160,12 +190,12 @@ async function callAi(prompt, provider, imageParts = [], systemPrompt = SYSTEM, 
 // GET /api/ai/models
 router.get('/models', (req, res) => {
   res.json({
-    active: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+    active: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
     geminiModels: [
-      { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', desc: 'Prémium minőség és megbízható kvóta (Ajánlott)' },
-      { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash-Lite', desc: 'Szupergyors és hatékony' },
+      { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', desc: 'Legújabb csúcsmodell (gyorsított gondolkodással)' },
+      { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash-Lite', desc: 'Villámgyors és hatékony (azonnali válasz)' },
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Stabil gyors modell' },
-      { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', desc: 'Legújabb generáció' }
+      { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', desc: 'Prémium minőség' }
     ]
   });
 });
@@ -280,7 +310,7 @@ A tesztkérdések módja legyen minél változatosabb, vegyesen alkalmazva az al
     if (customPrompt) prompt += `\nKülön instrukció: ${customPrompt}`;
     if (fileContext) prompt += `\n\nForrásanyag:\n${fileContext}`;
 
-    let latex = await callAi(prompt, provider, imageParts, sysPrompt, model, req);
+    let latex = await callAi(prompt, provider, imageParts, sysPrompt, model, req, { thinkingLevel: req.body?.thinkingLevel || 'low', timeoutMs: 60000 });
     const m = latex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
     if (m) latex = m[1];
 
@@ -295,7 +325,7 @@ A tesztkérdések módja legyen minél változatosabb, vegyesen alkalmazva az al
 
     res.json({ success: true, latex: finalLatex.trim(), topic: topic?.trim() });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -332,12 +362,12 @@ FONTOS SZABÁLYOK:
     }
     const prompt = `Kódrészlet:\n\`\`\`latex\n${content}\n\`\`\`\n\nUtasítás: ${instruction}\n\nCsak a módosított kódrészletet add vissza.`;
 
-    let latex = await callAi(prompt, provider, [], sysPrompt, model, req);
+    let latex = await callAi(prompt, provider, [], sysPrompt, model, req, { thinkingLevel: 'low', timeoutMs: 30000 });
     const m = latex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
     if (m) latex = m[1];
     res.json({ success: true, latex: sanitizeLatexNumbering(latex.trim()) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -375,12 +405,12 @@ Elhelyezés: ${position === 'before' ? 'A fenti kódrészlet ELÉ kell beszúrni
 
 Generáld le a közvetlenül beilleszthető új LaTeX kódrészletet!`;
 
-    let latex = await callAi(prompt, provider, [], insertSysPrompt, model, req);
+    let latex = await callAi(prompt, provider, [], insertSysPrompt, model, req, { thinkingLevel: 'low', timeoutMs: 30000 });
     const m = latex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
     if (m) latex = m[1];
     res.json({ success: true, latex: latex.trim() });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -462,7 +492,7 @@ SZABÁLYOK:
       prompt = `Készíts professzionális TikZ ábrát a csatolt kép alapján (${effectiveSubject})!`;
     }
 
-    let tikz = await callAi(prompt, provider, imageParts, sys, model, req);
+    let tikz = await callAi(prompt, provider, imageParts, sys, model, req, { thinkingLevel: 'low', timeoutMs: 40000 });
     const m = tikz.match(/```(?:latex|tex|tikz)?\n?([\s\S]*?)```/);
     if (m) tikz = m[1];
     tikz = tikz.trim();
@@ -484,7 +514,7 @@ SZABÁLYOK:
     });
   } catch (err) {
     console.error('[AI TikZ Error]:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -505,7 +535,7 @@ router.post('/tikz-compile', async (req, res) => {
     });
   } catch (err) {
     console.error('[AI TikZ Compile Error]:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -528,7 +558,7 @@ SZABÁLYOK:
 4. Gráfos ábráknál, ha nincsenek nevesítve a csúcsok, pöttyként rajzold ki őket betűk nélkül!`;
 
     const prompt = `EREDETI TIKZ KÓD:\n\`\`\`latex\n${tikzCode}\n\`\`\`\n\nMÓDOSÍTÁSI KÉRÉS:\n${instruction.trim()}`;
-    let refinedTikz = await callAi(prompt, provider, [], refineSys, model, req);
+    let refinedTikz = await callAi(prompt, provider, [], refineSys, model, req, { thinkingLevel: 'low', timeoutMs: 35000 });
     const m = refinedTikz.match(/```(?:latex|tex|tikz)?\n?([\s\S]*?)```/);
     if (m) refinedTikz = m[1];
     refinedTikz = refinedTikz.trim();
@@ -543,7 +573,7 @@ SZABÁLYOK:
     });
   } catch (err) {
     console.error('[AI TikZ Refine Error]:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -790,7 +820,7 @@ SZABÁLYOK:
 - Gráfos ábráknál (TikZ), ha a feladat szövegében nem hivatkozol kifejezetten a csúcsok betűjeleire (A, B, C...), a csúcsokat csak pontként (pöttyként) rajzold ki, betűk és zavaró fokszám-feliratok nélkül!
 - CSAK a LaTeX kódblokkot (vagy a megadott elválasztóval ellátott kódot) add vissza!`;
 
-    let latex = await callAi(fullPrompt, provider, [], SYSTEM, model, req);
+    let latex = await callAi(fullPrompt, provider, [], SYSTEM, model, req, { thinkingLevel: req.body?.thinkingLevel || 'medium', timeoutMs: 90000 });
     let finalLatex = latex.trim();
     let solutionsLatex = null;
 
@@ -865,7 +895,309 @@ SZABÁLYOK:
       count: Number(count)
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// POST /api/ai/exam - Professzionális dolgozat, témazáró és vizsgageneráló
+router.post('/exam', upload.array('files', 5), async (req, res) => {
+  try {
+    const {
+      topic,
+      subject = 'Matematika',
+      examType = 'temazaro', // 'ropdolgozat' | 'dolgozat' | 'temazaro' | 'erettsegi' | 'custom'
+      taskCount = 5,
+      schoolName = '',
+      groupMode = 'ab', // 'none' | 'ab' | 'abc' | 'abcd'
+      withGroupsAB = 'true', // legacy fallback
+      layoutMode = 'compact', // 'compact' | 'worksheet'
+      withEvaluationTable = 'true',
+      withRubric = 'true',
+      withGradingScale = 'true',
+      solutionPlacement = 'separate_page', // 'separate_page' | 'separate_doc' | 'inline' | 'none'
+      customPrompt = '',
+      provider,
+      model,
+      customPreamble
+    } = req.body;
+
+    let fileContext = '';
+    for (const file of (req.files || [])) {
+      try {
+        const ex = await extractFile(file.path, file.mimetype, file.originalname);
+        if (ex.type === 'text') fileContext += `\n\n--- ${file.originalname} ---\n${ex.content}`;
+      } finally {
+        await fs.remove(file.path).catch(() => {});
+      }
+    }
+
+    const effectiveSubject = subject === 'fizika' || subject === 'Fizika' ? 'Fizika' : 'Matematika';
+    const effectiveTopic = (topic && topic.trim()) ? topic.trim() : 'Témazáró Dolgozat';
+    
+    // Csoportbontás meghatározása: 'none' | 'ab' | 'abc' | 'abcd'
+    let effectiveGroupMode = 'ab';
+    if (groupMode !== undefined && groupMode !== '') {
+      effectiveGroupMode = groupMode;
+    } else if (withGroupsAB !== undefined) {
+      effectiveGroupMode = (withGroupsAB === 'true' || withGroupsAB === true) ? 'ab' : 'none';
+    }
+
+    const groupLabels = effectiveGroupMode === 'ab'
+      ? ['A', 'B']
+      : effectiveGroupMode === 'abc'
+      ? ['A', 'B', 'C']
+      : effectiveGroupMode === 'abcd'
+      ? ['A', 'B', 'C', 'D']
+      : [];
+
+    const isGroups = groupLabels.length > 0;
+    const isWorksheet = layoutMode === 'worksheet';
+    const hasEvalTable = withEvaluationTable === 'true' || withEvaluationTable === true;
+    const hasRubric = withRubric === 'true' || withRubric === true;
+    const hasGradingScale = withGradingScale === 'true' || withGradingScale === true;
+    const count = Number(taskCount) || 5;
+
+    // Dolgozat típus specifikus instrukciók
+    let examTypeInstruction = '';
+    if (examType === 'ropdolgozat') {
+      examTypeInstruction = `DOLGOZAT TÍPUSA: ⚡️ RÖPDOLGOZAT (10-15 perc)
+- Cél: Az előző 1-2 tanóra anyagának vagy alapfogalmainak azonnali, villámgyors számonkérése.
+- Felépítés: ${count} db feladat (1 db fogalom/definíció/képletellenőrzés, a többi 1-2 lépéses közvetlen számolási alapfeladat).
+- Összpontszám: 15–20 pont.
+- Papírtakarékos, kompakt tördelés.`;
+    } else if (examType === 'dolgozat') {
+      examTypeInstruction = `DOLGOZAT TÍPUSA: 📝 ÓRAI DOLGOZAT / TÉMAELLENŐRZŐ (25-30 perc)
+- Cél: Egy kisebb tematikus tanulmányi egység tanórai felmérése és ellenőrzése.
+- Felépítés: ${count} db feladat (alapfogalmak, begyakorló típusfeladatok és egy alkalmazás/szöveges feladat).
+- Összpontszám: 25–35 pont.`;
+    } else if (examType === 'erettsegi') {
+      examTypeInstruction = `DOLGOZAT TÍPUSA: 🎓 ÉRETTSÉGI PRÓBAVIZSGA (90 perc)
+- Cél: Középiskolai érettségi vizsgaszintű átfogó számonkérés.
+- Felépítés: Két részből áll:
+  * I. Rész: Rövid, egyszerűbb választ igénylő alapfeladatok (kb. 30 pont)
+  * II. Rész: Összetett, több lépéses kidolgozós feladatok részpontozással (kb. 70 pont)
+- Összpontszám: 100 pont, a hivatalos érettségi pontozási struktúra mintájára.`;
+    } else {
+      examTypeInstruction = `DOLGOZAT TÍPUSA: 📘 TÉMAZÁRÓ DOLGOZAT (45 perc)
+- Cél: Egy teljes tanulmányi fejezet lezárása és érdemjeggyel történő értékelése.
+- Felépítés: ${count} db feladat K1 → K2 → K3 nehézségi piramis szerint felépítve (K1 alapismeretek, K2 típusfeladatok, K3 gondolkodtató feladat).
+- Összpontszám: 40–50 pont.`;
+    }
+
+    // Fejléc és értékelési táblázat instrukció (Max pont, elért pont, érdemjegy)
+    const taskColHeaders = Array.from({ length: count }, (_, i) => `${i + 1}.`).join(' & ');
+    const taskMaxPlaceholders = Array.from({ length: count }, (_, i) => `[p_{${i + 1}}]`).join(' & ');
+    const emptyCells = Array.from({ length: count + 2 }, () => '').join(' & ');
+    const colAlign = `|l|${'c|'.repeat(count)}|c||c|`;
+    const colCountForCline = count + 2;
+
+    const evalTableSample = hasEvalTable ? `\\begin{flushright}
+  ${count >= 7 ? '{\\footnotesize' : '{\\small'}
+  \\begin{tabular}{${colAlign}}
+    \\hline
+    \\textbf{Feladat} & ${taskColHeaders} & \\textbf{Össz.} & \\textbf{Érdemjegy} \\\\ \\hline
+    \\textbf{Max. pont} & ${taskMaxPlaceholders} & [P_{max}] & \\\\ \\cline{1-${colCountForCline}}
+    \\textbf{Elért pont} & ${emptyCells} \\\\ \\hline
+  \\end{tabular}
+  }
+  \\end{flushright}` : '';
+
+    const headerInstruction = `KÖTELEZŐ DOLGOZAT FEJLÉC ÉS ADMINISZTRÁCIÓS ÉRTÉKELŐ TÁBLÁZAT (MAX PONT, ELÉRT PONT, ÉRDEMJEGY):
+Minden csoport (vagy egységes feladatsor) feladatlapjának legtetején KÖTELEZŐ az alábbi fejléc elhelyezése:
+\\noindent
+\\begin{minipage}[t]{0.45\\textwidth}
+  \\vspace{0pt}
+  ${schoolName && schoolName.trim() ? `{\\small\\textsf{${schoolName.trim()}}}\\\\[1mm]` : ''}
+  {\\Large\\textbf{${effectiveTopic}}}\\\\[2mm]
+  ${isGroups ? '{\\large\\textbf{„[CSOPORT_BETŰJELE]” CSOPORT}}\\\\[2mm]' : ''}
+  \\textbf{Név:} \\underline{\\hspace{4.5cm}}\\\\[2mm]
+  \\textbf{Osztály:} \\underline{\\hspace{1.5cm}} \\quad \\textbf{Dátum:} \\underline{\\hspace{2cm}}
+\\end{minipage}
+\\hfill
+\\begin{minipage}[t]{0.53\\textwidth}
+  \\vspace{0pt}
+  ${evalTableSample}
+\\end{minipage}
+\\vspace{2mm}
+\\hrule
+\\vspace{4mm}
+
+SZIGORÚ ÉRTÉKELÉSI ÉS PONTOZÁSI SZABÁLYOK (MAX PONT, ELÉRT PONT, ÉRDEMJEGY):
+1. A fejléc-táblázat PONTOSAN ${count + 3} oszlopos (${colAlign}). A táblázat MINDEN sorában PONTOSAN ${count + 2} darab '&' elválasztó jelnek kell lennie! Soha ne tegyél több '&' jelet a sorokba!
+2. A táblázat 'Max. pont' sorában MINDEN egyes feladatnál KÖTELEZŐ kiírni a feladatra járó maximális pontszámot (pl. 4 & 6 & 8...), és a végén az 'Össz.' oszlopba a dolgozat pontos összpontszámát (P_{max})!
+3. Az 'Elért pont' sort hagyd üresen (csak az elválasztó '&' jelek legyenek): '\\textbf{Elért pont} & ${emptyCells} \\\\ \\hline' (pontosan ${count + 2} db '&' jel)!
+4. Az 'Érdemjegy' oszlop az érdemjegy beírására szolgál, hagyd üresen a rubrikát!
+5. Minden feladat jobb szélén KÖTELEZŐ feltüntetni a maximális pontszámot: pl. \\hfill \\textbf{[4 pont]} vagy részpontoknál \\hfill \\textit{[2 pont]}!
+6. A fejléc-táblázatban megadott feladat-pontszámok és az összpontszám PONTOSAN egyezzen meg a feladatok szövege mellett szereplő pontszámokkal!`;
+
+    // Csoportok instrukciója (A-B stb csoportok)
+    let groupsInstruction = '';
+    if (isGroups) {
+      groupsInstruction = `SZIGORÚ CSOPORT SZIMMETRIA ÉS MÁSOLÁS ELLENI VÉDELEM (${groupLabels.map(g => `„${g}”`).join(', ')} CSOPORTOK):
+A dolgozatot ${groupLabels.length} teljesen egyenértékű, szimmetrikus változatban kell elkészíteni: ${groupLabels.map(g => `„${g}” csoport`).join(', ')}!
+${groupLabels.map((g, idx) => `
+${idx > 0 ? '\\newpage\n' : ''}* Készítsd el a(z) „${g}” csoport teljes feladatsorát a saját fejlécével ({\\large\\textbf{„${g}” CSOPORT}} felirattal), a fejléc értékelő táblázattal (Max pont, elért pont, érdemjegy), a feladatokkal és az alján a ponthatárokkal!`).join('\n')}
+
+DIDAKTIKAI KÖVETELMÉNYEK A CSOPORTOKHOZ:
+- Mindegyik csoportban az azonos sorszámú feladatnak pontosan ugyanazt a matematikai/fizikai képességet és nehézségi szintet kell mérnie, és ugyanannyi maximális pontot kell érnie!
+- A számadatok, együtthatók, függvények paraméterei és szöveges kontextusai legyenek eltérőek, hogy szomszédos padokból ne lehessen egymásról lemásolni a lépéseket vagy az eredményt!
+- Ha a feladathoz TikZ ábra tartozik, mindegyik csoportban szerepeljen ugyanolyan szerkezetű ábra, de eltérő paraméterekkel (pl. más szögérték, tükrözött háromszög, eltolt koordináták)!`;
+    }
+
+    // Elrendezési mód: Kompakt vs. Munkalap (négyzethálós)
+    let layoutInstruction = '';
+    if (isWorksheet) {
+      layoutInstruction = `KITÖLTŐS MUNKALAP (WORKSHEET) ELRENDEZÉS:
+A diákok közvetlenül erre a lapra dolgoznak! Minden egyes feladat után KÖTELEZŐ kihagyni megfelelő helyet a számoláshoz és levezetéshez:
+Használj elegáns, halvány szürke 5mm-es TikZ négyzethálót a számoláshoz:
+\\begin{tikzpicture}
+  \\draw[step=5mm, gray!30, very thin] (0,0) grid (\\linewidth, 4.5);
+\\end{tikzpicture}
+Szöveges kifejtős kérdéseknél pedig pontozott vonalakat (\\dotfill).`;
+    } else {
+      layoutInstruction = `KOMPAKT FELADATLAP ELRENDEZÉS:
+A diákok külön lapra/füzetbe dolgoznak. A tördelés legyen helytakarékos, áttekinthető, iskolai sokszorosításra és fénymásolásra optimalizált.`;
+    }
+
+    // Érdemjegy skála konkrét pontszámokkal
+    let gradingScaleInstruction = '';
+    if (hasGradingScale) {
+      gradingScaleInstruction = `ÉRDEMJEGY PONTHATÁROK TÁBLÁZAT A DOLGOZATLAP ALJÁN:
+A feladatlap alján (csoportos dolgozatnál minden csoport lapjának alján) helyezz el egy áttekinthető ponthatárok táblázatot az 1-5 érdemjegyekhez.
+KÖTELEZŐ a konkrét pontszám-tartományok kiszámítása a dolgozat megállapított összpontszáma (P_max) alapján:
+- 1 (elégtelen): 0 – (39% pontszám) pont
+- 2 (elégséges): (40% pontszám) – (54% pontszám) pont
+- 3 (közepes): (55% pontszám) – (69% pontszám) pont
+- 4 (jó): (70% pontszám) – (84% pontszám) pont
+- 5 (jeles): (85% pontszám) – P_max pont
+Példa (ha P_max = 40 pont):
+\\vfill
+\\noindent
+\\begin{center}
+\\small
+\\textbf{Ponthatárok:} \\quad 1 (elégtelen): 0--15 p \\quad 2 (elégséges): 16--21 p \\quad 3 (közepes): 22--27 p \\quad 4 (jó): 28--33 p \\quad 5 (jeles): 34--40 p
+\\end{center}`;
+    }
+
+    // Részpontozás
+    const pointsInstruction = `KÖTELEZŐ RÉSZPONTOZÁS:
+Minden egyes feladat jobb szélén KÖTELEZŐ feltüntetni a maximálisan szerezhető pontszámot, pl.:
+\\hfill \\textbf{[4 pont]} vagy alkérdéseknél \\hfill \\textit{[2 pont]}`;
+
+    // Megoldókulcs instrukció
+    let solutionInstruction = '';
+    if (solutionPlacement === 'separate_doc') {
+      solutionInstruction = `MEGOLDÓKULCS KÜLÖNÁLLÓ DOKUMENTUMKÉNT:
+1. A dolgozat befejezése után kötelezően szúrj be pontosan egy ilyen elválasztó sort:
+=== SEPARATE_SOLUTIONS_DOCUMENT ===
+2. Az elválasztó után generáld le a TELJES, ÖNÁLLÓ TANÁRI JAVÍTÓKULCS DOKUMENTUMOT (\\title{${effectiveTopic} - Javítókulcs és Pontozási Útmutató}).
+SZIGORÚ KÖVETELMÉNY: Minden feladatnál ELŐSZÖR A FELADAT TELJES SZÖVEGÉT mutasd be szó szerint, utána a lépésről-lépésre levezetett megoldást, a részletes pontbontást (rubric), valamint egy „Tanári megjegyzés / Tipikus hiba” blokkot!`;
+    } else if (solutionPlacement === 'inline') {
+      solutionInstruction = `MEGOLDÓKULCS INLINE ELHELYEZÉS:
+Minden feladat alatt közvetlenül helyezz el egy tanári megoldás dobozt a levezetéssel és a pontozási rubrikával.`;
+    } else {
+      solutionInstruction = `MEGOLDÓKULCS KÜLÖN OLDALON A VÉGÉN:
+A teljes dolgozat után tegyél be egy kötelező lapdobást:
+\\newpage
+\\section*{Részletes tanári megoldókulcs és pontozási útmutató}
+SZIGORÚ KÖVETELMÉNY: Minden feladatnál ELŐSZÖR A FELADAT TELJES SZÖVEGE szerepeljen szó szerint, közvetlenül utána a részletes lépésről-lépésre kidolgozás, a pontozási útmutató és a tipikus tanulói hibák!`;
+    }
+
+    const fullPrompt = `Te egy mester pedagógus és érettségi tételkészítő szakértő vagy. Készíts egy professzionális, nyomtatásra kész középiskolai dolgozatot!
+Tantárgy: ${effectiveSubject}
+Témakör: ${effectiveTopic}
+
+${examTypeInstruction}
+
+${headerInstruction}
+
+${groupsInstruction}
+
+${layoutInstruction}
+
+${pointsInstruction}
+
+${gradingScaleInstruction}
+
+${solutionInstruction}
+
+${customPrompt && customPrompt.trim() ? `KÜLÖN EGYÉNI TANÁRI UTASÍTÁS A DOLGOZATHOZ:\n${customPrompt.trim()}\n` : ''}
+
+${fileContext ? `Csatolt forrásanyagok tartalma:\n${fileContext}\n` : ''}
+
+SZABÁLYOK:
+- Kizárólag érvényes, hibátlan, pdflatex-szel azonnal fordítható LaTeX kódot adj vissza!
+- SZIGORÚAN TILOS A DUPLA SZÁMOZÁS:
+  * Számozott listákban (\\begin{enumerate}) az \\item mögé SOHA NE írj ki kézzel sorszámot vagy betűt!
+  * Helyes fejléc: \\item \\textbf{Feladat} \\hfill \\textbf{[X pont]}
+- Gráfos ábráknál (TikZ), ha a feladat szövegében nem hivatkozol kifejezetten a csúcsok betűjeleire (A, B, C...), a csúcsokat csak pontként (pöttyként) rajzold ki, betűk és zavaró fokszám-feliratok nélkül!
+- CSAK a LaTeX kódblokkot (vagy a megadott elválasztóval ellátott kódot) add vissza!`;
+
+    let latex = await callAi(fullPrompt, provider, [], SYSTEM, model, req, { thinkingLevel: req.body?.thinkingLevel || 'medium', timeoutMs: 90000 });
+    let finalLatex = latex.trim();
+    let solutionsLatex = null;
+
+    if (solutionPlacement === 'separate_doc') {
+      const sepRegex = /(?:%*\s*={3,}.*?\n)?%*\s*={0,}\s*SEPARATE[_\s-]+SOLUTIONS[_\s-]+DOCUMENT\s*={0,}%*(?:\n\s*%*\s*={3,})?/i;
+      if (sepRegex.test(finalLatex)) {
+        const parts = finalLatex.split(sepRegex);
+        finalLatex = parts[0].trim();
+        solutionsLatex = parts[1].trim();
+      } else if (finalLatex.includes('\\section*{Részletes tanári megoldókulcs') || finalLatex.includes('\\section*{Megoldókulcs')) {
+        const splitIdx = finalLatex.indexOf('\\section*{Részletes tanári megoldókulcs') !== -1
+          ? finalLatex.indexOf('\\section*{Részletes tanári megoldókulcs')
+          : finalLatex.indexOf('\\section*{Megoldókulcs');
+        solutionsLatex = finalLatex.slice(splitIdx).trim();
+        finalLatex = finalLatex.slice(0, splitIdx).trim();
+        finalLatex = finalLatex.replace(/\\newpage\s*$/, '').trim();
+      }
+
+      const m1 = finalLatex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
+      if (m1) finalLatex = m1[1].trim();
+      else finalLatex = finalLatex.replace(/^```(?:latex|tex)?\n?/i, '').replace(/\n?```$/i, '').trim();
+
+      if (solutionsLatex) {
+        const m2 = solutionsLatex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
+        if (m2) solutionsLatex = m2[1].trim();
+        else solutionsLatex = solutionsLatex.replace(/^```(?:latex|tex)?\n?/i, '').replace(/\n?```$/i, '').trim();
+
+        solutionsLatex = supplementFullLatex(solutionsLatex, customPreamble, `${effectiveTopic} - Javítókulcs`);
+        solutionsLatex = sanitizeLatexNumbering(solutionsLatex);
+        solutionsLatex = sanitizeTabularRows(solutionsLatex);
+        solutionsLatex = ensureDocumentStructure(solutionsLatex);
+      }
+    } else {
+      const m = finalLatex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
+      if (m) finalLatex = m[1].trim();
+      else finalLatex = finalLatex.replace(/^```(?:latex|tex)?\n?/i, '').replace(/\n?```$/i, '').trim();
+    }
+
+    finalLatex = supplementFullLatex(finalLatex, customPreamble, `${effectiveTopic}_Dolgozat`);
+    finalLatex = sanitizeLatexNumbering(finalLatex);
+    finalLatex = sanitizeTabularRows(finalLatex);
+    finalLatex = ensureDocumentStructure(finalLatex);
+
+    const safeTopicName = (effectiveTopic || 'Dolgozat')
+      .replace(/[\/\\:*?"<>|]/g, '_')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    res.json({
+      success: true,
+      latex: finalLatex,
+      solutionsLatex: solutionsLatex || null,
+      hasSeparateDoc: Boolean(solutionsLatex && solutionPlacement === 'separate_doc'),
+      solutionsFilename: `${safeTopicName}_Dolgozat_Megoldasok.tex`,
+      topic: `${safeTopicName}_Dolgozat`,
+      groupMode: effectiveGroupMode,
+      isGroupsAB: effectiveGroupMode !== 'none',
+      layoutMode,
+      taskCount: count
+    });
+  } catch (err) {
+    console.error('[AI Exam Error]:', err);
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -878,7 +1210,7 @@ router.post('/beamer', async (req, res) => {
       prompt += `\n\nKÜLÖN EGYÉNI UTASÍTÁS A PREZENTÁCIÓHOZ:\n${customPrompt.trim()}`;
     }
 
-    let latex = await callAi(prompt, provider, [], BEAMER_SYSTEM, model, req);
+    let latex = await callAi(prompt, provider, [], BEAMER_SYSTEM, model, req, { thinkingLevel: 'low', timeoutMs: 60000 });
     const m = latex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
     if (m) latex = m[1];
     const finalLatex = supplementFullLatex(latex.trim());
@@ -891,7 +1223,7 @@ router.post('/beamer', async (req, res) => {
 
     res.json({ success: true, latex: finalLatex.trim(), topic: extractedTopic || undefined });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -980,7 +1312,7 @@ ${ctx.snippet}
 Javítsd ki a kódrészletet úgy, hogy a hiba megszűnjön! Csak a javított kódrészletet add vissza.`;
 
       try {
-        let fixedSnippet = await callAi(targetedPrompt, provider, [], targetedSys, model, req);
+        let fixedSnippet = await callAi(targetedPrompt, provider, [], targetedSys, model, req, { thinkingLevel: 'low', timeoutMs: 25000 });
         const m = fixedSnippet.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
         if (m) fixedSnippet = m[1];
         fixedSnippet = fixedSnippet.trim();
@@ -1021,13 +1353,13 @@ ${code}
 
 Javítsd ki a hibá(ka)t, hogy a pdflatex hiba és figyelmeztetés nélkül le tudja fordítani! Csak a javított LaTeX forráskódot add vissza.`;
 
-    let latex = await callAi(prompt, provider, [], fixSysPrompt, model, req);
+    let latex = await callAi(prompt, provider, [], fixSysPrompt, model, req, { thinkingLevel: 'low', timeoutMs: 45000 });
     const m = latex.match(/```(?:latex|tex)?\n?([\s\S]*?)```/);
     if (m) latex = m[1];
     const finalLatex = supplementFullLatex(latex.trim());
     res.json({ success: true, latex: finalLatex.trim(), targeted: false });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -1078,7 +1410,7 @@ Válaszodat PONTOSAN az alábbi formátumban add meg:
 
     const prompt = `Kérlek, nézd át a következő LaTeX dokumentumot (${effectiveSubject}), és javítsd a TOC alapján a számozásokat, a section és egyéb szinteket:\n\n${code}`;
 
-    let raw = await callAi(prompt, provider, [], structureSysPrompt, model, req);
+    let raw = await callAi(prompt, provider, [], structureSysPrompt, model, req, { thinkingLevel: 'low', timeoutMs: 35000 });
 
     let summary = [];
     let fixedLatex = '';
@@ -1126,7 +1458,7 @@ Válaszodat PONTOSAN az alábbi formátumban add meg:
       hasChanges
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
@@ -1191,11 +1523,11 @@ SZABÁLYOK:
       }
     }
 
-    const reply = await callAi(prompt, provider, imageParts, CHAT_SYSTEM, model, req);
+    const reply = await callAi(prompt, provider, imageParts, CHAT_SYSTEM, model, req, { thinkingLevel: 'low', timeoutMs: 30000 });
     res.json({ success: true, reply: reply.trim() });
   } catch (err) {
     console.error('[AI Chat Error]:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 

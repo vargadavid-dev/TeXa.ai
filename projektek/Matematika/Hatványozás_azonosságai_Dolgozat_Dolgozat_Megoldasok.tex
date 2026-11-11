@@ -1,0 +1,160 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+
+\geometry{top=2cm, bottom=2cm, left=2cm, right=2cm}
+
+\title{Hatványozás azonosságai Dolgozat - Javítókulcs}
+\author{Tanári segédlet}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+\maketitle
+
+\section*{Általános értékelési elvek}
+\begin{itemize}
+    \item A dolgozat összpontszáma: \textbf{40 pont}.
+    \item Részpontszámok adhatók a levezetés helyes lépéseiért akkor is, ha a végeredmény számolási hiba miatt nem 100\%-osan pontos.
+    \item Az „A” és „B” csoport azonos sorszámú feladatai teljesen ekvivalens nehézségűek, így az alábbi javítási útmutató elvei mindkét csoportra egyformán vonatkoznak.
+\end{itemize}
+
+\section*{„A” csoport megoldásai és pontozása}
+
+\subsection*{1. Feladat}
+\textbf{Feladat szövege:} Írd fel egyetlen hatvány alakjában és számítsd ki az alábbi kifejezések értékét hatványalap és hatványkitevő azonosságainak felhasználásával:
+a) $\dfrac{2^5 \cdot 2^{-3}}{2^2}$ \hfill \textit{[2 pont]}
+b) $(3^2)^3 \cdot 3^{-4}$ \hfill \textit{[2 pont]}
+c) $\dfrac{5^6 \cdot 25^2}{125^2}$ \hfill \textit{[4 pont]}
+
+\textbf{Megoldás:}
+\begin{enumerate}
+    \item[a)] $\dfrac{2^{5+(-3)}}{2^2} = \dfrac{2^2}{2^2} = 2^{2-2} = 2^0 = 1$ \hfill (1 pont az összevonásért, 1 pont a végeredményért)
+    \item[b)] $3^{2 \cdot 3} \cdot 3^{-4} = 3^6 \cdot 3^{-4} = 3^{6+(-4)} = 3^2 = 9$ \hfill (1 pont a hatvány hatványáért, 1 pont a végeredményért)
+    \item[c)] A nevezőt és a számláló tényezőit átírjuk 5 alakra: $25 = 5^2$, $125 = 5^3$. 
+    $\dfrac{5^6 \cdot (5^2)^2}{(5^3)^2} = \dfrac{5^6 \cdot 5^4}{5^6} = \dfrac{5^{10}}{5^6} = 5^4 = 625$ \hfill (2 pont az alapok átírásáért, 1 pont az összevonásért, 1 pont a végeredményért)
+\end{enumerate}
+
+\noindent\textbf{Tanári megjegyzés / Tipikus hiba:} 
+Sok tanuló elrontja a negatív kitevőkkel való műveletet, vagy elfelejti, hogy $2^0 = 1$ (nem 0). A c) résznél gyakori hiba a bázisok közös alapra hozásának elmulasztása.
+
+\subsection*{2. Feladat}
+\textbf{Feladat szövege:} Egyszerűsítsd az alábbi algebrai kifejezéseket ($x \neq 0, y \neq 0$):
+a) $\left(\frac{2x^3}{y^2}\right)^{-2} \cdot \left(\frac{x^{-1}}{4y^3}\right)$ \hfill \textit{[4 pont]}
+b) $\dfrac{(x^2 y^{-3})^3 \cdot x^{-4}}{x^{-2} y^5}$ \hfill \textit{[4 pont]}
+
+\textbf{Megoldás:}
+\begin{enumerate}
+    \item[a)] $\left(\frac{y^2}{2x^3}\right)^2 \cdot \frac{x^{-1}}{4y^3} = \frac{y^4}{4x^6} \cdot \frac{x^{-1}}{4y^3} = \frac{y \cdot x^{-1}}{16 x^6} = \frac{y}{16 x^7}$ (vagy $\frac{1}{16}x^{-7}y$) \hfill (2 pont a negatív kitevő/hatvány hatványa felbontásért, 2 pont az összevonásért)
+    \item[b)] Számláló: $x^6 y^{-9} \cdot x^{-4} = x^2 y^{-9}$. Nevező: $x^{-2} y^5$.
+    Összesen: $\dfrac{x^2 y^{-9}}{x^{-2} y^5} = x^{2 - (-2)} \cdot y^{-9 - 5} = x^4 y^{-14} = \dfrac{x^4}{y^{14}}$ \hfill (2 pont a számláló/nevező rendezéséért, 2 pont a végső egyszerűsítésért)
+\end{enumerate}
+
+\noindent\textbf{Tanári megjegyzés / Tipikus hiba:} 
+A külső negatív kitevő ($-2$) megfordítja a törtet, de a számegyütthatóra ($2 \rightarrow 4$ a nevezőben) is vonatkozik, amit gyakran kifelejtenek.
+
+\subsection*{3. Feladat}
+\textbf{Feladat szövege:} Végezd el a következő műveleteket, és az eredményt add meg normálalakban:
+a) $(3,2 \cdot 10^5) \cdot (4,5 \cdot 10^{-2})$ \hfill \textit{[3 pont]}
+b) $\dfrac{8,4 \cdot 10^7}{2,1 \cdot 10^3}$ \hfill \textit{[2 pont]}
+c) $(1,5 \cdot 10^4) + (2,3 \cdot 10^3)$ \hfill \textit{[3 pont]}
+
+\textbf{Megoldás:}
+\begin{enumerate}
+    \item[a)] $(3,2 \cdot 4,5) \cdot 10^{5+(-2)} = 14,4 \cdot 10^3 = 1,44 \cdot 10^4$ \hfill (2 pont a szorzásért, 1 pont a normál alakra hozásért)
+    \item[b)] $\left(\frac{8,4}{2,1}\right) \cdot 10^{7-3} = 4 \cdot 10^4$ \hfill (1 pont az osztásért, 1 pont a normál alakért)
+    \item[c)] Azonos kitevőre hozzuk: $1,5 \cdot 10^4 + 0,23 \cdot 10^4 = (1,5 + 0,23) \cdot 10^4 = 1,73 \cdot 10^4$ \hfill (2 pont az átírásért/kiemelésért, 1 pont az összegért)
+\end{enumerate}
+
+\noindent\textbf{Tanári megjegyzés / Tipikus hiba:} 
+Az a)-nál a $14,4 \cdot 10^3$ még nem szabályos normálalak, azt $1,44 \cdot 10^4$-re kell igazítani. A c)-nél összeadhatóság miatt kötelező a megegyező kitevő.
+
+\subsection*{4. Feladat}
+\textbf{Feladat szövege:} Oldód meg a következő exponenciális egyenleteket:
+a) $2^{3x-1} = 32$ \hfill \textit{[4 pont]}
+b) $9^{x+1} = \dfrac{1}{27^x}$ \hfill \textit{[4 pont]}
+
+\textbf{Megoldás:}
+\begin{enumerate}
+    \item[a)] $32 = 2^5 \implies 2^{3x-1} = 2^5 \implies 3x - 1 = 5 \implies 3x = 6 \implies x = 2$. \hfill (2 pont az alapok azonosságra hozásáért, 2 pont a kitevős egyenlet megoldásáért)
+    \item[b)] Közös alap a $3$: $(3^2)^{x+1} = \dfrac{1}{(3^3)^x} \implies 3^{2x+2} = 3^{-3x} \implies 2x + 2 = -3x \implies 5x = -2 \implies x = -\frac{2}{5} = -0,4$. \hfill (2 pont az átalakításért, 2 pont a megoldásért)
+\end{enumerate}
+
+\noindent\textbf{Tanári megjegyzés / Tipikus hiba:} 
+A b)-nél a $\frac{1}{27^x} = 27^{-x} = (3^3)^{-x} = 3^{-3x}$ átmenet kritikus pont, itt szoktak előjelet téveszteni.
+
+\subsection*{5. Feladat}
+\textbf{Feladat szövege:} Adott $A_n = \dfrac{2^{n+2} + 2^n}{2^{n+1} - 2^{n-1}}$ ($n \in \mathbb{N}$).
+a) Hozd az $A_n$ kifejezést a lehető simplest alakba! \hfill \textit{[5 pont]}
+b) Határozd meg az $A_{2024}$ értékét! \hfill \textit{[3 pont]}
+
+\textbf{Megoldás:}
+\begin{enumerate}
+    \item[a)] Kiemelünk a számlálóból és nevezőből $2^n$-t (vagy $2^{n-1}$-et):
+    $\dfrac{2^n(2^2 + 1)}{2^n(2^1 - 2^{-1})} = \dfrac{4 + 1}{2 - \frac{1}{2}} = \dfrac{5}{\frac{3}{2}} = \frac{10}{3}$. \hfill (3 pont a kiemelésért/átalakításért, 2 pont az osztás elvégzéséért)
+    \item[b)] Mivel az $A_n$ kifejezés értéke független $n$-től ($A_n = \frac{10}{3}$ minden $n$-re), így $A_{2024} = \frac{10}{3}$. \hfill (1 pont a függetlenség észrevételéért, 2 pont a végeredményért)
+\end{enumerate}
+
+\noindent\textbf{Tanári megjegyzés / Tipikus hiba:} 
+Sokan megijednek a betűs kitevőktől, és megpróbálják behelyettesíteni a $2024$-et már az elején, ami kezelhetetlenül nagy számhoz vezetne. A kiemelés a kulcs.
+
+
+\newpage
+\section*{„B” csoport megoldásai és pontozási útmutatója}
+
+A „B” csoport struktúrája teljesen megegyezik az „A” csoportéval, a feladatok megoldásának menete analóg:
+
+\begin{enumerate}
+    \item \textbf{Feladat megoldása:}
+    \begin{enumerate}
+        \item[a)] $\dfrac{3^6 \cdot 3^{-2}}{3^3} = \dfrac{3^4}{3^3} = 3^1 = 3$ \hfill \textit{[2 pont]}
+        \item[b)] $(2^3)^2 \cdot 2^{-5} = 2^6 \cdot 2^{-5} = 2^1 = 2$ \hfill \textit{[2 pont]}
+        \item[c)] $\dfrac{2^8 \cdot (2^2)^3}{(2^3)^3} = \dfrac{2^8 \cdot 2^6}{2^9} = \dfrac{2^{14}}{2^9} = 2^5 = 32$ \hfill \textit{[4 pont]}
+    \end{enumerate}
+
+    \item \textbf{2. Feladat megoldása ($a \neq 0, b \neq 0$):}
+    \begin{enumerate}
+        \item[a)] $\left(\frac{b^3}{3a^2}\right)^2 \cdot \frac{a^{-2}}{3b^2} = \frac{b^6}{9a^4} \cdot \frac{a^{-2}}{3b^2} = \frac{b^4 \cdot a^{-6}}{27} = \frac{b^4}{27a^6}$ \hfill \textit{[4 pont]}
+        \item[b)] Számláló: $a^6 b^{-4} \cdot a^{-3} = a^3 b^{-4}$. Nevező: $a^{-1} b^4$. Kifejezés: $\dfrac{a^3 b^{-4}}{a^{-1} b^4} = a^4 b^{-8} = \dfrac{a^4}{b^8}$ \hfill \textit{[4 pont]}
+    \end{enumerate}
+
+    \item \textbf{Feladat megoldása:}
+    \begin{enumerate}
+        \item[a)] $(2,4 \cdot 5,0) \cdot 10^{4+(-3)} = 12 \cdot 10^1 = 1,2 \cdot 10^2$ \hfill \textit{[3 pont]}
+        \item[b)] $\left(\frac{9,6}{3,2}\right) \cdot 10^{8-4} = 3 \cdot 10^4$ \hfill \textit{[2 pont]}
+        \item[c)] $2,1 \cdot 10^5 + 0,42 \cdot 10^5 = (2,1 + 0,42) \cdot 10^5 = 2,52 \cdot 10^5$ \hfill \textit{[3 pont]}
+    \end{enumerate}
+
+    \item \textbf{Feladat megoldása:}
+    \begin{enumerate}
+        \item[a)] $3^{2x-1} = 3^5 \implies 2x - 1 = 5 \implies 2x = 6 \implies x = 3$ \hfill \textit{[4 pont]}
+        \item[b)] $(2^2)^{x-1} = \dfrac{1}{(2^3)^x} \implies 2^{2x-2} = 2^{-3x} \implies 2x - 2 = -3x \implies 5x = 2 \implies x = \frac{2}{5} = 0,4$ \hfill \textit{[4 pont]}
+    \end{enumerate}
+
+    \item \textbf{Feladat megoldása:}
+    \begin{enumerate}
+        \item[a)] $B_n = \dfrac{3^{n+2} + 3^n}{3^{n+1} - 3^{n-1}} = \dfrac{3^n(3^2 + 1)}{3^n(3^1 - 3^{-1})} = \dfrac{9 + 1}{3 - \frac{1}{3}} = \dfrac{10}{\frac{8}{3}} = 10 \cdot \frac{3}{8} = \frac{30}{8} = \frac{15}{4} = 3,75$ \hfill \textit{[5 pont]}
+        \item[b)] Mivel az eredmény független $n$-től, $B_{2024} = \dfrac{15}{4}$ ($=3,75$). \hfill \textit{[3 pont]}
+    \end{enumerate}
+\end{enumerate}
+
+\end{document}
+\end{document}

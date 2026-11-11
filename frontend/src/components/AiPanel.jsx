@@ -4,6 +4,7 @@ import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import CustomSelect from './CustomSelect'
 import CustomDocTypesModal from './CustomDocTypesModal'
+import ExamTemplatesModal from './ExamTemplatesModal'
 import { findSmartReplacement } from '../utils/snippetMatcher'
 import {
   Bookmark,
@@ -13,6 +14,7 @@ import {
   Calculator,
   FlaskConical,
   GraduationCap,
+  Clock,
   Compass,
   Sparkles,
   Wand2,
@@ -70,13 +72,15 @@ const MODES = [
   { id: 'chat', label: 'Csevegő', icon: MessageSquare, desc: 'Interaktív AI asszisztens és kép alapú hibajavítás' },
   { id: 'generate', label: 'Generálás', icon: Sparkles, desc: 'Teljes dokumentum téma alapján' },
   { id: 'rewrite', label: 'Átdolgozás', icon: Wand2, desc: 'LaTeX kód stílusának vagy tartalmának javítása' },
+  { id: 'exam', label: 'Dolgozat', icon: GraduationCap, desc: 'Témazáró és röpdolgozat A/B csoporttal, fejléccel és pontozással' },
   { id: 'tikz', label: 'TikZ Ábra', icon: Shapes, desc: 'Vektoros ábra természetes leírásból' },
   { id: 'problems', label: 'Feladatsor', icon: ListChecks, desc: 'Feladatok nehézség szerint megoldással' },
   { id: 'beamer', label: 'Beamer Diák', icon: Presentation, desc: 'Prezentáció készítése a dokumentumból' }
 ]
 
 const MODEL_OPTIONS = [
-  { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash', desc: 'Legújabb csúcsmodell' },
+  { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash', desc: 'Legújabb csúcsmodell (gyorsított)' },
+  { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite', desc: 'Villámgyors (azonnali válasz)' },
   { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', desc: 'Gyors és megbízható' },
   { value: 'local', label: 'Helyi LLM', desc: 'LM Studio / Ollama' }
 ]
@@ -87,6 +91,33 @@ const DOC_TYPE_OPTIONS = [
   { value: 'beamer', label: 'Beamer prezentáció', desc: 'Diák bullet pontokkal és képletekkel', icon: Presentation },
   { value: 'leiras', label: 'Részletes leírás', desc: 'Folyó szöveg, példák, TikZ ábrák', icon: FileText },
   { value: 'custom', label: 'Egyéni utasítás', desc: 'Egyedi felépítés, szerkezet és saját szempontok', icon: PenTool }
+]
+
+const EXAM_TYPE_OPTIONS = [
+  { value: 'ropdolgozat', label: 'Röpdolgozat (15 perc)', desc: 'Villámgyors 10-15 perces fogalmi és alapfeladatok (15-20 pont)' },
+  { value: 'dolgozat', label: 'Dolgozat / Ellenőrző (30 perc)', desc: 'Órai témaellenőrző, felmérés (25-35 pont)' },
+  { value: 'temazaro', label: 'Témazáró Dolgozat (45 perc)', desc: 'Átfogó fejezeti számonkérés K1→K2→K3 piramissal (40-50 pont)' },
+  { value: 'erettsegi', label: 'Érettségi Próbavizsga (90 perc)', desc: 'I. rész rövid alap + II. rész összetett feladatok (100 pont)' },
+  { value: 'custom', label: 'Egyedi dolgozat', desc: 'Saját felépítés és egyedi pedagógiai szempontok' }
+]
+
+const EXAM_GROUP_OPTIONS = [
+  { value: 'ab', label: '„A” és „B” csoport (2 változat)', desc: 'Két szimmetrikus változat azonos nehézséggel, eltérő számadatokkal' },
+  { value: 'abc', label: '„A”, „B” és „C” csoport (3 változat)', desc: 'Három szimmetrikus változat másolás elleni védelemmel' },
+  { value: 'abcd', label: '„A”, „B”, „C” és „D” csoport (4 változat)', desc: 'Négy szimmetrikus változat egymás melletti padsorokhoz' },
+  { value: 'none', label: 'Nincs csoportbontás (Egységes)', desc: 'Minden diák pontosan ugyanazt a feladatsort kapja' }
+]
+
+const EXAM_LAYOUT_OPTIONS = [
+  { value: 'compact', label: 'Kompakt feladatlap', desc: 'Papírtakarékos, külön válaszlappal vagy füzettel' },
+  { value: 'worksheet', label: 'Munkafüzet (5mm négyzetháló)', desc: 'Hely a kidolgozáshoz pontos 5mm TikZ négyzethálóval a feladatok alatt' }
+]
+
+const EXAM_SOLUTION_OPTIONS = [
+  { value: 'separate_doc', label: 'Külön tanári dokumentum (.tex)', desc: 'Önálló tanári javítókulcs fájl a feladatokkal együtt' },
+  { value: 'separate_page', label: 'Külön oldalon a végén', desc: '\\newpage lapdobás után a dolgozat végén' },
+  { value: 'inline', label: 'Feladatok alatt (Inline)', desc: 'Közvetlenül a feladatok alatt elhelyezett megoldások' },
+  { value: 'none', label: 'Nincs megoldókulcs', desc: 'Kizárólag a nyomtatható diák feladatlap' }
 ]
 
 const DEFAULT_TYPE_PROMPTS = {
@@ -864,6 +895,30 @@ export default function AiPanel({
   const [beamerText, setBeamerText] = useState('')
   const [beamerCustomPrompt, setBeamerCustomPrompt] = useState('')
 
+  // Dolgozat (Témazáró, Röpdolgozat, Érettségi próba)
+  const [examTopic, setExamTopic] = useState('')
+  const [isExamTopicUserEdited, setIsExamTopicUserEdited] = useState(false)
+  const isExamTopicUserEditedRef = useRef(false)
+  const setExamTopicUserEdited = (val) => {
+    isExamTopicUserEditedRef.current = val
+    setIsExamTopicUserEdited(val)
+  }
+  const [examTemplates, setExamTemplates] = useState([])
+  const [selectedExamTemplateId, setSelectedExamTemplateId] = useState('temazaro')
+  const [isExamTemplateModalOpen, setIsExamTemplateModalOpen] = useState(false)
+  const [examType, setExamType] = useState('temazaro')
+  const [examTaskCount, setExamTaskCount] = useState(5)
+  const [examSchoolName, setExamSchoolName] = useState('')
+  const [examGroupMode, setExamGroupMode] = useState('ab') // 'none' | 'ab' | 'abc' | 'abcd'
+  const [examWithGroupsAB, setExamWithGroupsAB] = useState(true)
+  const [examLayoutMode, setExamLayoutMode] = useState('compact')
+  const [examWithEvaluationTable, setExamWithEvaluationTable] = useState(true)
+  const [examWithRubric, setExamWithRubric] = useState(true)
+  const [examWithGradingScale, setExamWithGradingScale] = useState(true)
+  const [examSolutionPlacement, setExamSolutionPlacement] = useState('separate_doc')
+  const [examCustomPrompt, setExamCustomPrompt] = useState('')
+  const [selectedExamProjectFiles, setSelectedExamProjectFiles] = useState([])
+
   // Csevegő
   const [chatMessages, setChatMessages] = useState([
     {
@@ -1132,7 +1187,7 @@ export default function AiPanel({
 
   // Automatikus témakör-kitöltés, ha feladatsor módra váltunk, vagy változik a fájl
   useEffect(() => {
-    if (mode !== 'exam') return
+    if (mode !== 'problems') return
     if (isTopicUserEditedRef.current) return
 
     if (selectedProjectFiles.length > 0) {
@@ -1206,6 +1261,104 @@ export default function AiPanel({
       }
     }
   }
+
+  // ── Dolgozat Sablonok és Logika ──
+  const handleSelectExamTemplate = useCallback((tpl) => {
+    if (!tpl) return
+    setSelectedExamTemplateId(tpl.id)
+    if (tpl.examType) setExamType(tpl.examType)
+    if (tpl.taskCount !== undefined) setExamTaskCount(tpl.taskCount)
+    if (tpl.groupMode !== undefined) {
+      setExamGroupMode(tpl.groupMode)
+      setExamWithGroupsAB(tpl.groupMode !== 'none')
+    } else if (tpl.withGroupsAB !== undefined) {
+      setExamWithGroupsAB(tpl.withGroupsAB)
+      setExamGroupMode(tpl.withGroupsAB ? 'ab' : 'none')
+    }
+    if (tpl.layoutMode) setExamLayoutMode(tpl.layoutMode)
+    if (tpl.withEvaluationTable !== undefined) setExamWithEvaluationTable(tpl.withEvaluationTable)
+    if (tpl.withRubric !== undefined) setExamWithRubric(tpl.withRubric)
+    if (tpl.withGradingScale !== undefined) setExamWithGradingScale(tpl.withGradingScale)
+    if (tpl.solutionPlacement) setExamSolutionPlacement(tpl.solutionPlacement)
+    if (tpl.customPrompt !== undefined) setExamCustomPrompt(tpl.customPrompt)
+  }, [])
+
+  const loadExamTemplates = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/exam-templates')
+      if (res.data?.success && Array.isArray(res.data.templates)) {
+        setExamTemplates(res.data.templates)
+        if (res.data.templates.length > 0 && !selectedExamTemplateId) {
+          const matched = res.data.templates.find((t) => t.id === 'temazaro') || res.data.templates[0]
+          if (matched) {
+            handleSelectExamTemplate(matched)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Hiba a dolgozat sablonok betöltésekor:', err)
+    }
+  }, [selectedExamTemplateId, handleSelectExamTemplate])
+
+  useEffect(() => {
+    loadExamTemplates()
+  }, [loadExamTemplates])
+
+  const examTemplateOptions = useMemo(() => {
+    return examTemplates.map((tpl) => {
+      let icon = GraduationCap
+      if (tpl.id === 'ropdolgozat' || tpl.examType === 'ropdolgozat') icon = Clock
+      else if (tpl.id === 'erettsegi_proba' || tpl.examType === 'erettsegi') icon = BookOpen
+      else if (!tpl.isBuiltIn) icon = Bookmark
+
+      const tag = tpl.isBuiltIn ? 'Alapértelmezett' : 'Saját sablon'
+      const grp = tpl.groupMode === 'abcd' ? 'A/B/C/D' : tpl.groupMode === 'abc' ? 'A/B/C' : tpl.withGroupsAB || tpl.groupMode === 'ab' ? 'A/B' : 'Egységes'
+      return {
+        value: tpl.id,
+        label: tpl.name,
+        desc: `${tag} · ${tpl.taskCount} feladat · ${grp} csoport · ${tpl.layoutMode === 'worksheet' ? 'Munkafüzet' : 'Kompakt'}`,
+        icon
+      }
+    })
+  }, [examTemplates])
+
+  // Automatikus témakör-felismerés dolgozat módra váltáskor
+  useEffect(() => {
+    if (mode !== 'exam') return
+    if (isExamTopicUserEditedRef.current) return
+
+    if (selectedExamProjectFiles.length > 0) {
+      const smartTopic = inferTopicFromFiles(selectedExamProjectFiles)
+      if (smartTopic) setExamTopic(smartTopic)
+    } else if (currentFile?.name) {
+      const smartTopic = inferTopicFromFiles([{ name: currentFile.name, path: currentFile.path || '', content: currentCode }])
+      if (smartTopic) setExamTopic(smartTopic)
+    }
+  }, [mode, currentFile?.name, currentFile?.path, currentCode, selectedExamProjectFiles.length])
+
+  const handleAddCurrentFileToExam = useCallback(() => {
+    if (!currentFile?.name) return
+    const exists = selectedExamProjectFiles.some((f) => f.path === (currentFile.path || currentFile.name))
+    if (exists) {
+      addNotif?.(`"${currentFile.name}" már csatolva van a dolgozathoz.`, 'info')
+      return
+    }
+    const item = {
+      path: currentFile.path || currentFile.name,
+      name: currentFile.name,
+      relativePath: currentFile.name,
+      content: currentCode || '',
+      lineCount: currentCode ? currentCode.split('\n').length : 0,
+      isLoading: false
+    }
+    const nextList = [...selectedExamProjectFiles, item]
+    setSelectedExamProjectFiles(nextList)
+    if (!isExamTopicUserEditedRef.current) {
+      const smartTopic = inferTopicFromFiles(nextList)
+      if (smartTopic) setExamTopic(smartTopic)
+    }
+    addNotif?.(`"${currentFile.name}" hozzáadva a dolgozat forrásaihoz`, 'success')
+  }, [currentFile, currentCode, selectedExamProjectFiles, addNotif])
 
   // Kép beillesztés vágólapról (csevegő és TikZ módban)
   const readImageFile = useCallback((file) => {
@@ -1681,6 +1834,76 @@ export default function AiPanel({
       onInsert?.(res.data.latex, true, beamerTopicName)
       setLastInserted({ label: beamerTopicName })
       stopProgressTracking(true)
+    } catch (err) {
+      stopProgressTracking(false)
+      reportError(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 6. Dolgozat generálás (Témazáró, Röpdolgozat, Érettségi próba)
+  const handleGenerateExam = async () => {
+    if (loading) return
+    const effTopic = examTopic.trim() || 'Témazáró Dolgozat'
+    setLoading(true)
+    setLastInserted(null)
+    startProgressTracking()
+    try {
+      const fd = new FormData()
+      fd.append('topic', effTopic)
+      fd.append('subject', activeSubject)
+      fd.append('examType', examType)
+      fd.append('taskCount', examTaskCount)
+      fd.append('schoolName', examSchoolName.trim())
+      fd.append('groupMode', examGroupMode)
+      fd.append('withGroupsAB', String(examGroupMode !== 'none'))
+      fd.append('layoutMode', examLayoutMode)
+      fd.append('withEvaluationTable', String(examWithEvaluationTable))
+      fd.append('withRubric', String(examWithRubric))
+      fd.append('withGradingScale', String(examWithGradingScale))
+      fd.append('solutionPlacement', examSolutionPlacement)
+      fd.append('customPrompt', examCustomPrompt.trim())
+      fd.append('provider', provider)
+      fd.append('model', modelParam || '')
+      fd.append('customPreamble', customPreambleText || '')
+
+      if (selectedExamProjectFiles.length > 0) {
+        selectedExamProjectFiles.forEach((file) => {
+          if (file.fileObj) {
+            fd.append('files', file.fileObj, file.name)
+          } else if (file.content) {
+            const blob = new Blob([file.content], { type: 'text/plain' })
+            fd.append('files', blob, file.name)
+          }
+        })
+      }
+
+      const res = await axios.post('/api/ai/exam', fd)
+      const data = res.data
+      remember()
+
+      const examDocTitle = data.topic || `${effTopic.replace(/\s+/g, '_')}_Dolgozat`
+      onInsert?.(data.latex, true, examDocTitle)
+
+      if (data.hasSeparateDoc && data.solutionsLatex) {
+        try {
+          await axios.post('/api/files/save', {
+            subject: activeSubject,
+            filename: data.solutionsFilename,
+            content: data.solutionsLatex
+          })
+          onRefreshProjects?.()
+          addNotif?.(`Tanári megoldókulcs elmentve: ${data.solutionsFilename}`, 'success')
+        } catch (saveErr) {
+          console.error('[Save Solutions Error]:', saveErr)
+          addNotif?.('A külön tanári megoldókulcs mentése nem sikerült.', 'warning')
+        }
+      }
+
+      setLastInserted({ label: `${data.taskCount || examTaskCount} feladatos dolgozat (${effTopic})` })
+      stopProgressTracking(true)
+      addNotif?.('A dolgozat sikeresen elkészült és beillesztésre került!', 'success')
     } catch (err) {
       stopProgressTracking(false)
       reportError(err)
@@ -2330,6 +2553,273 @@ export default function AiPanel({
           </>
         )}
 
+        {/* MODE: DOLGOZAT (Témazáró, Röpdolgozat, Érettségi próba) */}
+        {mode === 'exam' && (
+          <div className="exam-mode-container">
+            {/* 1. Sablon választó és kezelő */}
+            <div className="form-group">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label className="form-label" style={{ marginBottom: 0 }}>
+                  Dolgozat sablon
+                </label>
+                <button
+                  type="button"
+                  className="btn-text-subtle"
+                  onClick={() => setIsExamTemplateModalOpen(true)}
+                  title="Dolgozat sablonok kezelése, szerkesztése vagy mentése"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                >
+                  <BookmarkPlus size={12} />
+                  <span>Sablonok ({examTemplates.length})</span>
+                </button>
+              </div>
+
+              <CustomSelect
+                value={selectedExamTemplateId}
+                onChange={(val) => {
+                  const tpl = examTemplates.find((t) => t.id === val)
+                  if (tpl) handleSelectExamTemplate(tpl)
+                }}
+                options={examTemplateOptions}
+                placeholder="Válassz dolgozat sablont…"
+              />
+            </div>
+
+            {/* 2. Témakör */}
+            <div className="form-group">
+              <div className="problems-topic-label-row">
+                <label className="form-label" style={{ marginBottom: 0 }}>
+                  Dolgozat témaköre *
+                </label>
+                {(selectedExamProjectFiles.length > 0 || currentFile?.name) && (
+                  <button
+                    type="button"
+                    className="topic-auto-detect-btn"
+                    onClick={() => {
+                      const filesToUse = selectedExamProjectFiles.length > 0
+                        ? selectedExamProjectFiles
+                        : (currentFile?.name ? [{ name: currentFile.name, path: currentFile.path || '', content: currentCode }] : [])
+                      const smartTopic = inferTopicFromFiles(filesToUse)
+                      if (smartTopic) {
+                        setExamTopic(smartTopic)
+                        setExamTopicUserEdited(false)
+                        addNotif?.(`Témakör felismerve: ${smartTopic}`, 'info')
+                      } else {
+                        addNotif?.('Nem sikerült automatikusan témakört azonosítani.', 'info')
+                      }
+                    }}
+                    title="Témakör felismerése a fájlok alapján"
+                  >
+                    <Sparkles size={11} />
+                    <span>Felismerés</span>
+                  </button>
+                )}
+              </div>
+              <input
+                className="form-input"
+                value={examTopic}
+                onChange={(e) => {
+                  setExamTopic(e.target.value)
+                  setExamTopicUserEdited(true)
+                }}
+                placeholder="pl. Másodfokú egyenletek és egyenlőtlenségek, Newton törvényei…"
+              />
+            </div>
+
+            {/* 3. Iskola neve (opcionális fejlécbe) */}
+            <div className="form-group">
+              <label className="form-label" title="Megjelenik a nyomtatható dolgozatlap fejlécében">
+                Iskola / Intézmény neve (opcionális fejléc)
+              </label>
+              <input
+                className="form-input"
+                value={examSchoolName}
+                onChange={(e) => setExamSchoolName(e.target.value)}
+                placeholder="pl. Kossuth Lajos Gimnázium"
+              />
+            </div>
+
+            {/* 4. Paraméter rács: Feladatszám + Dolgozat típusa */}
+            <div className="prob-params-grid">
+              <div className="form-group">
+                <label className="form-label" title="Feladatok darabszáma">
+                  Feladatok száma
+                </label>
+                <div className="number-stepper">
+                  <button
+                    type="button"
+                    className="stepper-btn"
+                    onClick={() => setExamTaskCount(Math.max(2, examTaskCount - 1))}
+                    disabled={examTaskCount <= 2}
+                    title="Eggyel kevesebb feladat"
+                  >
+                    <Minus size={13} />
+                  </button>
+                  <span className="stepper-val">
+                    <span className="stepper-num">{examTaskCount}</span>
+                    <span className="stepper-unit">feladat</span>
+                  </span>
+                  <button
+                    type="button"
+                    className="stepper-btn"
+                    onClick={() => setExamTaskCount(Math.min(15, examTaskCount + 1))}
+                    disabled={examTaskCount >= 15}
+                    title="Eggyel több feladat"
+                  >
+                    <Plus size={13} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Dolgozat típusa</label>
+                <CustomSelect
+                  value={examType}
+                  onChange={(val) => setExamType(val)}
+                  options={EXAM_TYPE_OPTIONS}
+                />
+              </div>
+            </div>
+
+            {/* 5. Csoportbontás (A-B stb.) */}
+            <div className="form-group">
+              <label className="form-label">Csoportok (A-B stb. csoport)</label>
+              <CustomSelect
+                value={examGroupMode}
+                onChange={(val) => {
+                  setExamGroupMode(val)
+                  setExamWithGroupsAB(val !== 'none')
+                }}
+                options={EXAM_GROUP_OPTIONS}
+              />
+            </div>
+
+            {/* 6. Elrendezés & Megoldókulcs */}
+            <div className="form-group">
+              <label className="form-label">Elrendezés & Formátum</label>
+              <CustomSelect
+                value={examLayoutMode}
+                onChange={(val) => setExamLayoutMode(val)}
+                options={EXAM_LAYOUT_OPTIONS}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Megoldókulcs és rubrika elhelyezése</label>
+              <CustomSelect
+                value={examSolutionPlacement}
+                onChange={(val) => setExamSolutionPlacement(val)}
+                options={EXAM_SOLUTION_OPTIONS}
+              />
+            </div>
+
+            {/* 7. Tanári értékelési kapcsolók (Max pont, elért pont, érdemjegy) */}
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
+              <label className="checkbox-label" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <input
+                  type="checkbox"
+                  checked={examWithEvaluationTable}
+                  onChange={(e) => setExamWithEvaluationTable(e.target.checked)}
+                />
+                <span style={{ fontSize: 12, fontWeight: 500 }}>
+                  Fejléc értékelési táblázat (Max pont, elért pont, érdemjegy)
+                </span>
+              </label>
+
+              <label className="checkbox-label" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <input
+                  type="checkbox"
+                  checked={examWithRubric}
+                  onChange={(e) => setExamWithRubric(e.target.checked)}
+                />
+                <span style={{ fontSize: 12, fontWeight: 500 }}>
+                  Részpontszámok feltüntetése a margón (pl. [4 pont])
+                </span>
+              </label>
+
+              <label className="checkbox-label" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <input
+                  type="checkbox"
+                  checked={examWithGradingScale}
+                  onChange={(e) => setExamWithGradingScale(e.target.checked)}
+                />
+                <span style={{ fontSize: 12, fontWeight: 500 }}>
+                  Érdemjegy ponthatárok táblázat (1–5) konkrét pontszámokkal
+                </span>
+              </label>
+            </div>
+
+            {/* 7. Külön egyéni instrukció & Mentés sablonként gomb */}
+            <div className="form-group">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                <label className="form-label" style={{ marginBottom: 0 }}>
+                  Külön egyéni utasítás (opcionális)
+                </label>
+                <button
+                  type="button"
+                  className="btn-text-subtle"
+                  onClick={() => setIsExamTemplateModalOpen(true)}
+                  title="A jelenlegi beállítások elmentése új dolgozat sablonként"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                >
+                  <BookmarkPlus size={11} />
+                  <span>Mentés új sablonként</span>
+                </button>
+              </div>
+              <textarea
+                className="form-textarea"
+                style={{ minHeight: 65 }}
+                value={examCustomPrompt}
+                onChange={(e) => setExamCustomPrompt(e.target.value)}
+                placeholder="pl. Legyen benne 1 db TikZ függvényábra, a 3. feladat szöveges alkalmazás legyen a valós életből..."
+              />
+            </div>
+
+            {/* 8. Forrásfájl csatolása az aktuális dokumentumból (opcionális) */}
+            {currentFile?.name && (
+              <div className="form-group" style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-secondary)', gap: 8 }}>
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      minWidth: 0,
+                      flex: 1,
+                    }}
+                    title={`Forrás: ${currentFile.name} (${currentCode.split('\n').length} sor)`}
+                  >
+                    Forrás: <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{currentFile.name}</span> ({currentCode.split('\n').length} sor)
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-text-subtle"
+                    style={{ flexShrink: 0 }}
+                    onClick={handleAddCurrentFileToExam}
+                    disabled={selectedExamProjectFiles.some((f) => f.path === (currentFile.path || currentFile.name))}
+                  >
+                    {selectedExamProjectFiles.some((f) => f.path === (currentFile.path || currentFile.name)) ? '✓ Csatolva' : '+ Fájl csatolása'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {renderProgress()}
+            {renderInserted()}
+
+            {/* 9. Fő generáló gomb */}
+            <button
+              className="btn btn-primary"
+              style={{ justifyContent: 'center' }}
+              disabled={loading || !examTopic.trim()}
+              onClick={handleGenerateExam}
+            >
+              {loading ? <Loader2 size={14} className="spinner" /> : <GraduationCap size={15} />}
+              Dolgozat generálása
+            </button>
+          </div>
+        )}
+
         {/* MODE: TIKZ */}
         {mode === 'tikz' && (
           <div
@@ -2932,10 +3422,13 @@ export default function AiPanel({
                         type="button"
                         className="problems-quick-add-current"
                         onClick={handleAddCurrentFile}
-                        title="Aktuális szerkesztett dokumentum hozzáadása a feladatsor forrásaihoz"
+                        title={`Aktuális szerkesztett fájl csatolása: ${currentFile.name}`}
                       >
-                        <Plus size={12} />
-                        <span>+ Aktuális fájl csatolása ({currentFile.name})</span>
+                        <Plus size={13} className="problems-quick-add-icon" />
+                        <span className="problems-quick-add-label">Aktuális fájl csatolása:</span>
+                        <span className="problems-quick-add-filename">
+                          {currentFile.name}
+                        </span>
                       </button>
                     )}
                   </div>
@@ -3203,8 +3696,10 @@ export default function AiPanel({
             {beamerSource === 'current' ? (
               <div className="current-doc-info-card">
                 <div className="current-doc-info-title">
-                  <FileText size={13} />
-                  <span>{currentFile?.name || 'Névtelen.tex'}</span>
+                  <FileText size={13} style={{ flexShrink: 0 }} />
+                  <span className="doc-title-text" title={currentFile?.name || 'Névtelen.tex'}>
+                    {currentFile?.name || 'Névtelen.tex'}
+                  </span>
                 </div>
                 <div className="current-doc-info-sub">{currentCode.split('\n').length} sor lesz átalakítva Beamer diákká</div>
               </div>
@@ -3270,6 +3765,32 @@ export default function AiPanel({
         onSelectCustomDocType={handleSelectCustomDocTypeFromModal}
         initialCustomPrompt={customPrompt}
         initialSubject={activeSubject}
+        addNotif={addNotif}
+      />
+
+      {/* Dolgozat sablonok kezelése modal */}
+      <ExamTemplatesModal
+        isOpen={isExamTemplateModalOpen}
+        onClose={() => setIsExamTemplateModalOpen(false)}
+        examTemplates={examTemplates}
+        onRefreshExamTemplates={loadExamTemplates}
+        onSelectExamTemplate={(tpl) => {
+          handleSelectExamTemplate(tpl)
+          addNotif?.(`"${tpl.name}" sablon betöltve!`, 'success')
+        }}
+        currentExamConfig={{
+          examType,
+          taskCount: examTaskCount,
+          groupMode: examGroupMode,
+          withGroupsAB: examGroupMode !== 'none',
+          layoutMode: examLayoutMode,
+          withEvaluationTable: examWithEvaluationTable,
+          withRubric: examWithRubric,
+          withGradingScale: examWithGradingScale,
+          solutionPlacement: examSolutionPlacement,
+          customPrompt: examCustomPrompt,
+          topic: examTopic
+        }}
         addNotif={addNotif}
       />
     </div>

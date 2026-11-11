@@ -131,9 +131,24 @@ function sanitizeSectionHeadings(latex) {
 function sanitizeListTypo(latex) {
   if (!latex || typeof latex !== 'string') return latex;
 
-  return latex.replace(/(\\begin\{(?:itemize|enumerate)\}[\s\S]*?\\end\{(?:itemize|enumerate)\})/g, (block) => {
+  // Először a listákon belül, majd globálisan is kicseréljük a hibás utoitem szót \item-re
+  let res = latex.replace(/(\\begin\{(?:itemize|enumerate)\}[\s\S]*?\\end\{(?:itemize|enumerate)\})/g, (block) => {
     return block.replace(/(^|\n)(\s*)\\?(?:utoitem|autoitem)\b/g, '$1$2\\item');
   });
+  return res.replace(/(^|\n)(\s*)\\?(?:utoitem|autoitem)\b/g, '$1$2\\item');
+}
+
+/**
+ * Megtisztítja a LaTeX kódot a szövegben maradt Markdown formázásoktól (pl. **kiemelés** -> \textbf{kiemelés}).
+ *
+ * @param {string} latex
+ * @returns {string}
+ */
+function sanitizeMarkdownFormatting(latex) {
+  if (!latex || typeof latex !== 'string') return latex;
+
+  // **félkövér** -> \textbf{félkövér}
+  return latex.replace(/\*\*([^*\n\r]+?)\*\*/g, '\\textbf{$1}');
 }
 
 /**
@@ -304,6 +319,9 @@ function sanitizeLatexNumbering(latex) {
   // 3. Számozott listaelemek kettős számozásának szanálása
   cleaned = sanitizeEnumerateItems(cleaned);
 
+  // 4. Szövegközi Markdown formázás (pl. **félkövér**) átalakítása érvényes \textbf{...}-re
+  cleaned = sanitizeMarkdownFormatting(cleaned);
+
   return cleaned;
 }
 
@@ -312,5 +330,6 @@ module.exports = {
   cleanSectionTitle,
   sanitizeSectionHeadings,
   sanitizeListTypo,
-  sanitizeEnumerateItems
+  sanitizeEnumerateItems,
+  sanitizeMarkdownFormatting
 };

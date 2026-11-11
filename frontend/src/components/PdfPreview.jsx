@@ -18,6 +18,7 @@ import {
   Sparkles,
   Wand2,
   Scan,
+  BoxSelect,
   X,
   CornerDownLeft,
   Plus,
@@ -104,6 +105,8 @@ export default function PdfPreview({
   const containerRef = useRef(null)
   const canvasRefs = useRef({})
   const pageViewportsRef = useRef({})
+  const activeRenderTasksRef = useRef([])
+  const renderGenRef = useRef(0)
 
   const [pdfDoc, setPdfDoc] = useState(null)
   const [numPages, setNumPages] = useState(0)
@@ -116,6 +119,9 @@ export default function PdfPreview({
     return Math.min(2.0, Math.max(0.25, +((estWidth - margin) / 595.28).toFixed(2)))
   })
   const [rendering, setRendering] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const prevScaleRef = useRef(scale)
+  const prevIsAutoFitRef = useRef(isAutoFit)
   const [highlight, setHighlight] = useState(null)
   const [inverseSyncing, setInverseSyncing] = useState(false)
 
@@ -452,11 +458,25 @@ export default function PdfPreview({
   // 2. Oldalak kirajzolása vásznakra (canvas)
   const renderPages = useCallback(async () => {
     if (!pdfDoc) return
+
+    // Korábbi futó renderelési feladatok visszavonása a canvas-ütközések megelőzésére
+    activeRenderTasksRef.current.forEach(task => {
+      try {
+        task.cancel()
+      } catch (e) {}
+    })
+    activeRenderTasksRef.current = []
+
+    const currentGen = ++renderGenRef.current
     setRendering(true)
 
     try {
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        if (renderGenRef.current !== currentGen) break
+
         const page = await pdfDoc.getPage(pageNum)
+        if (renderGenRef.current !== currentGen) break
+
         const canvas = canvasRefs.current[pageNum]
         if (!canvas) continue
 
@@ -481,18 +501,43 @@ export default function PdfPreview({
           viewport
         }
 
-        await page.render(renderContext).promise
+        const renderTask = page.render(renderContext)
+        activeRenderTasksRef.current.push(renderTask)
+
+        try {
+          await renderTask.promise
+        } catch (taskErr) {
+          if (taskErr?.name !== 'RenderingCancelledException' && !taskErr?.message?.includes('cancelled')) {
+            throw taskErr
+          }
+        }
       }
     } catch (err) {
-      console.warn('Oldal renderelési megjegyzés:', err)
+      if (err?.name !== 'RenderingCancelledException' && !err?.message?.includes('cancelled')) {
+        console.warn('Oldal renderelési megjegyzés:', err)
+      }
     } finally {
-      setRendering(false)
+      if (renderGenRef.current === currentGen) {
+        setRendering(false)
+      }
     }
   }, [pdfDoc, scale])
 
   useEffect(() => {
     renderPages()
   }, [renderPages])
+
+  // Komponens leszerelésekor az összes aktív render task leállítása
+  useEffect(() => {
+    return () => {
+      activeRenderTasksRef.current.forEach(task => {
+        try {
+          task.cancel()
+        } catch (e) {}
+      })
+      activeRenderTasksRef.current = []
+    }
+  }, [])
 
   // Automatikus szélességhez igazítás (ResizeObserver a konténer méretváltozásakor / split-pane húzásakor)
   useEffect(() => {
@@ -981,6 +1026,44 @@ export default function PdfPreview({
     }
   }
 
+  const handleToggleFullscreen = useCallback(async () => {
+    if (!isFullscreen) {
+      prevScaleRef.current = scale
+      prevIsAutoFitRef.current = isAutoFit
+      setIsFullscreen(true)
+
+      if (pdfDoc) {
+        try {
+          const page = await pdfDoc.getPage(1)
+          const unscaledVp = page.getViewport({ scale: 1.0 })
+          const ptHeight = unscaledVp.viewBox ? (unscaledVp.viewBox[3] - unscaledVp.viewBox[1]) : unscaledVp.height
+          const ptWidth = unscaledVp.viewBox ? (unscaledVp.viewBox[2] - unscaledVp.viewBox[0]) : unscaledVp.width
+          if (ptHeight > 0) {
+            const availH = (window.innerHeight || 800) - 75
+            const availW = (window.innerWidth || 1200) - 60
+            const scaleByH = availH / ptHeight
+            const scaleByW = availW / ptWidth
+            const optimalScale = Math.min(scaleByW, scaleByH)
+            const clamped = Math.max(0.65, Math.min(2.0, +optimalScale.toFixed(2)))
+            setScale(clamped)
+            setIsAutoFit(false)
+          }
+        } catch (err) {
+          console.warn('Fullscreen scale calc failed:', err)
+        }
+      }
+    } else {
+      setIsFullscreen(false)
+      if (prevIsAutoFitRef.current) {
+        setIsAutoFit(true)
+        const fitScale = await computeFitScale()
+        if (fitScale) setScale(fitScale)
+      } else if (prevScaleRef.current) {
+        setScale(prevScaleRef.current)
+      }
+    }
+  }, [isFullscreen, scale, isAutoFit, pdfDoc, computeFitScale])
+
   // Escape billentyű figyelése
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -991,12 +1074,14 @@ export default function PdfPreview({
           setSelectionState(null)
           setSelectedBlock(null)
           setSelectionTip(null)
+        } else if (isFullscreen) {
+          handleToggleFullscreen()
         }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isAiPromptOpen, isTransforming, selectionState])
+  }, [isAiPromptOpen, isTransforming, selectionState, isFullscreen, handleToggleFullscreen])
 
   const handleZoomIn = () => {
     setIsAutoFit(false)
@@ -1020,7 +1105,16 @@ export default function PdfPreview({
   const isSelectActive = toolMode !== 'none'
 
   return (
-    <div className="preview-pane">
+    <div className={`preview-pane ${isFullscreen ? 'is-fullscreen' : ''}`}>
+      {/* Lebegő jelzés teljes képernyős módban */}
+      {isFullscreen && (
+        <div className="pdf-fullscreen-floating-hint">
+          <span>Teljes képernyős előnézet</span>
+          <kbd>Esc</kbd>
+          <span>a kilépéshez</span>
+        </div>
+      )}
+
       {/* Fejléc és Vezérlők */}
       <div className="preview-pane-header">
         <div className="preview-header-left">
@@ -1111,7 +1205,7 @@ export default function PdfPreview({
             </button>
           )}
 
-          {/* Átszerkesztés gomb (önálló gomb, egységes stílus a Letöltés mintájára) */}
+          {/* Átszerkesztés gomb (BoxSelect ikon a terület kijelöléséhez) */}
           {pdfData && (
             <button
               type="button"
@@ -1132,8 +1226,25 @@ export default function PdfPreview({
                   : 'Terület kijelölése és átírása'
               }
             >
-              <Scan size={13} />
+              <BoxSelect size={13} />
               <span className="pdf-btn-label">Átszerkesztés</span>
+            </button>
+          )}
+
+          {/* Teljes képernyős nézet gomb (Scan ikonnal a felhasználó kérése szerint) */}
+          {pdfData && (
+            <button
+              type="button"
+              className={`pdf-header-btn ${isFullscreen ? 'active' : ''}`}
+              onClick={handleToggleFullscreen}
+              title={
+                isFullscreen
+                  ? 'Kilépés a teljes képernyős módból (Esc)'
+                  : 'Teljes képernyős előnézet megnyitása'
+              }
+            >
+              <Scan size={13} />
+              <span className="pdf-btn-label">{isFullscreen ? 'Kilépés' : 'Teljes képernyő'}</span>
             </button>
           )}
 
@@ -1209,6 +1320,19 @@ export default function PdfPreview({
             >
               <Download size={13} />
               <span className="pdf-btn-label">Letöltés</span>
+            </button>
+          )}
+
+          {/* Teljes képernyő esetén jobb oldali közvetlen bezárás (X) gomb */}
+          {isFullscreen && (
+            <button
+              type="button"
+              className="pdf-header-btn pdf-header-close-fs-btn"
+              onClick={handleToggleFullscreen}
+              title="Kilépés a teljes képernyős nézetből (Esc)"
+            >
+              <X size={13} />
+              <span className="pdf-btn-label">Bezárás</span>
             </button>
           )}
         </div>

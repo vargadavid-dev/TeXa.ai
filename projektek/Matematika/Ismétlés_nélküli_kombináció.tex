@@ -1,0 +1,175 @@
+\documentclass[a4paper,12pt]{article}
+
+%%% Alapdokumentum beállítások %%%
+\usepackage[hungarian]{babel}     % Magyar nyelvi támogatás
+\usepackage[T1]{fontenc}          % T1 betűtípus kódolás (az utf8 inputenc ma már alapértelmezett)
+\usepackage{geometry}             % Oldalformázás
+\geometry{a4paper, margin=1.5in}  % Papírméret és margók
+
+%%% Szövegformázás és oldalelrendezés (JAVÍTOTT) %%%
+\usepackage{microtype}            % Intelligens sorkizárás, szebb szövegkép
+\usepackage{parskip}              % Bekezdések közötti térköz (behúzás helyett)
+\usepackage{enumitem}             % Lista testreszabáshoz
+\usepackage{multicol}             % Többszörös oszlopokhoz
+\setlength{\emergencystretch}{3em}% Segít a nehezen törhető soroknál (a \sloppy helyett)
+
+%%% Matematikai és tudományos csomagok %%%
+\usepackage{amsmath, amssymb, amsfonts, amsthm} % Matematikai csomagok egyben
+\usepackage{stmaryrd}                           % Speciális matematikai szimbólumok
+\usepackage[version=4]{mhchem}                  % Kémiai képletekhez
+\usepackage{esvect}                             % Vektorokhoz (vastag nyilak)
+\usepackage{cancel}                             % Matematikai áthúzáshoz
+
+%%% Színek és Grafikai elemek (JAVÍTOTT) %%%
+\usepackage{xcolor}                             % Színek kezelése (FONTOS!)
+\definecolor{bvred}{rgb}{0.8, 0.0, 0.0}         % Piros szín definiálása
+
+\usepackage{graphicx}                           % Képek beszúrásához
+\usepackage{wrapfig}                            % Képek lebegtetéséhez
+\usepackage{tikz}                               % Vektoros ábrákhoz
+\usetikzlibrary{calc, intersections, decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}                       % PGFPlots kompatibilitás (FONTOS!)
+\usepackage{caption}                            % Ábrafeliratok testreszabásához
+\usepackage{float}                              % Ábrák pozicionálásához
+
+%%% Táblázatok és tömbök %%%
+\usepackage{array}                       % Speciális oszloptípusok
+\setlength{\arrayrulewidth}{0.8pt}       % Táblázatvonalak vastagsága
+\setlength{\tabcolsep}{6pt}              % Oszlopok közötti térköz
+\renewcommand{\arraystretch}{1.8}        % Sorok magassága
+
+%%% Egyedi parancsok és környezetek (JAVÍTOTT) %%%
+\newcommand{\textbfr}[1]{\textbf{\textcolor{bvred}{#1}}} % Piros félkövér szöveg
+
+\usepackage{etoolbox} % LaTeX programozási eszközök
+\newrobustcmd*{\mytriangle}[1]{%                  % Háromszög jelölés
+    \tikz{\filldraw[draw=#1,fill=#1,rotate=-90] (0,0)--(0.2cm,0)--(0.1cm,0.2cm)--cycle;}}
+
+% amsthm környezetek letisztult beállítása
+\theoremstyle{definition} % Ezzel a normál (nem dőlt) betűtípust használja a környezeteken belül
+\newtheorem*{definition}{Definíció}
+\newtheorem*{theorem}{Tétel}
+\newtheorem*{problem}{Feladat}
+\newtheorem*{example}{Példa}
+\newtheorem*{remark}{\mytriangle{bvred} Megjegyzés}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage[utf8]{inputenc}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+\usepackage{booktabs}
+
+%%% Megjelenítéshez kiegészített dobozok és makrók %%%
+\newtcolorbox{definiciodoboz}[1][]{colback=blue!5!white,colframe=blue!75!black,fonttitle=\bfseries,title=Definíció: #1}
+\newtcolorbox{teteldoboz}[1][]{colback=green!10!white,colframe=green!75!black,fonttitle=\bfseries,title=Tétel: #1}
+\newtcolorbox{torvenydoboz}[1][]{colback=purple!5!white,colframe=purple!75!black,fonttitle=\bfseries,title=Fizikai törvény: #1}
+
+\usepackage{hyperref}                    % Mindig utolsóként (vagy majdnem utolsóként) érdemes betölteni
+
+%%% Geometriai jelölések %%%
+\def\dotMarkRightAngle[size=#1](#2,#3,#4){%
+ \draw ($(#3)!#1!(#2)$) -- 
+       ($($(#3)!#1!(#2)$)!#1!90:(#2)$) --
+       ($(#3)!#1!(#4)$);
+ \path (#3)--node[circle,fill,inner sep=.5pt]{} ($($(#3)!#1!(#2)$)!#1!90:(#2)$);
+}
+
+\title{Ismétlés nélküli kombináció}
+\author{Készítette: \\Varga Dávid}
+
+\begin{document}
+
+\maketitle
+
+\section{Mikor használjuk?}
+Képzeld el, hogy a gyümölcsöskosárba kell válogatnod gyümölcsöket, vagy éppen a lottón kell megjelölnöd néhány számot. Az \textbf{ismétlés nélküli kombinációt} akkor hívjuk segítségül, amikor egy nagyobb halmazból kell kiválasztanunk egy adott darabszámú kisebb csoportot úgy, hogy \textbf{a sorrend egyáltalán nem számít}, és elemeket \textbf{nem halmozhatunk} (azaz mindent legfeljebb egyszer választhatunk ki). 
+
+A lényeg tehát két pontban sűríthető össze: 
+\begin{enumerate}
+    \item Mindegy, hogy a kiválasztott elemeket milyen sorrendben kapjuk meg (ha az alma, körte, banán hármast húzzuk ki, az teljesen ugyanaz, mintha körte, banán, alma lenne a sorrend).
+    \item Nincs visszatevés, mindegyik elem csak egyszer szerepelhet a pakliban.
+\end{enumerate}
+
+\section{Hogyan működik?}
+Nézzünk meg egy szemléletes példát a logika megértéséhez! Tegyük fel, hogy van $5$ féle kiváló csokoládénk a boltban ($A, B, C, D, E$), és nekünk pontosan $3$ darazat kell választanunk a csomagunkba. 
+
+Ha a sorrend számítana (vagyis az elsőként választott csoki különleges státuszt kapna, mondjuk ő lenne a díszdoboz közepén), akkor így gondolkodhatnánk:
+Az első helyre választhatunk $5$ félét, a másodikra $4$-et, a harmadikra pedig $3$-at. Ez összesen $5 \cdot 4 \cdot 3 = 60$ lehetőséget jelentene (ez a variáció).
+
+De figyeljünk oda! A mi esetünkben a csokik egy sima zacskóba kerülnek, ott pedig nincsenek "helyek". Ha a zacskóba bekerül az $A$, a $B$ és a $C$ csoki, az pont ugyanaz a végeredmény, mintha a $C$, az $A$ és a $B$ csokoládét pakoltuk volna be. Hányféleképpen tudjuk sorba rendezni ezt a $3$ kiválasztott csokit? Pontosan $3!$ ( azaz $3 \cdot 2 \cdot 1 = 6$) féleképpen. 
+
+Mivel ez a $6$-féle sorrend a mi szempontunkból mind ugyanazt a \textbf{ismétlés nélküli kombinációt} jelenti, a korábban kapott $60$-as számot túl sokat számoltunk! Ahhoz, hogy ezt a felesleges duplikációt kiszűrjük, a lehetőségek számát egyszerűen el kell osztanunk a sorrendek számával, vagyis $3!$-mal:
+$$\frac{5 \cdot 4 \cdot 3}{5!} = \frac{60}{6} = 100.$$
+Ez a bizonyos "osztás" a titka annak, hogy a sorrendet érvénytelenítsük.
+
+\section{Általános képlet és speciális esetek}
+Ha az előbbi logikát átültetjük a matematika nyelvére: van összesen $n$ darab különböző elemünk, és ezek közül szeretnénk kiválasztani $k$ darazat (ahol $k \le n$). Az \textbf{ismétlés nélküli kombináció} száma a következő képlettel adható meg:
+
+\begin{theorem}{Ismétlés nélküli kombináció képlete}
+$$\binom{n}{k} = \frac{n!}{k!(n-k)!}$$
+Ezt úgy olvassuk ki: „$n$ alatt a $k$”.
+\end{theorem}
+
+\begin{remark}
+Gyakori buktatók és speciális esetek, amikre érdemes figyelni:
+\begin{itemize}
+    \item \textbf{A sorrend csapdája:} Ha a feladatban a sorrendnek, rangnak, beosztásnak szerepe van (pl. elnök, alelnök, titkár választás), akkor \textit{nem} \textbf{ismétlés nélküli kombinációt}, hanem variációt használunk!
+    \item \textbf{Határesetek:} $\binom{n}{0} = 1$ (sehogy sem választani 1féleképpen lehet) és $\binom{n}{n} = 1$ (az összes elemet kiválasztani szintén 1féleképpen lehet).
+    \item \textbf{Szimmetria-tulajdonság:} $\binom{n}{k} = \binom{n}{n-k}$. Ha pl. $10$ emberből $8$-at akarunk kiválasztani, az ugyanannyi lehetőség, mintha azt néznénk, hogy melyik $2$ embert \textit{hagyjuk otthon}.
+\end{itemize}
+\end{remark}
+
+\section{Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
+Amikor olvasod a feladat szövegét, tedd fel magadnak az alábbi három kérdést sorban. Ha mindegyikre az alábbi válasz adódik, akkor azonnal tudod, hogy \textbf{ismétlés nélküli kombinációt} kell írnod:
+
+\begin{enumerate}[label=\textbfr{\arabic*}.]
+    \item \textbf{Van-e visszatevés / ismétlődés?} $\rightarrow$ Nincs (minden elem egyedi, mindent csak egyszer választhatunk).
+    \item \textbf{Számít-e a kiválasztott elemek sorrendje?} $\rightarrow$ Nem számít (csak a csoport összetétele a lényeg, nincs első, második stb. helyezett).
+    \item \textbf{Az összes rendelkezésre álló elemet felhasználjuk?} $\rightarrow$ Nem, csak egy részüket ($k$ darazat $n$-ből).
+\end{enumerate}
+
+\section{Tipikus és trükkös feladatok levezetése}
+
+\begin{problem}[Kártyalapok húzása]
+Egy standard magyar kártyapakliból ($32$ lapos) egyszerre kihúzunk $4$ lapot. Hányféle különböző 4 lapos kéz jöhet létre?
+\end{problem}
+
+\textbf{Gondolatmenet és lépések:}
+\begin{enumerate}
+    \item \textit{Mit látunk?} Van $n = 32$ darab különböző elemünk (a kártyák), és ebből választunk $k = 4$ darazat.
+    \item \textit{Miért így gondolkodunk?} Mivel a kártyákat egyszerre húzzuk ki (vagy ha sorban is húzzuk, de a végén csak a kezünkben lévő lapok halmaza számít), a sorrend teljesen mindegy. Egy kártyapakliból egy lap csak egyszer szerepel, így ismétlés sincs. Ez tiszta \textbf{ismétlés nélküli kombináció}.
+    \item \textit{A számítás:}
+    $$\binom{32}{4} = \frac{32!}{4!(32-4)!} = \frac{32!}{4! \cdot 28!} = \frac{32 \cdot 31 \cdot 30 \cdot 29}{4 \cdot 3 \cdot 2 \cdot 1}$$
+    \item \textit{Hogyan rontják el gyakran?} Sok diák megijed a nagy faktoriálisoktól, vagy megpróbálja kiszorozni a $32!$-t a zsebszámológépén, ami túlcsordulást (overflow hibát) okoz. Mindig egyszerűsítsünk először a nevezővel!
+    \item \textit{Hibátlan megoldás:} 
+    A nevezőben lévő $4 \cdot 3 \cdot 2 \cdot 1 = 24$. Ezzel leosztva a számlálót: a $30$-at elosztjuk $3 \cdot 10$-zel vagy hasonlóan, kapjuk:
+    $$\frac{32 \cdot 31 \cdot 30 \cdot 29}{24} = 4 \cdot 31 \cdot 5 \cdot 29 = 35\,960.$$
+    Összesen $35\,960$-féleképpen húzhatunk ki $4$ lapot.
+\end{enumerate}
+
+\vspace{1em}
+
+\begin{problem}[Csapatépítés feltételekkel (Trükkös)]
+Egy 10 fős baráti társaságból (4 fiú és 6 lány) szeretnénk egy 4 fős bizottságot alakítani. Hányféleképpen tehetjük ezt meg, ha a bizottságban \textbf{pontosan 2 fiúnak} kell lennie?
+\end{problem}
+
+\textbf{Gondolatmenet és lépések:}
+\begin{enumerate}
+    \item \textit{Mit látunk?} Komplexebb feladat, feltétellel. A társaság két különálló részre oszlik: fiúkra és lányokra.
+    \item \textit{Miért így gondolkodunk?} Ha a bizottság 4 fős, és pontosan 2 fiút kell tartalmaznia, akkor logikus, hogy a maradék $4 - 2 = 2$ helyre lányok fognak kerülni. A fiúk kiválasztása független a lányok kiválasztásától, de a végén a lehetőségeket össze kell szoroznunk (\textbf{Kombinatorikus alapelv}: és-kapcsolat esetén szorzás).
+    \item \textit{A részfeladatok:}
+   \begin{itemize}
+       \item Hányféleképpen tudunk kiválasztani 2 fiút a 4 fiúból? Ez egy \textbf{ismétlés nélküli kombináció}: $\binom{4}{2}$.
+       \item Hányféleképpen tudunk kiválasztani 2 lányt a 6 lányból? Ez szintén \textbf{ismétlés nélküli kombináció}: $\binom{6}{2}$.
+   \end{itemize}
+    \item \textit{A számítás:}
+   $$\binom{4}{2} = \frac{4 \cdot 3}{2 \cdot 1} = 6$$
+   $$\binom{6}{2} = \frac{6 \cdot 5}{2 \cdot 1} = 15$$
+    \item \textit{Hogyan rontják el gyakran?} A diákok gyakran összeadják a két lehetőséget ($6 + 15 = 21$) a szorzás helyett. Emlékezzünk: a bizottsághoz \textit{szükségünk van} a fiúkra \textbf{és} a lányokra is egyszerre, ezért a \textbf{ismétlés nélküli kombinációk} számát össze kell szorozni!
+    \item \textit{Hibátlan megoldás:}
+   $$6 \cdot 15 = 90.$$
+   Tehát $90$-féleképpen állíthatjuk össze a kívánt bizottságot.
+\end{enumerate}
+
+\end{document}

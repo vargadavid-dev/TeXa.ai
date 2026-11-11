@@ -410,7 +410,7 @@ export default function App() {
   }, [checkHealth, loadProjects, loadPreambles, applyEditorCode])
 
   const addNotif = useCallback((message, type = 'info', action = null) => {
-    const id = Date.now()
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     setNotifications(n => [...n, { id, message, type, action }])
     const timeoutDuration = action ? 7000 : 4000
     setTimeout(() => setNotifications(n => n.filter(x => x.id !== id)), timeoutDuration)

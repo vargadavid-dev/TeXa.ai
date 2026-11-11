@@ -1,0 +1,157 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\definecolor{myprimary}{RGB}{0, 102, 204}
+\definecolor{mybackground}{RGB}{240, 248, 255}
+\definecolor{myalert}{RGB}{204, 0, 0}
+
+\tcbset{
+    colback=mybackground,
+    colframe=myprimary,
+    fonttitle=\bfseries,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=6pt,
+    right=6pt,
+    top=6pt,
+    bottom=6pt
+}
+
+\title{Kalorimetria, folyadékok keverése}
+\author{Fizika oktatási segédanyag}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+\usepackage{abstract}
+\definecolor{bvred}{rgb}{0.8, 0.0, 0.0}  
+
+%%% Megjelenítéshez kiegészített dobozok és makrók %%%
+\providecommand{\textbfr}[1]{\textbf{\textcolor{red}{#1}}}
+
+\usepackage{hyperref}
+
+\begin{document}
+\title{\textbfr{Kalorimetria}}
+\author{Készítette:\\Varga Dávid}
+\date{}
+\maketitle
+
+\begin{abstract}
+Ez az összefoglaló segít átlátni a kalorimetria és a folyadékok keverésének rejtelmeit. Célunk, hogy képletek bemagolása helyett valóban megértsd, mi történik a fazekakban, poharakban és a hőmérőkben, amikor különböző hőmérsékletű anyagokat összeöntünk.
+\end{abstract}
+
+\section{Mikor használjuk?}
+A kalorimetriát akkor vesszük elő, amikor eltérő hőmérsékletű anyagokat – leggyakrabban folyadékokat – összeöntünk, vagy egy forró tárgyat hideg vízbe dobunk, és arra vagyunk kíváncsiak, hogy végül \textbf{mekkora lesz a közös hőmérséklet}, vagy mennyi hő áramlott át a rendszerek között. A hétköznapokban is ezt használjuk, amikor a forró teához hideg tejet öntünk, hogy rögtön megihassuk, vagy amikor megkeverjük a fürdővizet.
+
+\section{Hogyan működik?}
+Képzelj el két teli vödröt: az egyikben $50\,^\circ\text{C}$-os meleg víz van, a másikban pedig $10\,^\circ\text{C}$-os hideg víz. Ha összeöntjük őket, a meleg víz \textbf{hőt ad le} (energiát veszít), míg a hideg víz \textbf{hőt vesz fel} (energiát nyer). 
+
+Miért nem adódnak csak úgy össze egyszerűen a hőmérsékletek? Azért, mert a hőmérséklet nem egy „mennyiség”, amit csak úgy össze lehet adni, hanem a molekulák átlagos mozgási energiájának a mértéke. A meleg víz molekulái vadul táncolnak, a hidegeké lustábban mozognak. Amikor összeérnek, a gyorsak ütköznek a lassan mozgókkal, és lassan átadják nekik a lökéseiket, amíg be nem áll a \textbf{hőmérsékleti egyensúly} – vagyis amíg mindenki ugyanakkora átlagos sebességgel nem mozog.
+
+A legfontosabb természeti szabály itt a \textbf{hőmennyiségek megmaradása} (ideális esetben, ha nem fűtjük a szobát, és a edény sem nyel el hőt):
+$$\text{Q}_{\text{leadott}} = \text{Q}_{\text{felvett}}$$
+A meleg anyag által leadott hő pontosan megegyezik a hideg anyag által felvett hővel. Ezért tesszük őket egy egyenlet két oldalára.
+
+\section{Általános képlet és speciális esetek}
+A hőtani számítások alapképlete az egyes anyagok hőmérséklet-változásakor:
+$$Q = c \cdot m \cdot \Delta T$$
+Ahol:
+\begin{itemize}
+    \item $Q$: a felvett vagy leadott hő (mértékegysége joule, $\text{J}$),
+    \item $c$: a fajhő (megmutatja, mennyi hő kell $1\,\text{kg}$ anyag $1\,^\circ\text{C}$-os melegítéséhez, $\text{J}/(\text{kg}\cdot^\circ\text{C})$),
+    \item $m$: a tömeg ($\text{kg}$),
+    \item $\Delta T$: a hőmérséklet-változás ($|T_{\text{kezdeti}} - T_{\text{végső}}|$).
+}
+\end{itemize}
+
+A keverési egyenlet felírásakor a következőt tesszük:
+$$c_1 \cdot m_1 \cdot (T_1 - T_{\text{kész}}) = c_2 \cdot m_2 \cdot (T_{\text{kész}} - T_2)$$
+Ahol $T_1$ a melegebb test kezdeti hőmérséklete, $T_2$ a hidegebbé, $T_{\text{kész}}$ pedig a közös végső hőmérséklet (ami a kettő közé esik: $T_2 < T_{\text{kész}} < T_1$).
+
+\begin{tcolorbox}[colframe=myalert, colback=red!5!white, title=Gyakori csapdák és speciális esetek]
+\begin{itemize}
+    \item \textbf{Az edény elhanyagolása:} Ha a feladat megemlíti a kalorimétert (vagy az edényt), amelyben a keverés történik, akkor \textbf{az edény is felvesz hőt} a meleg folyadéktól! Olyan, mintha lenne egy harmadik résztvevő is a játékban, amelynek a tömegét és fajhőjét ($c_{\text{edény}} \cdot m_{\text{edény}}$) hozzá kell adni a hideg oldalhoz.
+    \item \textbf{Mértékegységek:} Soha ne keverd a grammot a kilogrammal, vagy a Celsius-fokot a Kelvinnel (bár $\Delta T$-nél mindegy, de a biztonság kedvéért maradj a Celsiusnál, ha a fajhő is abban van megadva).
+    \end{itemize}
+\end{tcolorbox}
+
+\section{Dolgozat- / Vizsga-gyorsteszt (Döntési fa)}
+Ha a feladat olvasásakor az alábbi három kérdésre igennel válaszolsz, akkor biztosan kaloriméteres egyenletet kell felírnod:
+\begin{enumerate}
+    \item Két vagy több különböző hőmérsékletű anyagot (folyadékot, netán szilárd testet) összehoznak?
+    \item Az anyagok között hőáramlás történik, de a rendszer magára van hagyva (nem forralják folyamatosan tűzhelyen, és nem hűtik hűtőben)?
+    \item A cél a végső egyensúlyi hőmérséklet vagy az egyik anyag ismeretlen tömegének/hőmérsékletének meghatározása?
+\end{enumerate}
+
+\section{Tipikus és trükkös feladatok levezetése}
+
+\subsection{Feladat: A klasszikus tea és tej keverése}
+\textit{Feladat:} $2\,kg$, $80\,^\circ\text{C}$-os vizet ($c_{\text{víz}} = 4200\,\text{J}/(\text{kg}\cdot^\circ\text{C})$) összeöntünk $0{,}5\,\text{kg}$, $20\,^\circ\text{C}$-os tejjel. Feltételezzük, hogy a tej fajhője megegyezik a vízévelel. Mennyi lesz a keverék végső hőmérséklete?
+
+\begin{tcolorbox}[title=Megoldási lépések]
+\textbf{1. Lépés: Gondolkodási stratégia}\\
+A meleg víz hőt ad le, a hideg tej hőt vesz fel. A veszteség egyenlő a nyereséggel. Legyen a keresett végső hőmérséklet $T$.\\[6pt]
+\textbf{2. Lépés: A hőmennyiségek felírása}\\
+A leadott hő (víz): 
+$$Q_{\text{leadott}} = c \cdot m_1 \cdot (80 - T)$$
+A felvett hő (tej): 
+$$Q_{\text{felvett}} = c \cdot m_2 \cdot (T - 20)$$
+\textbf{3. Lépés: Az egyenlet felírása és megoldása}\\
+Mivel $Q_{\text{leadott}} = Q_{\text{felvett}}$, és a $c$ mindkét oldalon szerepel, leoszthatunk vele:
+$$m_1 \cdot (80 - T) = m_2 \cdot (T - 20)$$
+Helyettesítsük be az adatokat:
+$$2 \cdot (80 - T) = 0{,}5 \cdot (T - 20)$$
+Zárójelbontás:
+$$160 - 2T = 0{,}5T - 10$$
+Rendezzük az egyenletet (adjunk hozzá $2T$-t és $10$-et):
+$$170 = 2{,}5T$$
+Osztás $2{,}5$-tel:
+$$T = \frac{170}{2{,}5} = 68\,^\circ\text{C}$$
+\textbf{Hibaforrás, amit kerülj el:} A zárójelben mindig a \textit{nagyobb mínusz kisebb} elvet követjük a hőmérsékleteknél, hogy pozitív számokat kapjunk, hiszen a $T$ a melegebbnél alacsonyabb, de a hidegebbnél magasabb lesz!
+\end{tcolorbox}
+
+\subsection{Feladat: Amikor a kaloriméter edény is besegít}
+\textit{Feladat:} Egy $100\,\text{g}$-os alumínium kaloriméter edényben ($c_{\text{al}} = 900\,\text{J}/(\text{kg}\cdot^\circ\text{C})$) $200\,\text{g}$, $15\,^\circ\text{C}$-os víz van. Ebbe beleejtünk $300\,\text{g}$, $90\,^\circ\text{C}$-os vasdarabot ($c_{\text{vas}} = 450\,\text{J}/(\text{kg}\cdot^\circ\text{C})$). Mennyi lesz a közös hőmérséklet?
+
+\begin{tcolorbox}[title=Megoldási lépések]
+\textbf{1. Lépés: Kik a szereplők?}\\
+\begin{itemize}
+    \item \textbf{Leadja a hőt:} A vasdarab (mert forró).
+    \item \textbf{Felveszi a hőt:} A víz \textbf{ÉS} az alumínium edény is (mert mindketten $15\,^\circ\text{C}$-osak kezdetben, és átveszik a vas melegét).
+\end{itemize}
+\textbf{2. Lépés: Az egyenlet összeállítása}\\
+$$Q_{\text{vas, leadott}} = Q_{\text{víz, felvett}} + Q_{\text{edény, felvett}}$$
+$$\vphantom{}_v c_v m_v (90 - T) = c_{\text{víz}} m_{\text{víz}} (T - 15) + c_{\text{al}} m_{\text{al}} (T - 15)$$
+\textbf{3. Lépés: Mértékegységek átváltása kilogrammra}\\
+$m_{\text{víz}} = 0{,}2\,\text{kg}$, $m_{\text{al}} = 0{,}1\,\text{kg}$, $m_{\text{vas}} = 0{,}3\,\text{kg}$.\\[6pt]
+\textbf{4. Lépés: Behelyettesítés}\\
+$$0{,}3 \cdot 450 \cdot (90 - T) = 0{,}2 \cdot 4200 \cdot (T - 15) + 0{,}1 \cdot 900 \cdot (T - 15)$$
+$$135 \cdot (90 - T) = 840 \cdot (T - 15) + 90 \cdot (T - 15)$$
+Vegyük észre, hogy a jobb oldalon kiemelhetjük a $(T - 15)$-öt:
+$$12150 - 135T = (840 + 90) \cdot (T - 15)$$
+$$12150 - 135T = 930 \cdot (T - 15)$$
+$$12150 - 135T = 930T - 13950$$
+Rendezés után:
+$$12150 + 13950 = 930T + 135T$$
+$$26100 = 1065T \implies T \approx 24{,}5\,^\circ\text{C}$$
+\textbf{Megjegyzés:} A diákok itt gyakran kihagyják az edényt, pedig az alumínium jelentős hőt képes elnyelni a jó hővezető képessége és fajhője miatt!
+\end{tcolorbox}
+
+\end{document}

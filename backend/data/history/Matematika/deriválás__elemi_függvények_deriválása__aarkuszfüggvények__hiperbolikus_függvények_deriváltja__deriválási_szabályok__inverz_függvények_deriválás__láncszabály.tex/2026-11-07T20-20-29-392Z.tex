@@ -1,0 +1,185 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{top=25mm, bottom=25mm, left=25mm, right=25mm}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\tcbuselibrary{skins,breakable}
+
+\definecolor{myblue}{RGB}{26, 82, 118}
+\definecolor{mybg}{RGB}{242, 247, 250}
+
+\newtcolorbox{defbox}[2][]{
+  colback=mybg,
+  colframe=myblue,
+  fonttitle=\bfseries,
+  title=#2,
+  rounded corners,
+  boxrule=0.8pt,
+  #1
+}
+
+\newtcolorbox{examplebox}[1][]{
+  colback=white,
+  colframe=teal!80!black,
+  fonttitle=\bfseries,
+  title=Megoldott példa: #1,
+  rounded corners,
+  boxrule=0.8pt
+}
+
+\newtcolorbox{exercisebox}{
+  colback=orange!5!white,
+  colframe=orange!80!black,
+  fonttitle=\bfseries,
+  title=Önálló feladatok,
+  rounded corners,
+  boxrule=0.8pt
+}
+
+\title{Deriválás összefoglaló}
+\author{Készített: Varga Dávid}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+\maketitle
+
+\section{Bevezetés és a derivált fogalma}
+A differenciálszámítás a matematikai elemzés egyik alappillére. Geometriailag a derivált egy görbe érintőjének meredekségét, fizikailag pedig a pillanatnyi sebességet vagy változási ütemet jelenti.
+
+\begin{defbox}{A derivált definíciója}
+Legyen az $f$ függvény értelmezve az $x_0$ pont egy környezetében. Azt mondjuk, hogy az $f$ függvény differenciálható az $x_0$ helyen, ha létezik a következő véges határérték:
+\[
+f'(x_0) = \lim_{x \to x_0} \frac{f(x) - f(x_0)}{x - x_0} = \lim_{h \to 0} \frac{f(x_0 + h) - f(x_0)}{h}
+\]
+Ezt a határértéket az $f$ függvény $x_0$ pontbeli deriváltjának nevezzük.
+\end{defbox}
+
+\section{Deriválási szabályok}
+Ha $f$ és $g$ differenciálható függvények egy adott intervallumon, és $c$ valós szám, akkor a következő alapvető műveleti szabályok érvényesek:
+
+\begin{itemize}
+    \item \textbf{Konstans szorzó:} $(c \cdot f(x))' = c \cdot f'(x)$
+    \item \textbf{Összeg és különbség:} $(f(x) \pm g(x))' = f'(x) \pm g'(x)$
+    \item \textbf{Szorzatfüggvény deriváltja:} $(f(x) \cdot g(x))' = f'(x)g(x) + f(x)g'(x)$
+    \item \textbf{Hányadosfüggvény deriváltja:} $\left(\frac{f(x)}{g(x)}\right)' = \frac{f'(x)g(x) - f(x)g'(x)}{(g(x))^2}$, feltéve, hogy $g(x) \neq 0$.
+\end{itemize}
+
+\section{Elemi függvények deriváltjai}
+Az alábbi listában összefoglaljuk a legfontosabb elemi függvények deriváltjait:
+
+\begin{align*}
+    (c)' &= 0 \quad (\text{ahogyan } c \text{ konstans}) \\
+    (x^n)' &= n \cdot x^{n-1} \quad (n \in \mathbb{R}) \\
+    (e^x)' &= e^x, \quad (a^x)' = a^x \ln a \\
+    (\ln x)' &= \frac{1}{x}, \quad (\log_a x)' = \frac{1}{x \ln a} \\
+    (\sin x)' &= \cos x, \quad (\cos x)' = -\sin x \\
+    (\operatorname{tg} x)' &= \frac{1}{\cos^2 x}, \quad (\operatorname{ctg} x)' = -\frac{1}{\sin^2 x}
+\end{align*}
+
+\section{Láncszabály és összetett függvények deriválása}
+Ha egy függvény egy másik függvénybe van ágyazva (összetett függvény), akkor a deriváláshoz a láncszabályt használjuk.
+
+\begin{defbox}{A láncszabály}
+Ha az $f$ függvény differenciálható a $g(x)$ helyen, és a $g$ függvény differenciálható az $x$ helyen, akkor az $F(x) = f(g(x))$ összetett függvény is differenciálható, és deriváltja:
+\[
+F'(x) = f'(g(x)) \cdot g'(x)
+\]
+Szavakkal: a külső függvény deriváltja a belső függvényben kiszámolva szorozva a belső függvény deriváltjával.
+\end{defbox}
+
+\begin{examplebox}{Összetett függvény deriválása}
+Határozzuk meg az $f(x) = \sin(3x^2 + 1)$ függvény deriváltját!
+\vspace{0.2cm}
+
+\textbf{Megoldás:}
+Itt a külső függvény a szinusz ($\sin(u)$), a belső függvény pedig $g(x) = 3x^2 + 1$.
+A külső függvény deriváltja: $\cos(u)$, így $\cos(3x^2 + 1)$.
+A belső függvény deriváltja: $g'(x) = 6x$.
+A láncszabály szerint:
+\[
+f'(x) = \cos(3x^2 + 1) \cdot 6x = 6x \cos(3x^2 + 1)
+\]
+\end{examplebox}
+
+\section{Inverz függvények deriválása és az arkuszfüggvények}
+Ha egy $f$ függvénynek létezik differenciálható inverze ($f^{-1}$), és $f'(f^{-1}(y)) \neq 0$, akkor az inverz függvény is deriválható, és teljesül a következő összefüggés:
+\[
+(f^{-1})'(y) = \frac{1}{f'(f^{-1}(y))}
+\]
+
+Ennek a képletnek a segítségével származtathatók az inverz trigonometrikus függvények (arkuszfüggvények) deriváltjai:
+
+\begin{align*}
+    (\arcsin x)' &= \frac{1}{\sqrt{1 - x^2}} \quad (-1 < x < 1) \\
+    (\arccos x)' &= -\frac{1}{\sqrt{1 - x^2}} \quad (-1 < x < 1) \\
+    (\operatorname{arctg} x)' &= \frac{1}{1 + x^2} \quad (x \in \mathbb{R}) \\
+    (\operatorname{arcctg} x)' &= -\frac{1}{1 + x^2} \quad (x \in \mathbb{R})
+\end{align*}
+
+\section{Hiperbolikus függvények deriváltja}
+A hiperbolikus függvények exponenciális kifejezésekkel definialt függvények, amelyek nagyon hasonlítanak a trigonometrikus függvényekre, de tulajdonságaikban eltérnek.
+
+\begin{defbox}{Hiperbolikus alapfüggvények}
+\[
+\operatorname{sh} x = \frac{e^x - e^{-x}}{2}, \quad \operatorname{ch} x = \frac{e^x + e^{-x}}{2}, \quad \operatorname{th} x = \frac{\operatorname{sh} x}{\operatorname{ch} x}
+\]
+\end{defbox}
+
+Ezen függvények deriváltjai rendkívül egyszerűek, nincs bennük előjélváltás a szinuszhoz hasonlóan:
+
+\begin{align*}
+    (\operatorname{sh} x)' &= \operatorname{ch} x \\
+    (\operatorname{ch} x)' &= \operatorname{sh} x \\
+    (\operatorname{th} x)' &= \frac{1}{\operatorname{ch}^2 x}
+\end{align*}
+
+\begin{examplebox}{Inverz hiperbolikus / arkusz kombináció}
+Számítsuk ki a $g(x) = \operatorname{arctg}(\operatorname{sh} x)$ függvény deriváltját!
+\vspace{0.2cm}
+
+\textbf{Megoldás:}
+Alkalmazzuk a láncszabályt. A külső függvény az $\operatorname{arctg}$, aminek a deriváltja $\frac{1}{1 + u^2}$, a belső függvény pedig $\operatorname{sh} x$.
+\[
+g'(x) = \frac{1}{1 + (\operatorname{sh} x)^2} \cdot \operatorname{sh}'(x) = \frac{\operatorname{ch} x}{1 + \operatorname{sh}^2 x}
+\]
+Mivel az alapvető hiperbolikus összefüggés szerint $\operatorname{ch}^2 x - \operatorname{sh}^2 x = 1$, azaz $1 + \operatorname{sh}^2 x = \operatorname{ch}^2 x$:
+\[
+g'(x) = \frac{\operatorname{ch} x}{\operatorname{ch}^2 x} = \frac{1}{\operatorname{ch} x}
+\]
+\end{examplebox}
+
+\section{Önálló feladatok}
+Gyakorold a fent leírt szabályokat az alábbi feladatokon keresztül!
+
+\begin{exercisebox}
+Határozd meg az alábbi függvények első deriváltját:
+\begin{enumerate}
+    \item $f(x) = 5x^4 - 3\ln x + 2e^x$
+    \item $f(x) = (x^2 + 1) \cdot \operatorname{tg} x$
+    \item $f(x) = e^{-2x} \cdot \sin(5x)$
+    \item $f(x) = \arcsin(2x)$
+    \item $f(x) = \operatorname{ch}(3x^2 - 1)$
+\end{enumerate}
+\end{exercisebox}
+
+\end{document}

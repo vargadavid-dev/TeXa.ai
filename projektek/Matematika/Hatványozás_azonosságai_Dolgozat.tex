@@ -1,0 +1,190 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\geometry{top=1cm, bottom=1cm, left=1cm, right=1cm}
+
+\title{Hatványozás azonosságai_Dolgozat}
+\author{AI LaTeX Studio}
+\date{\today}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+
+% ==========================================
+% „A” CSOPORT
+% ==========================================
+
+\noindent
+\begin{minipage}[t]{0.45\textwidth}
+  \vspace{0pt}
+  
+  {\Large\textbf{Hatványozás azonosságai}}\\[2mm]
+  {\large\textbf{„A” CSOPORT}}\\[2mm]
+  \textbf{Név:} \underline{\hspace{4.5cm}}\\[2mm]
+  \textbf{Osztály:} \underline{\hspace{1.5cm}} \quad \textbf{Dátum:} \underline{\hspace{2cm}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.53\textwidth}
+  \vspace{0pt}
+  \begin{flushright}
+  {\small
+  \begin{tabular}{|l|c|c|c|c|c||c||c|}
+    \hline
+    \textbf{Feladat} & 1. & 2. & 3. & 4. & 5. & \textbf{Össz.} & \textbf{Érdemjegy} \\ \hline
+    \textbf{Max. pont} & 8 & 8 & 10 & 10 & 8 & 44 & \\ \cline{1-7}
+    \textbf{Elért pont} &  &  &  &  &  &  &  \\ \hline
+  \end{tabular}
+  }
+  \end{flushright}
+\end{minipage}
+\vspace{2mm}
+\hrule
+\vspace{4mm}
+
+\begin{enumerate}
+    \item \textbf{Alapműveletek hatványokkal} \hfill \textbf{[8 pont]}
+    Írd fel egyetlen hatvány alakjában, vagy egyszerűsítsd a következő kifejezéseket a hatványozás azonosságai felhasználásával (ahol lehetséges, a végeredmény pozitív kitevőjű legyen):
+    \begin{enumerate}
+        \item $2^5 \cdot 2^{-3} \cdot 2^4 =$ \hfill \textit{[2 pont]}
+        \item $\frac{a^7 \cdot a^{-2}}{a^3} =$ \quad ($a \neq 0$) \hfill \textit{[2 pont]}
+        \item $(3^2)^{-3} \cdot 9^4 =$ \hfill \textit{[2 pont]}
+        \item $\frac{(x^3)^2 \cdot x^{-4}}{x^{-1} \cdot x^5} =$ \quad ($x \neq 0$) \hfill \textit{[2 pont]}
+    \end{enumerate}
+
+    \vspace{2mm}
+    \item \textbf{Számérték kiszámítása és negatív kitevők} \hfill \textbf{[8 pont]}
+    Számítsd ki az alábbi kifejezések pontos értékét (tört vagy egész szám alakban):
+    \begin{enumerate}
+        \item $(-2)^3 + 3^{-2} \cdot 18 - 5^0 =$ \hfill \textit{[3 pont]}
+        \item $\left(\frac{2}{3}\right)^{-2} + \left(-\frac{1}{2}\right)^{-3} =$ \hfill \textit{[3 pont]}
+        \item $\frac{5^{-4} \cdot 5^6}{5^2} =$ \hfill \textit{[2 pont]}
+    \end{enumerate}
+
+    \vspace{2mm}
+    \item \textbf{Algebrai kifejezések és törtek egyszerűsítése} \hfill \textbf{[10 pont]}
+    Egyszerűsítsd az alábbi algebrai kifejezéseket, és add meg a kikötéseket is a változókra:
+    \begin{enumerate}
+        \item $\frac{12x^5 y^{-3}}{4x^2 y^{-5}}$ \quad ($x \neq 0, y \neq 0$) \hfill \textit{[4 pont]}
+        \item $\left( \frac{a^{-2} b^3}{c^4} \right)^{-2} \cdot \left( \frac{a^3 c^{-1}}{b^{-2}} \right)^3$ \quad ($a \neq 0, b \neq 0, c \neq 0$) \hfill \textit{[6 pont]}
+    \end{enumerate}
+
+    \vspace{2mm}
+    \item \textbf{Típusfeladatok: Nehezebb egyenletek és becslések} \hfill \textbf{[10 pont]}
+    \begin{enumerate}
+        \item Oldd meg az alábbi exponenciális egyenletet a valós számok halmazán:
+        $$2^{x+1} + 2^{x-1} = 20$$ \hfill \textit{[6 pont]}
+        \item Írd fel normálalakban a következő számot: $0{,}000456 \cdot 10^{-3}$. \hfill \textit{[4 pont]}
+    \end{enumerate}
+
+    \vspace{2mm}
+    \item \textbf{Gondolkodtató, emelt szintű feladat} \hfill \textbf{[8 pont]}
+    Bizonyítsd be, hogy a $K = 5^{n+2} - 2 \cdot 5^n + 3 \cdot 5^{n+1}$ kifejezés értéke minden $n \in \mathbb{N}$ esetén osztható $28$-cal! \hfill \textbf{[8 pont]}
+\end{enumerate}
+
+\vfill
+\noindent
+\begin{center}
+\small
+\textbf{Ponthatárok:} \quad 1 (elégtelen): 0--17 p \quad 2 (elégséges): 18--23 p \quad 3 (közepes): 24--30 p \quad 4 (jó): 31--36 p \quad 5 (jeles): 37--44 p
+\end{center}
+
+\newpage
+
+% ==========================================
+% „B” CSOPORT
+% ==========================================
+
+\noindent
+\begin{minipage}[t]{0.45\textwidth}
+  \vspace{0pt}
+  
+  {\Large\textbf{Hatványozás azonosságai}}\\[2mm]
+  {\large\textbf{„B” CSOPORT}}\\[2mm]
+  \textbf{Név:} \underline{\hspace{4.5cm}}\\[2mm]
+  \textbf{Osztály:} \underline{\hspace{1.5cm}} \quad \textbf{Dátum:} \underline{\hspace{2cm}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.53\textwidth}
+  \vspace{0pt}
+  \begin{flushright}
+  {\small
+  \begin{tabular}{|l|c|c|c|c|c||c||c|}
+    \hline
+    \textbf{Feladat} & 1. & 2. & 3. & 4. & 5. & \textbf{Össz.} & \textbf{Érdemjegy} \\ \hline
+    \textbf{Max. pont} & 8 & 8 & 10 & 10 & 8 & 44 & \\ \cline{1-7}
+    \textbf{Elért pont} &  &  &  &  &  &  &  \\ \hline
+  \end{tabular}
+  }
+  \end{flushright}
+\end{minipage}
+\vspace{2mm}
+\hrule
+\vspace{4mm}
+
+\begin{enumerate}
+    \item \textbf{Alapműveletek hatványokkal} \hfill \textbf{[8 pont]}
+    Írd fel egyetlen hatvány alakjában, vagy egyszerűsítsd a következő kifejezéseket a hatványozás azonosságai felhasználásával (ahol lehetséges, a végeredmény pozitív kitevőjű legyen):
+    \begin{enumerate}
+        \item $3^4 \cdot 3^{-2} \cdot 3^3 =$ \hfill \textit{[2 pont]}
+        \item $\frac{b^8 \cdot b^{-3}}{b^2} =$ \quad ($b \neq 0$) \hfill \textit{[2 pont]}
+        \item $(2^3)^{-2} \cdot 4^4 =$ \hfill \textit{[2 pont]}
+        \item $\frac{(y^2)^3 \cdot y^{-5}}{y^{-2} \cdot y^4} =$ \quad ($y \neq 0$) \hfill \textit{[2 pont]}
+    \end{enumerate}
+
+    \vspace{2mm}
+    \item \textbf{Számérték kiszámítása és negatív kitevők} \hfill \textbf{[8 pont]}
+    Számítsd ki az alábbi kifejezések pontos értékét (tört vagy egész szám alakban):
+    \begin{enumerate}
+        \item $(-3)^2 + 2^{-3} \cdot 16 - 7^0 =$ \hfill \textit{[3 pont]}
+        \item $\left(\frac{3}{2}\right)^{-2} + \left(-\frac{1}{3}\right)^{-3} =$ \hfill \textit{[3 pont]}
+        \item $\frac{3^{-5} \cdot 3^7}{3^3} =$ \hfill \textit{[2 pont]}
+    \end{enumerate}
+
+    \vspace{2mm}
+    \item \textbf{Algebrai kifejezések és törtek egyszerűsítése} \hfill \textbf{[10 pont]}
+    Egyszerűsítsd az alábbi algebrai kifejezéseket, és add meg a kikötéseket is a változókra:
+    \begin{enumerate}
+        \item $\frac{15a^6 y^{-2}}{5a^3 y^{-4}}$ \quad ($a \neq 0, y \neq 0$) \hfill \textit{[4 pont]}
+        \item $\left( \frac{x^{-3} y^2}{z^3} \right)^{-2} \cdot \left( \frac{x^2 z^{-2}}{y^{-3}} \right)^2$ \quad ($x \neq 0, y \neq 0, z \neq 0$) \hfill \textit{[6 pont]}
+    \end{enumerate}
+
+    \vspace{2mm}
+    \item \textbf{Típusfeladatok: Nehezebb egyenletek és becslések} \hfill \textbf{[10 pont]}
+    \begin{enumerate}
+        \item Oldd meg az alábbi exponenciális egyenletet a valós számok halmazán:
+        $$3^{x+1} + 3^{x-1} = 30$$ \hfill \textit{[6 pont]}
+        \item Írd fel normálalakban a következő számot: $0{,}000789 \cdot 10^{-4}$. \hfill \textit{[4 pont]}
+    \end{enumerate}
+
+    \vspace{2mm}
+    \item \textbf{Gondolkodtató, emelt szintű feladat} \hfill \textbf{[8 pont]}
+    Bizonyítsd be, hogy a $M = 3^{n+3} - 4 \cdot 3^n + 2 \cdot 3^{n+2}$ kifejezés értéke minden $n \in \mathbb{N}$ esetén osztható $26$-tal! \hfill \textbf{[8 pont]}
+\end{enumerate}
+
+\vfill
+\noindent
+\begin{center}
+\small
+\textbf{Ponthatárok:} \quad 1 (elégtelen): 0--17 p \quad 2 (elégséges): 18--23 p \quad 3 (közepes): 24--30 p \quad 4 (jó): 31--36 p \quad 5 (jeles): 37--44 p
+\end{center}
+
+\end{document}

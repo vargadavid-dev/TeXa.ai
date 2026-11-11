@@ -1,0 +1,193 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[magyar]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+
+\geometry{top=2cm, bottom=2cm, left=2cm, right=2cm}
+
+\title{Hatványozás azonosságai - Javítókulcs}
+\author{Matematika munkaközösség}
+\date{}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
+\usepackage{amsfonts, amsthm}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+
+\usepackage{hyperref}
+
+\begin{document}
+\maketitle
+
+\section*{Általános útmutató a javításhoz}
+A részpontszámok elosztásánál a levezetés logikáját és a helyes hatványozási szabályok alkalmazását kell értékelni. Számolási hiba esetén az adott részfeladatból legfeljebb 1 pont vonható le, ha az elv egyébként helyes.
+
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}
+
+\section*{„A” CSOPORT - MEGOLDÁSOK ÉS PONTOZÁS}
+
+\begin{enumerate}
+  \item \textbf{Alapműveletek és azonosságok alkalmazása} \hfill \textbf{[8 pont]}
+  \textit{Feladat:} Add meg a következő kifejezések egyszerűsített alakját, és számítsd ki a helyettesítési értéküket, ha $x = 2$ és $y = -1$:
+  \begin{enumerate}
+    \item $\frac{2^3 \cdot 2^{-4}}{2^{-2}}$ \hfill \textit{[3 pont]}
+    \item $(x^3 \cdot y^{-2})^2 \cdot \frac{x^{-1}}{y^3}$ \hfill \textit{[5 pont]}
+  \end{enumerate}
+  
+  \textbf{Megoldás:}
+  \begin{enumerate}
+    \item $\frac{2^{3+(-4)}}{2^{-2}} = \frac{2^{-1}}{2^{-2}} = 2^{-1 - (-2)} = 2^1 = 2$. \hfill \textit{[3 pont: számláló 1p, nevezővel összevontan 1p, végeredmény 1p]}
+    \item $(x^3 \cdot y^{-2})^2 \cdot \frac{x^{-1}}{y^3} = x^6 \cdot y^{-4} \cdot x^{-1} \cdot y^{-3} = x^{6-1} \cdot y^{-4-3} = x^5 \cdot y^{-7} = \frac{x^5}{y^7}$. \hfill \textit{[3 pont]}
+    Helyettesítés: $x=2, y=-1 \implies \frac{2^5}{(-1)^7} = \frac{32}{-1} = -32$. \hfill \textit{[2 pont]}
+  \end{enumerate}
+  \textbf{Tanári megjegyzés / Tipikus hiba:} Negatív kitevőjű hatványok osztásánál gyakori elírás a előjelekkel való művelet (-1 - (-2) helyett -1 - 2).
+
+  \item \textbf{Hatványok összehasonlítása és műveletek normálalakkal} \hfill \textbf{[10 pont]}
+  \textit{Feladat:} 
+  \begin{enumerate}
+    \item Rendezd növekvő sorrendbe: $A = 2^{40}$, $B = 3^{30}$, $C = 5^{20}$. \hfill \textit{[4 pont]}
+    \item Végezd el a műveletet normálalakban: $\frac{4,8 \cdot 10^7 \cdot 3 \cdot 10^{-3}}{1,6 \cdot 10^2}$. \hfill \textit{[6 pont]}
+  \end{enumerate}
+
+  \textbf{Megoldás:}
+  \begin{enumerate}
+    \item A kitevők közös osztója a 10: $A = (2^4)^{10} = 16^{10}$, $B = (3^3)^{10} = 27^{10}$, $C = (5^2)^{10} = 25^{10}$. \hfill \textit{[3 pont]}
+    Mivel $16 < 25 < 27$, így $A < C < B$ (azaz $2^{40} < 5^{20} < 3^{30}$). \hfill \textit{[1 pont]}
+    \item Számláló: $(4,8 \cdot 3) \cdot 10^{7+(-3)} = 14,4 \cdot 10^4$. \hfill \textit{[2 pont]}
+    Tört egyszerűsítése: $\frac{14,4 \cdot 10^4}{1,6 \cdot 10^2} = \frac{14,4}{1,6} \cdot 10^{4-2} = 9 \cdot 10^2$. \hfill \textit{[3 pont]}
+    Normálalak ellenőrzése: $9 \cdot 10^2$ megfelel a feltételeknek ($1 \le 9 < 10$). \hfill \textit{[1 pont]}
+  \end{enumerate}
+
+  \item \textbf{Algebrai kifejezések és törtek egyszerűsítése} \hfill \textbf{[8 pont]}
+  \textit{Feladat:} $\frac{a^3 b^{-2} \cdot (a^{-1} b^3)^2}{(a^2 b)^{-1}}$, $a \neq 0, b \neq 0$.
+  
+  \textbf{Megoldás:}
+  Zárójel felbontása a számlálóban: $(a^{-1} b^3)^2 = a^{-2} b^6$. \hfill \textit{[2 pont]}
+  Számláló összevonása: $a^3 b^{-2} \cdot a^{-2} b^6 = a^{3-2} b^{-2+6} = a^1 b^4 = ab^4$. \hfill \textit{[3 pont]}
+  Nevező felbontása: $(a^2 b)^{-1} = a^{-2} b^{-1}$. \hfill \textit{[1 pont]}
+  Osztás elvégzése: $\frac{ab^4}{a^{-2} b^{-1}} = a^{1-(-2)} b^{4-(-1)} = a^3 b^5$. \hfill \textit{[2 pont]}
+
+  \item \textbf{Egyenletek megoldása hatványos alakban} \hfill \textbf{[10 pont]}
+  \textit{Feladat:} 
+  \begin{enumerate}
+    \item $3^{x+1} + 3^x = 108$ \hfill \textit{[5 pont]}
+    \item $2^{2x} - 5 \cdot 2^x + 4 = 0$ \hfill \textit{[5 pont]}
+  \end{enumerate}
+
+  \textbf{Megoldás:}
+  \begin{enumerate}
+    \item Kiemelés: $3^x(3^1 + 1) = 108 \implies 3^x \cdot 4 = 108$. \hfill \textit{[2 pont]}
+    $3^x = 27$. \hfill \textit{[2 pont]}
+    $x = 3$. \hfill \textit{[1 pont]}
+    \item Új ismeretlen bevezetése: $z = 2^x$ ($z > 0$). \hfill \textit{[1 pont]}
+    Másodfokú egyenlet: $z^2 - 5z + 4 = 0$. \hfill \textit{[1 pont]}
+    Gyökök: $z_1 = 1, z_2 = 4$. \hfill \textit{[1 pont]}
+    Visszahelyettesítés: $2^x = 1 \implies x_1 = 0$; $2^x = 4 \implies x_2 = 2$. \hfill \textit{[2 pont]}
+  \end{enumerate}
+
+  \item \textbf{Gondolkodtató / Alkalmazási feladat} \hfill \textbf{[8 pont]}
+  \textit{Feladat:} Kezdetben $2^{10}$ baktérium, óránként duplázódik.
+  \begin{enumerate}
+    \item 5 óra múlva mennyi? \hfill \textit{[3 pont]}
+    \item Hány óra múlva éri el a $2^{25}$-öt? \hfill \textit{[5 pont]}
+  \end{enumerate}
+
+  \textbf{Megoldás:}
+  \begin{enumerate}
+    \item $5$ óra alatt 5-ször duplázódik: $2^{10} \cdot 2^5 = 2^{15}$. \hfill \textit{[3 pont]}
+    \item Egyenlet: $2^{10} \cdot 2^t = 2^{25} \implies 2^{10+t} = 2^{25}$. \hfill \textit{[3 pont]}
+    $10 + t = 25 \implies t = 15$. \hfill \textit{[1 pont]}
+    Válasz: 15 óra elteltével. \hfill \textit{[1 pont]}
+  \end{enumerate}
+\end{enumerate}
+
+\vspace{1cm}
+\hrule
+\vspace{1cm}
+
+\section*{„B” CSOPORT - MEGOLDÁSOK ÉS PONTOZÁS}
+
+\begin{enumerate}
+  \item \textbf{Alapműveletek és azonosságok alkalmazása} \hfill \textbf{[8 pont]}
+  \textit{Feladat:} $\frac{3^4 \cdot 3^{-2}}{3^{-1}}$, valamint $(x^{-2} \cdot y^3)^3 \cdot \frac{x^2}{y^{-2}}$ ($x=3, y=-2$).
+  
+  \textbf{Megoldás:}
+  \begin{enumerate}
+    \item $\frac{3^{4+(-2)}}{3^{-1}} = \frac{3^2}{3^{-1}} = 3^{2-(-1)} = 3^3 = 27$. \hfill \textit{[3 pont]}
+    \item $(x^{-2} \cdot y^3)^3 \cdot \frac{x^2}{y^{-2}} = x^{-6} \cdot y^9 \cdot x^2 \cdot y^2 = x^{-6+2} \cdot y^{9+2} = x^{-4} y^{11} = \frac{y^{11}}{x^4}$. \hfill \textit{[3 pont]}
+    Helyettesítés: $x=3, y=-2 \implies \frac{(-2)^{11}}{3^4} = \frac{-2048}{81}$. \hfill \textit{[2 pont]}
+  \end{enumerate}
+
+  \item \textbf{Hatványok összehasonlítása és műveletek normálalakkal} \hfill \textbf{[10 pont]}
+  \textit{Feladat:} 
+  \begin{enumerate}
+    \item Rendezés: $A = 2^{30}$, $B = 3^{20}$, $C = 5^{10}$. \hfill \textit{[4 pont]}
+    \item Normálalak: $\frac{6,4 \cdot 10^8 \cdot 2 \cdot 10^{-4}}{1,6 \cdot 10^3}$. \hfill \textit{[6 pont]}
+  \end{enumerate}
+
+  \textbf{Megoldás:}
+  \begin{enumerate}
+    \item Kitekintő (közös kitevő 10): $A = (2^3)^{10} = 8^{10}$, $B = (3^2)^{10} = 9^{10}$, $C = (5^1)^{10} = 5^{10}$. \hfill \textit{[3 pont]}
+    Sorrend: $5^{10} < 2^{30} < 3^{20}$ ($C < A < B$). \hfill \textit{[1 pont]}
+    \item Számláló: $(6,4 \cdot 2) \cdot 10^{8+(-4)} = 12,8 \cdot 10^4$. \hfill \textit{[2 pont]}
+    Tört: $\frac{12,8 \cdot 10^4}{1,6 \cdot 10^3} = \frac{12,8}{1,6} \cdot 10^{4-3} = 8 \cdot 10^1 = 80$ (vagy $8 \cdot 10^1$). \hfill \textit{[3 pont]}
+    Normálalak: $8 \cdot 10^1$. \hfill \textit{[1 pont]}
+  \end{enumerate}
+
+  \item \textbf{Algebrai kifejezések és törtek egyszerűsítése} \hfill \textbf{[8 pont]}
+  \textit{Feladat:} $\frac{x^{-2} y^3 \cdot (x^2 y^{-1})^2}{(x^3 y)^{-1}}$, $x \neq 0, y \neq 0$.
+
+  \textbf{Megoldás:}
+  Zárójel: $(x^2 y^{-1})^2 = x^4 y^{-2}$. \hfill \textit{[2 pont]}
+  Számláló: $x^{-2} y^3 \cdot x^4 y^{-2} = x^{-2+4} y^{3-2} = x^2 y$. \hfill \textit{[3 pont]}
+  Nevező: $(x^3 y)^{-1} = x^{-3} y^{-1}$. \hfill \textit{[1 pont]}
+  Végeredmény: $\frac{x^2 y}{x^{-3} y^{-1}} = x^{2-(-3)} y^{1-(-1)} = x^5 y^2$. \hfill \textit{[2 pont]}
+
+  \item \textbf{Egyenletek megoldása hatványos alakban} \hfill \textbf{[10 pont]}
+  \textit{Feladat:} 
+  \begin{enumerate}
+    \item $2^{x+2} + 2^x = 320$ \hfill \textit{[5 pont]}
+    \item $3^{2x} - 10 \cdot 3^x + 9 = 0$ \hfill \textit{[5 pont]}
+  \end{enumerate}
+
+  \textbf{Megoldás:}
+  \begin{enumerate}
+    \item Kiemelés: $2^x(2^2 + 1) = 320 \implies 2^x \cdot 5 = 320$. \hfill \textit{[2 pont]}
+    $2^x = 64$. \hfill \textit{[2 pont]}
+    $x = 6$. \hfill \textit{[1 pont]}
+    \item Új ismeretlen: $z = 3^x$ ($z > 0$). \hfill \textit{[1 pont]}
+    Másodfokú: $z^2 - 10z + 9 = 0$. \hfill \textit{[1 pont]}
+    Gyökök: $z_1 = 1, z_2 = 9$. \hfill \textit{[1 pont]}
+    Visszahelyettesítés: $3^x = 1 \implies x_1 = 0$; $3^x = 9 \implies x_2 = 2$. \hfill \textit{[2 pont]}
+  \end{enumerate}
+
+  \item \textbf{Gondolkodtató / Alkalmazási feladat} \hfill \textbf{[8 pont]}
+  \textit{Feladat:} Kezdetben $3^8$ baktérium, óránként megháromszorozódik.
+  \begin{enumerate}
+    \item 4 óra múlva mennyi? \hfill \textit{[3 pont]}
+    \item Hány óra múlva éri el a $3^{20}$-at? \hfill \textit{[5 pont]}
+  \end{enumerate}
+
+  \textbf{Megoldás:}
+  \begin{enumerate}
+    \item $4$ óra alatt: $3^8 \cdot 3^4 = 3^{12}$. \hfill \textit{[3 pont]}
+    \item Egyenlet: $3^8 \cdot 3^t = 3^{20} \implies 3^{8+t} = 3^{20}$. \hfill \textit{[3 pont]}
+    $8 + t = 20 \implies t = 12$. \hfill \textit{[1 pont]}
+    Válasz: 12 óra elteltével. \hfill \textit{[1 pont]}
+  \end{enumerate}
+\end{enumerate}
+
+\end{document}
