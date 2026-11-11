@@ -35,6 +35,78 @@ import {
   Sparkles
 } from 'lucide-react'
 
+function extractProjectSubpath(filePath) {
+  if (!filePath || typeof filePath !== 'string') return ''
+  const normalized = filePath.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+  if (!normalized) return ''
+  const match = normalized.match(/^(?:.*\/)?projektek\/(.+)$/)
+  return match ? match[1] : normalized
+}
+
+function flattenProjectTree(tree) {
+  const files = []
+  const visit = (node) => {
+    if (!node) return
+    if (Array.isArray(node)) {
+      node.forEach((f) => {
+        if (f?.path) files.push(f)
+      })
+      return
+    }
+    if (Array.isArray(node.files)) {
+      node.files.forEach((f) => {
+        if (f?.path) files.push(f)
+      })
+    }
+    if (Array.isArray(node.folders)) {
+      node.folders.forEach(visit)
+    }
+  }
+  if (tree && typeof tree === 'object') {
+    Object.values(tree).forEach(visit)
+  }
+  return files
+}
+
+function findMatchingTreeFile(tree, targetPath) {
+  if (!tree || !targetPath) return null
+  const targetNorm = targetPath.trim().replace(/\\/g, '/')
+  const targetSub = extractProjectSubpath(targetPath)
+  const files = flattenProjectTree(tree)
+
+  for (const f of files) {
+    const fileNorm = f.path ? f.path.replace(/\\/g, '/') : ''
+    const relNorm = f.relativePath ? f.relativePath.replace(/\\/g, '/') : ''
+    if (fileNorm === targetNorm || (relNorm && relNorm === targetNorm)) {
+      return f
+    }
+  }
+  if (targetSub) {
+    for (const f of files) {
+      const fileNorm = f.path ? f.path.replace(/\\/g, '/') : ''
+      const relNorm = f.relativePath ? f.relativePath.replace(/\\/g, '/') : ''
+      if (
+        (relNorm && relNorm === targetSub) ||
+        fileNorm === targetSub ||
+        fileNorm.endsWith('/' + targetSub)
+      ) {
+        return f
+      }
+    }
+  }
+  return null
+}
+
+function isSameProjectFilePath(a, b) {
+  if (!a || !b) return false
+  const normA = a.trim().replace(/\\/g, '/')
+  const normB = b.trim().replace(/\\/g, '/')
+  if (normA === normB) return true
+  const subA = extractProjectSubpath(normA)
+  const subB = extractProjectSubpath(normB)
+  return Boolean(subA && subB && subA === subB)
+}
+
 const MOBILE_COLUMNS = [
   { id: 'files', label: 'Fájlok', icon: Folder },
   { id: 'ai', label: 'AI Asszisztens', icon: Sparkles },
@@ -64,6 +136,7 @@ export default function App() {
   const [apiOk, setApiOk] = useState(null)
   const [hasCustomKey, setHasCustomKey] = useState(() => apiKeyManager.hasCustomKey())
   const [settingsModalOpen, setSettingsModalOpen] = useState(false)
+  const [settingsInitialTab, setSettingsInitialTab] = useState('workspace')
   const [activeModel, setActiveModel] = useState('gemini-3.5-flash')
   const [notifications, setNotifications] = useState([])
   const [projectTree, setProjectTree] = useState({})
@@ -238,7 +311,7 @@ export default function App() {
         if (cats.length > 0) {
           setCurrentSubject(prev => (cats.includes(prev) ? prev : cats[0]))
         }
-        return
+        return { tree, source: 'local' }
       } catch (err) {
         console.warn('Hiba a helyi mappa beolvasásakor:', err)
       }
@@ -260,8 +333,10 @@ export default function App() {
       if (cats.length > 0) {
         setCurrentSubject(prev => (cats.includes(prev) ? prev : cats[0]))
       }
+      return { tree, workspacePath: r.data.workspacePath || null, source: 'server' }
     } catch (err) {
       console.warn('Projektek betöltési hiba:', err)
+      return null
     }
   }, [])
 
@@ -283,6 +358,8 @@ export default function App() {
       loadPreambles()
 
       let activeHandle = null
+      let loadedProjects = null
+      let needsLocalPermission = false
 
       // 1. Helyi munkakönyvtár ellenőrzése (Saját gép mappa)
       try {
@@ -291,11 +368,12 @@ export default function App() {
           const handle = saved.handle || saved
           if (saved.needsPermission) {
             setPendingPermissionHandle(handle)
+            needsLocalPermission = true
           } else {
             setLocalDirHandle(handle)
             localDirHandleRef.current = handle
             activeHandle = handle
-            await loadProjects(handle)
+            loadedProjects = await loadProjects(handle)
           }
         }
       } catch (e) {
@@ -303,7 +381,7 @@ export default function App() {
       }
 
       if (!activeHandle) {
-        await loadProjects(null)
+        loadedProjects = await loadProjects(null)
       }
 
       // 2. Legutóbb megnyitott / lefordított dokumentum és PDF visszaállítása
@@ -344,25 +422,62 @@ export default function App() {
             }
           }
 
-          // Szerver mappából olvasás
-          if (loadedContent === null) {
-            try {
-              const fileRes = await axios.post('/api/files/load', { filePath: lastFile.path })
-              if (fileRes.data?.content !== undefined) {
-                loadedContent = fileRes.data.content
-                if (fileRes.data.tags) {
-                  lastFile.tags = fileRes.data.tags
+          // Szerver mappából olvasás (elkerülve a garantált 404 kéréseket elavult útvonalakra)
+          if (loadedContent === null && !activeHandle) {
+            let canFetchFromServer = !needsLocalPermission
+
+            if (loadedProjects?.source === 'server' && loadedProjects.tree) {
+              const matched = findMatchingTreeFile(loadedProjects.tree, lastFile.path)
+              if (matched) {
+                lastFile = {
+                  ...lastFile,
+                  name: matched.name || lastFile.name,
+                  path: matched.path,
+                  subject: matched.subject || lastFile.subject,
+                  tags: matched.tags || lastFile.tags
+                }
+                canFetchFromServer = true
+              } else {
+                canFetchFromServer = false
+                if (!needsLocalPermission) {
+                  rememberActiveFile(null)
+                  lastFile = null
                 }
               }
-            } catch (err) {
-              console.warn('[Restore] Szerver fájl olvasási hiba:', err)
+            }
+
+            if (canFetchFromServer && lastFile?.path) {
+              try {
+                const fileRes = await axios.post('/api/files/load', { filePath: lastFile.path })
+                if (fileRes.data?.content !== undefined) {
+                  loadedContent = fileRes.data.content
+                  if (fileRes.data.path) {
+                    lastFile.path = fileRes.data.path
+                  }
+                  if (fileRes.data.subject) {
+                    lastFile.subject = fileRes.data.subject
+                  }
+                  if (fileRes.data.tags) {
+                    lastFile.tags = fileRes.data.tags
+                  }
+                }
+              } catch (err) {
+                console.warn('[Restore] Szerver fájl olvasási hiba:', err)
+                const status = err?.response?.status
+                if ((status === 404 || status === 403) && !needsLocalPermission) {
+                  rememberActiveFile(null)
+                }
+              }
             }
           }
 
-          if (loadedContent !== null) {
+          if (loadedContent !== null && lastFile) {
             applyEditorCode(loadedContent, false)
             savedCodeRef.current = loadedContent
             setCurrentFile(lastFile)
+            if (!activeHandle) {
+              rememberActiveFile(lastFile)
+            }
             if (lastFile.subject) {
               setCurrentSubject(lastFile.subject)
             }
@@ -370,7 +485,9 @@ export default function App() {
 
             // Ha van lefordított PDF a szerveren, ami ehhez a fájlhoz tartozik
             if (activeCompile?.pdf) {
-              const isMatch = !activeCompile.meta?.filePath || activeCompile.meta.filePath === lastFile.path
+              const isMatch =
+                !activeCompile.meta?.filePath ||
+                isSameProjectFilePath(activeCompile.meta.filePath, lastFile.path)
               if (isMatch) {
                 setPdfData(activeCompile.pdf)
                 setCompileStatus('ok')
@@ -389,14 +506,22 @@ export default function App() {
           setCompileStatus('ok')
           setCompileLog('✓ Előző sikeres fordítás betöltve.')
           if (activeCompile.meta) {
+            const matchedMetaFile =
+              loadedProjects?.source === 'server' && activeCompile.meta.filePath
+                ? findMatchingTreeFile(loadedProjects.tree, activeCompile.meta.filePath)
+                : null
+            const resolvedMetaPath =
+              loadedProjects?.source === 'server'
+                ? (matchedMetaFile?.path || null)
+                : (activeCompile.meta.filePath || null)
             const restoredFile = {
-              name: activeCompile.meta.fileName || 'Dokumentum.tex',
-              path: activeCompile.meta.filePath || null,
-              subject: activeCompile.meta.subject || 'Matematika'
+              name: matchedMetaFile?.name || activeCompile.meta.fileName || 'Dokumentum.tex',
+              path: resolvedMetaPath,
+              subject: matchedMetaFile?.subject || activeCompile.meta.subject || 'Matematika'
             }
             setCurrentFile(restoredFile)
-            if (activeCompile.meta.subject) {
-              setCurrentSubject(activeCompile.meta.subject)
+            if (restoredFile.subject) {
+              setCurrentSubject(restoredFile.subject)
             }
           }
           setIsModified(false)
@@ -407,7 +532,7 @@ export default function App() {
     }
 
     initApp()
-  }, [checkHealth, loadProjects, loadPreambles, applyEditorCode])
+  }, [checkHealth, loadProjects, loadPreambles, applyEditorCode, rememberActiveFile])
 
   const addNotif = useCallback((message, type = 'info', action = null) => {
     const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
@@ -415,6 +540,18 @@ export default function App() {
     const timeoutDuration = action ? 7000 : 4000
     setTimeout(() => setNotifications(n => n.filter(x => x.id !== id)), timeoutDuration)
   }, [])
+
+  const openSettingsModal = useCallback((tab = 'workspace') => {
+    setSettingsInitialTab(tab === 'apikey' ? 'apikey' : 'workspace')
+    setSettingsModalOpen(true)
+  }, [])
+
+  const requireGeminiKey = useCallback(() => {
+    if (apiKeyManager.hasCustomKey()) return true
+    addNotif('Az AI funkció használatához először add meg a saját Gemini API kulcsodat!', 'warning')
+    openSettingsModal('apikey')
+    return false
+  }, [addNotif, openSettingsModal])
 
   // Helyi mappa engedélyezése 1 kattintással (újratöltés után)
   const handleGrantPermission = useCallback(async () => {
@@ -458,7 +595,7 @@ export default function App() {
   // Helyi mappa tallózása 1 kattintással a Sidebarból
   const handlePickLocalFolder = useCallback(async () => {
     if (!localWorkspace.isSupported()) {
-      setSettingsModalOpen(true)
+      openSettingsModal('workspace')
       return
     }
     try {
@@ -1362,6 +1499,11 @@ export default function App() {
   // Kijelölt kódrészlet átdolgozása AI paranccsal
   const handleTransformSelection = useCallback(
     async ({ selectedText, instruction, range, editor, startLine, endLine, isFigure }) => {
+      if (!requireGeminiKey()) {
+        const missingKeyErr = new Error('Hiányzó Gemini API kulcs')
+        missingKeyErr.code = 'MISSING_API_KEY'
+        throw missingKeyErr
+      }
       try {
         addNotif(
           isFigure
@@ -1413,12 +1555,17 @@ export default function App() {
         throw err
       }
     },
-    [code, activeModel, compile, addNotif, applyEditorCode]
+    [code, activeModel, compile, addNotif, applyEditorCode, requireGeminiKey]
   )
 
   // Új AI tartalom beszúrása a PDF kijelölés vagy kódsor alapján
   const handleInsertSelection = useCallback(
     async ({ contextSnippet, instruction, position = 'after', startLine, endLine, targetLine }) => {
+      if (!requireGeminiKey()) {
+        const missingKeyErr = new Error('Hiányzó Gemini API kulcs')
+        missingKeyErr.code = 'MISSING_API_KEY'
+        throw missingKeyErr
+      }
       try {
         addNotif('Gemini generálja az új tartalmat a megadott helyre...', 'info')
         const res = await axios.post('/api/ai/insert', {
@@ -1461,12 +1608,13 @@ export default function App() {
         throw err
       }
     },
-    [code, activeModel, currentSubject, compile, addNotif, applyEditorCode, isMobile, handleMobileTabSelect]
+    [code, activeModel, currentSubject, compile, addNotif, applyEditorCode, isMobile, handleMobileTabSelect, requireGeminiKey]
   )
 
   // SyncTeX Forward Search (Kódsor -> PDF koordináta)
   const handleForwardSync = useCallback(
     async (line, column) => {
+      if (!pdfData || !line) return
       try {
         const r = await axios.post('/api/compile/synctex-forward', { line, column })
         if (r.data?.target) {
@@ -1480,12 +1628,13 @@ export default function App() {
         console.warn('SyncTeX forward hiba:', err)
       }
     },
-    [addNotif, isMobile, handleMobileTabSelect]
+    [pdfData, addNotif, isMobile, handleMobileTabSelect]
   )
 
   // SyncTeX Inverse Search (PDF Dupla kattintás -> Kódsor)
   const handleInverseSync = useCallback(
     async ({ page, x, y }) => {
+      if (!pdfData) return
       try {
         const r = await axios.post('/api/compile/synctex-inverse', { page, x, y })
         if (r.data?.target?.line) {
@@ -1498,18 +1647,21 @@ export default function App() {
           if (isMobile) {
             handleMobileTabSelect('editor')
           }
+        } else if (r.data?.found === false) {
+          addNotif(r.data.error || 'Nem található kódsor ehhez a pozícióhoz.', 'warning')
         }
       } catch (err) {
         console.warn('SyncTeX inverse hiba:', err)
         addNotif('Nem található kódsor ehhez a pozícióhoz.', 'warning')
       }
     },
-    [addNotif, isMobile, handleMobileTabSelect]
+    [pdfData, addNotif, isMobile, handleMobileTabSelect]
   )
 
   // Fordítási hiba automatikus javítása Gemini AI-val
   const handleFixErrorWithAi = useCallback(async () => {
     if (!compileLog) return
+    if (!requireGeminiKey()) return
     addNotif('Gemini 3.8 Flash elemzi a fordítási hibát és javítja a forráskódot...', 'info')
     try {
       const res = await axios.post('/api/ai/fix-error', {
@@ -1535,7 +1687,7 @@ export default function App() {
       addNotif(err.response?.data?.error || err.message || 'Nem sikerült javítani a hibát.', 'error')
       throw err
     }
-  }, [code, compileLog, activeModel, compile, addNotif, applyEditorCode])
+  }, [code, compileLog, activeModel, compile, addNotif, applyEditorCode, requireGeminiKey])
 
   // Dokumentum szerkezetének és számozásainak átnézése és javítása a TOC alapján
   const handleFixStructure = useCallback(async () => {
@@ -1543,6 +1695,7 @@ export default function App() {
       addNotif('A dokumentum túl rövid a szerkezet átnézéséhez.', 'warning')
       return
     }
+    if (!requireGeminiKey()) return
 
     setIsFixingStructure(true)
     const prevCode = code
@@ -1586,7 +1739,7 @@ export default function App() {
     } finally {
       setIsFixingStructure(false)
     }
-  }, [code, currentSubject, activeModel, applyEditorCode, compile, addNotif])
+  }, [code, currentSubject, activeModel, applyEditorCode, compile, addNotif, requireGeminiKey])
 
   const handleRevertStructureFix = useCallback(() => {
     if (structureFixResult?.previousCode) {
@@ -1837,7 +1990,7 @@ export default function App() {
         autoSaveStatus={autoSaveStatus}
         onSave={() => handleSave()}
         onOpenPreambles={() => setPreambleModalOpen(true)}
-        onOpenSettings={() => setSettingsModalOpen(true)}
+        onOpenSettings={() => openSettingsModal('workspace')}
         hasCustomKey={hasCustomKey}
       />
 
@@ -1881,7 +2034,7 @@ export default function App() {
           onGrantPermission={handleGrantPermission}
           onPickLocalFolder={handlePickLocalFolder}
           onDisconnectLocalFolder={handleDisconnectLocalFolder}
-          onOpenSettings={() => setSettingsModalOpen(true)}
+          onOpenSettings={() => openSettingsModal('workspace')}
           isCollapsed={isMobile ? false : sidebarCollapsed}
           onToggleCollapse={toggleSidebarCollapse}
           onLoad={handleLoad}
@@ -1918,6 +2071,7 @@ export default function App() {
           addNotif={addNotif}
           preambles={preambles}
           onOpenPreambles={() => setPreambleModalOpen(true)}
+          onOpenApiKeySettings={() => openSettingsModal('apikey')}
         />
 
         {/* Szerkesztő és PDF előnézet (átméretezhető split panel) */}
@@ -1944,6 +2098,7 @@ export default function App() {
               onClearLog={() => setCompileLog('')}
               onTransformSelection={handleTransformSelection}
               onForwardSync={handleForwardSync}
+              hasPdf={Boolean(pdfData)}
               activeLineToReveal={activeLineToReveal}
               onFixError={handleFixErrorWithAi}
               onImportFiles={handleProcessImportFiles}
@@ -2105,6 +2260,7 @@ export default function App() {
       <SettingsModal
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
+        initialTab={settingsInitialTab}
         onWorkspaceChanged={async (newHandle) => {
           setLocalDirHandle(newHandle)
           localDirHandleRef.current = newHandle

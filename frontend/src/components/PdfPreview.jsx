@@ -995,7 +995,9 @@ export default function PdfPreview({
       setSelectedBlock(null)
       setInlineInstruction('')
     } catch (err) {
-      console.error('PDF kijelölés átalakítási hiba:', err)
+      if (err?.code !== 'MISSING_API_KEY') {
+        console.error('PDF kijelölés átalakítási hiba:', err)
+      }
     } finally {
       setIsTransforming(false)
     }
@@ -1020,7 +1022,9 @@ export default function PdfPreview({
       setSelectedBlock(null)
       setInlineInstruction('')
     } catch (err) {
-      console.error('PDF tartalom beszúrási hiba:', err)
+      if (err?.code !== 'MISSING_API_KEY') {
+        console.error('PDF tartalom beszúrási hiba:', err)
+      }
     } finally {
       setIsTransforming(false)
     }

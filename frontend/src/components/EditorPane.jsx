@@ -1,5 +1,17 @@
 import { useState, useMemo, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
-import Editor from '@monaco-editor/react'
+import Editor, { loader } from '@monaco-editor/react'
+import * as monaco from 'monaco-editor/esm/vs/editor/edcore.main'
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+
+if (typeof window !== 'undefined' && !window.MonacoEnvironment) {
+  window.MonacoEnvironment = {
+    getWorker() {
+      return new EditorWorker()
+    }
+  }
+}
+
+loader.config({ monaco })
 import {
   FileCode,
   Terminal,
@@ -171,6 +183,7 @@ const EditorPane = forwardRef(function EditorPane({
   onClearLog,
   onTransformSelection,
   onForwardSync,
+  hasPdf = false,
   activeLineToReveal,
   onFixError,
   onImportFiles,
@@ -331,19 +344,27 @@ const EditorPane = forwardRef(function EditorPane({
     }, 1800)
   }, [])
 
+  const hasPdfRef = useRef(hasPdf)
+  const onForwardSyncRef = useRef(onForwardSync)
+  useEffect(() => {
+    hasPdfRef.current = hasPdf
+    onForwardSyncRef.current = onForwardSync
+  }, [hasPdf, onForwardSync])
+
   // Gyorsugrás sorszámra
   const handleJumpToLine = useCallback(
-    (line) => {
+    (line, options) => {
       if (!editorRef.current) return
       editorRef.current.revealLineInCenter(line)
       editorRef.current.setPosition({ lineNumber: line, column: 1 })
       editorRef.current.focus()
       flashLine(line)
-      if (onForwardSync) {
+      const shouldSync = options?.sync !== false
+      if (shouldSync && hasPdf && onForwardSync) {
         onForwardSync(line, 1)
       }
     },
-    [onForwardSync, flashLine]
+    [onForwardSync, flashLine, hasPdf]
   )
 
   // Ref metódusok az App felé (visszavonható kódfrissítés, undo, redo, ugrás, kijelölés lekérés)
@@ -586,8 +607,8 @@ const EditorPane = forwardRef(function EditorPane({
     editor.onMouseDown((e) => {
       if ((e.event.ctrlKey || e.event.metaKey) && e.target?.position) {
         const pos = e.target.position
-        if (onForwardSync) {
-          onForwardSync(pos.lineNumber, pos.column)
+        if (hasPdfRef.current && onForwardSyncRef.current) {
+          onForwardSyncRef.current(pos.lineNumber, pos.column)
         }
       }
     })
@@ -608,8 +629,8 @@ const EditorPane = forwardRef(function EditorPane({
     // Alt+S gyorsbillentyű a kurzor pozíciójának SyncTeX kereséséhez
     editor.addCommand(monaco.KeyMod.Alt | monaco.KeyCode.KeyS, () => {
       const pos = editor.getPosition()
-      if (pos && onForwardSync) {
-        onForwardSync(pos.lineNumber, pos.column)
+      if (pos && hasPdfRef.current && onForwardSyncRef.current) {
+        onForwardSyncRef.current(pos.lineNumber, pos.column)
       }
     })
 
@@ -675,7 +696,9 @@ const EditorPane = forwardRef(function EditorPane({
       setIsAiPromptOpen(false)
       setInlineInstruction('')
     } catch (err) {
-      console.error(err)
+      if (err?.code !== 'MISSING_API_KEY') {
+        console.error(err)
+      }
     } finally {
       setIsTransforming(false)
     }
@@ -964,11 +987,17 @@ const EditorPane = forwardRef(function EditorPane({
               <button
                 type="button"
                 className="editor-header-btn editor-synctex-btn"
+                disabled={!hasPdf}
                 onClick={() => {
+                  if (!hasPdf) return
                   const pos = editorRef.current?.getPosition()
                   if (pos && onForwardSync) onForwardSync(pos.lineNumber, pos.column)
                 }}
-                title="Ugrás a PDF-re ennél a sornál (SyncTeX Forward) [Ctrl+Kattintás vagy Alt+S]"
+                title={
+                  hasPdf
+                    ? 'Ugrás a PDF-re ennél a sornál (SyncTeX Forward) [Ctrl+Kattintás vagy Alt+S]'
+                    : 'Előbb fordítsd le a dokumentumot a PDF-re ugráshoz'
+                }
               >
                 <Navigation size={13} />
                 <span className="editor-btn-label">Ugrás a PDF-re</span>
@@ -1196,7 +1225,7 @@ const EditorPane = forwardRef(function EditorPane({
                         key={err.id || idx}
                         className={`console-error-card ${err.line ? 'clickable' : ''}`}
                         onClick={() => {
-                          if (err.line) handleJumpToLine(err.line)
+                          if (err.line) handleJumpToLine(err.line, { sync: false })
                         }}
                         title={err.line ? `Kattints a ${err.line}. sorra ugráshoz a szerkesztőben` : ''}
                       >

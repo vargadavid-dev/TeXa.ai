@@ -37,21 +37,43 @@ function resolvePathInProjects(filePath, projectsDir = getProjectsDir()) {
   const trimmed = filePath.trim();
   if (!trimmed) return null;
 
+  const isWinAbs = /^[A-Za-z]:[/\\]/.test(trimmed);
+  const isAnyAbs = path.isAbsolute(trimmed) || isWinAbs;
   let resolved = path.isAbsolute(trimmed)
     ? path.resolve(trimmed)
-    : path.resolve(root, trimmed);
+    : (isWinAbs ? null : path.resolve(root, trimmed));
 
-  // Ha az abszolút útvonal a szülő munkakörnyezetre (process.cwd()) hivatkozik projektek nélkül:
-  if (!resolved.startsWith(root) && !resolved.startsWith(root + path.sep)) {
-    const workspaceRoot = path.resolve(__dirname, '..', '..');
-    const relFromWs = path.relative(workspaceRoot, resolved);
-    if (!relFromWs.startsWith('..')) {
-      const candidate = path.resolve(root, relFromWs);
-      if (fs.existsSync(candidate)) {
-        resolved = candidate;
+  // Ha az útvonal kívül esik az aktuális projektek mappán (pl. másik OS/konténer vagy szülő munkakörnyezet):
+  if (!resolved || (resolved !== root && !resolved.startsWith(root + path.sep))) {
+    if (resolved) {
+      const workspaceRoot = path.resolve(__dirname, '..', '..');
+      const relFromWs = path.relative(workspaceRoot, resolved);
+      if (relFromWs && !relFromWs.startsWith('..') && !path.isAbsolute(relFromWs)) {
+        const candidate = path.resolve(root, relFromWs);
+        if (fs.existsSync(candidate)) {
+          resolved = candidate;
+        }
+      }
+    }
+
+    // Különösen macOS/Windows <-> Linux Docker közötti mentett abszolút útvonalakhoz:
+    // kinyerjük az utolsó projektek gyökérmappa utáni relatív útvonalat (kis/nagybetű érzékenyen a /Documents/Projektek/ ütközések elkerülésére).
+    if ((!resolved || (resolved !== root && !resolved.startsWith(root + path.sep))) && isAnyAbs) {
+      const normalized = trimmed.replace(/\\/g, '/');
+      const rootName = path.basename(root).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const markerRegex = new RegExp(`^.*/(?:${rootName}|projektek)/(.+)$`);
+      const match = normalized.match(markerRegex);
+      if (match && match[1]) {
+        const candidate = path.resolve(root, match[1]);
+        const candRel = path.relative(root, candidate);
+        if (candRel && !candRel.startsWith('..') && !path.isAbsolute(candRel)) {
+          resolved = candidate;
+        }
       }
     }
   }
+
+  if (!resolved) return null;
 
   const rel = path.relative(root, resolved);
   if (rel.startsWith('..') || path.isAbsolute(rel)) {

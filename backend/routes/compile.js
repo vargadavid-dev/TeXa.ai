@@ -289,7 +289,12 @@ router.post('/synctex-forward', async (req, res) => {
   const pdfFile = path.join(ACTIVE_DIR, 'document.pdf');
 
   if (!(await fs.pathExists(pdfFile)) || !(await fs.pathExists(texFile))) {
-    return res.status(404).json({ error: 'Nincs elérhető lefordított dokumentum vagy synctex adat.' });
+    return res.json({
+      success: false,
+      found: false,
+      reason: 'no_pdf',
+      error: 'Nincs elérhető lefordított dokumentum vagy synctex adat.'
+    });
   }
 
   const col = column || 1;
@@ -301,9 +306,9 @@ router.post('/synctex-forward', async (req, res) => {
     }
     const result = parseSyncTeXView(stdout);
     if (!result) {
-      return res.status(404).json({ error: 'Nem található PDF pozíció ehhez a sorhoz' });
+      return res.json({ success: false, found: false, error: 'Nem található PDF pozíció ehhez a sorhoz' });
     }
-    res.json({ success: true, target: result });
+    res.json({ success: true, found: true, target: result });
   });
 });
 
@@ -316,7 +321,12 @@ router.post('/synctex-inverse', async (req, res) => {
 
   const pdfFile = path.join(ACTIVE_DIR, 'document.pdf');
   if (!(await fs.pathExists(pdfFile))) {
-    return res.status(404).json({ error: 'Nincs elérhető lefordított PDF.' });
+    return res.json({
+      success: false,
+      found: false,
+      reason: 'no_pdf',
+      error: 'Nincs elérhető lefordított PDF.'
+    });
   }
 
   const roundX = Math.round(Number(x));
@@ -329,9 +339,9 @@ router.post('/synctex-inverse', async (req, res) => {
     }
     const result = parseSyncTeXEdit(stdout);
     if (!result) {
-      return res.status(404).json({ error: 'Nem található kódsor a megadott pozícióhoz' });
+      return res.json({ success: false, found: false, error: 'Nem található kódsor a megadott pozícióhoz' });
     }
-    res.json({ success: true, target: result });
+    res.json({ success: true, found: true, target: result });
   });
 });
 

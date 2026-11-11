@@ -8,13 +8,25 @@ const DEFAULT_PROJECTS_DIR = path.resolve(__dirname, '..', '..', 'projektek');
 
 fs.ensureDirSync(DATA_DIR);
 
+function isForeignHostPath(targetPath) {
+  if (!targetPath || typeof targetPath !== 'string') return false;
+  if (process.platform !== 'darwin' && targetPath.startsWith('/Users/')) return true;
+  if (process.platform !== 'win32' && /^[A-Za-z]:[/\\]/.test(targetPath)) return true;
+  if (process.platform === 'linux' && !targetPath.startsWith('/')) return true;
+  return false;
+}
+
 function loadConfig() {
   try {
     if (fs.existsSync(CONFIG_FILE)) {
       const data = fs.readJsonSync(CONFIG_FILE);
       if (data && typeof data === 'object') {
+        const rawDir = typeof data.projectsRootDirectory === 'string' ? data.projectsRootDirectory.trim() : '';
+        const resolvedDir = rawDir
+          ? (isForeignHostPath(rawDir) ? rawDir : path.resolve(rawDir))
+          : DEFAULT_PROJECTS_DIR;
         return {
-          projectsRootDirectory: data.projectsRootDirectory ? path.resolve(data.projectsRootDirectory) : DEFAULT_PROJECTS_DIR,
+          projectsRootDirectory: resolvedDir,
           configuredAt: data.configuredAt || null
         };
       }
@@ -43,7 +55,15 @@ function saveConfig(cfg) {
 
 function getProjectsDir() {
   const cfg = loadConfig();
-  const dir = cfg.projectsRootDirectory || DEFAULT_PROJECTS_DIR;
+  let dir = cfg.projectsRootDirectory || DEFAULT_PROJECTS_DIR;
+
+  if (dir !== DEFAULT_PROJECTS_DIR && !fs.existsSync(dir)) {
+    if (isForeignHostPath(dir) || fs.existsSync(DEFAULT_PROJECTS_DIR)) {
+      console.warn(`[Config] A mentett projektek mappa nem létezik (${dir}), visszaállás az alapértelmezettre: ${DEFAULT_PROJECTS_DIR}`);
+      dir = DEFAULT_PROJECTS_DIR;
+    }
+  }
+
   fs.ensureDirSync(dir);
   return dir;
 }

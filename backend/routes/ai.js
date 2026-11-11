@@ -200,30 +200,134 @@ router.get('/models', (req, res) => {
   });
 });
 
+function classifyGeminiKeyError(err) {
+  const rawMsg = String(err?.message || '');
+  const lower = rawMsg.toLowerCase();
+
+  if (/api_key_invalid|api key not valid/i.test(rawMsg)) {
+    return {
+      retryable: false,
+      message: 'A megadott Gemini API kulcs érvénytelen! Ellenőrizd, hogy nem maradt-e le karakter a másoláskor.'
+    };
+  }
+  if (/api_key_expired|expired/i.test(rawMsg)) {
+    return {
+      retryable: false,
+      message: 'A megadott Gemini API kulcs lejárt. Hozz létre új kulcsot a Google AI Studio-ban!'
+    };
+  }
+  if (/leaked/i.test(rawMsg)) {
+    return {
+      retryable: false,
+      message: 'A Google ezt az API kulcsot biztonsági okból (kiszivárgott kulcs) letiltotta. Hozz létre új kulcsot!'
+    };
+  }
+  if (/unrestricted/i.test(rawMsg)) {
+    return {
+      retryable: false,
+      message: 'A megadott kulcs korlátozatlan standard kulcs, amelyet a Gemini API elutasít. Korlátozd a Generative Language API-ra vagy generálj új kulcsot a Google AI Studio-ban!'
+    };
+  }
+  if (/api_key_http_referrer_blocked|referer/i.test(rawMsg)) {
+    return {
+      retryable: false,
+      message: 'A kulcs HTTP hivatkozó (referrer) korlátozása miatt a szerverről indított kérés tiltott. Távolítsd el a webhely-korlátozást vagy állíts be API-szintű kulcsot!'
+    };
+  }
+  if (/api_key_service_blocked|service_disabled|has not been used in project|is disabled/i.test(rawMsg)) {
+    return {
+      retryable: false,
+      message: 'A kulcshoz tartozó Google Cloud projektben nincs engedélyezve a Generative Language API.'
+    };
+  }
+  if (/location is not supported|failed_precondition/i.test(rawMsg)) {
+    return {
+      retryable: false,
+      message: 'A Gemini API ebből a szerverrégióból jelenleg nem érhető el (földrajzi korlátozás).'
+    };
+  }
+  if (/quota|resource_exhausted|\b429\b/i.test(rawMsg)) {
+    return {
+      retryable: true,
+      message: 'A megadott API kulcs elérte az átmeneti kvóta- vagy sebességkorlátot!'
+    };
+  }
+  if (/permission_denied|\b403\b|\b401\b/i.test(rawMsg)) {
+    return {
+      retryable: false,
+      message: 'A Gemini API megtagadta a hozzáférést ehhez a kulcshoz. Ellenőrizd a kulcs jogosultságait!'
+    };
+  }
+  if (
+    /\b404\b|not found|not supported|is not found for api version|\b503\b|unavailable|overloaded|időtúllépés/i.test(
+      lower
+    )
+  ) {
+    return {
+      retryable: true,
+      message: rawMsg || 'A tesztmodell átmenetileg nem érhető el.'
+    };
+  }
+  return {
+    retryable: true,
+    message: rawMsg || 'Nem sikerült ellenőrizni az API kulcsot.'
+  };
+}
+
 // POST /api/ai/validate-key - ellenőrzi a kliens által megadott Gemini kulcsot
 router.post('/validate-key', async (req, res) => {
-  try {
-    const customKey = req.headers['x-gemini-api-key'] || req.body?.apiKey;
-    if (!customKey || !customKey.trim()) {
-      return res.status(400).json({ success: false, valid: false, error: 'Kérjük, add meg az API kulcsodat!' });
-    }
-    const genAI = new GoogleGenerativeAI(customKey.trim());
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
-    const result = await Promise.race([
-      model.generateContent('ping'),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Időtúllépés az ellenőrzés során (12s)')), 12000))
-    ]);
-    res.json({
-      success: true,
-      valid: true,
-      message: 'API kulcs érvényes és működőképes!'
-    });
-  } catch (err) {
-    let msg = err.message || 'Érvénytelen API kulcs!';
-    if (msg.includes('API_KEY_INVALID') || msg.includes('400')) msg = 'A megadott API kulcs érvénytelen!';
-    if (msg.includes('429')) msg = 'A megadott API kulcs elérte az átmeneti kvótakorlátot!';
-    res.status(400).json({ success: false, valid: false, error: msg });
+  const rawKey = req.headers['x-gemini-api-key'] || req.body?.apiKey || '';
+  const trimmedKey = String(rawKey).trim().replace(/^Bearer\s+/i, '').trim();
+  if (!trimmedKey) {
+    return res.status(400).json({ success: false, valid: false, error: 'Kérjük, add meg az API kulcsodat!' });
   }
+
+  const genAI = new GoogleGenerativeAI(trimmedKey);
+  const validationModels = [
+    process.env.GEMINI_MODEL,
+    'gemini-3.5-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-3.5-flash',
+    'gemini-3.8-flash'
+  ].filter(Boolean);
+  const uniqueValidationModels = [...new Set(validationModels)];
+
+  let lastClassified = { message: 'Nem sikerült ellenőrizni az API kulcsot.' };
+
+  for (const modelName of uniqueValidationModels) {
+    let timerId = null;
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      await Promise.race([
+        model.generateContent('ping'),
+        new Promise((_, reject) => {
+          timerId = setTimeout(
+            () => reject(new Error(`Időtúllépés az ellenőrzés során (10s) a(z) ${modelName} modellnél`)),
+            10000
+          );
+        })
+      ]);
+      clearTimeout(timerId);
+      return res.json({
+        success: true,
+        valid: true,
+        model: modelName,
+        message: 'API kulcs érvényes és működőképes!'
+      });
+    } catch (err) {
+      if (timerId) clearTimeout(timerId);
+      lastClassified = classifyGeminiKeyError(err);
+      if (!lastClassified.retryable) {
+        break;
+      }
+    }
+  }
+
+  return res.json({
+    success: false,
+    valid: false,
+    error: lastClassified.message
+  });
 });
 
 // POST /api/ai/generate
@@ -333,6 +437,9 @@ A tesztkérdések módja legyen minél változatosabb, vegyesen alkalmazva az al
 router.post('/rewrite', async (req, res) => {
   try {
     const { content, instruction, provider, model, isSnippet, isFigure: reqIsFigure } = req.body;
+    if (typeof content !== 'string' || !content.trim() || typeof instruction !== 'string' || !instruction.trim()) {
+      return res.status(400).json({ error: 'Hiányzó forráskód vagy utasítás az átdolgozáshoz.' });
+    }
     const isFullDoc = content.includes('\\documentclass') && !isSnippet;
     const isFigure = Boolean(reqIsFigure || content.includes('\\begin{tikzpicture}'));
 
@@ -375,7 +482,7 @@ FONTOS SZABÁLYOK:
 router.post('/insert', async (req, res) => {
   try {
     const { contextSnippet = '', instruction, position = 'after', provider, model, subject = 'matematika' } = req.body;
-    if (!instruction) {
+    if (!instruction || !String(instruction).trim()) {
       return res.status(400).json({ error: 'Hiányzó utasítás a tartalom generálásához.' });
     }
 

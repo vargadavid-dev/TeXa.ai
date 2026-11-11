@@ -6,6 +6,7 @@ import CustomSelect from './CustomSelect'
 import CustomDocTypesModal from './CustomDocTypesModal'
 import ExamTemplatesModal from './ExamTemplatesModal'
 import { findSmartReplacement } from '../utils/snippetMatcher'
+import { apiKeyManager } from '../utils/apiKeyManager'
 import {
   Bookmark,
   BookmarkPlus,
@@ -694,7 +695,8 @@ export default function AiPanel({
   onRefreshProjects,
   addNotif,
   preambles = [],
-  onOpenPreambles
+  onOpenPreambles,
+  onOpenApiKeySettings
 }) {
   // Tantárgy: kizárólag Matematika vagy Fizika az AI Asszisztensben
   const [localSubject, setLocalSubject] = useState(subject === 'Fizika' ? 'Fizika' : 'Matematika')
@@ -1407,6 +1409,7 @@ export default function AiPanel({
     const textToSend = (typeof customText === 'string' ? customText : chatInput).trim()
     if (!textToSend && pendingImages.length === 0) return
     if (chatLoading) return
+    if (!ensureGeminiKey()) return
 
     const newImages = [...pendingImages]
     const userMessage = {
@@ -1500,6 +1503,13 @@ export default function AiPanel({
     setLastInserted(null)
   }
 
+  const ensureGeminiKey = () => {
+    if (provider !== 'gemini' || apiKeyManager.hasCustomKey()) return true
+    addNotif?.('A Gemini AI használatához először add meg a saját API kulcsodat!', 'warning')
+    onOpenApiKeySettings?.()
+    return false
+  }
+
   const reportError = (err) => {
     const msg = err.response?.data?.error || err.message || 'Hiba történt a generálás során'
     addNotif?.(msg, 'error')
@@ -1514,6 +1524,7 @@ export default function AiPanel({
         ? selectedCustomDocType?.name || customPrompt.trim().slice(0, 45).replace(/[\n\r]+/g, ' ')
         : '')
     if (!effectiveTopic || loading) return
+    if (!ensureGeminiKey()) return
     setLoading(true)
     setLastInserted(null)
     startProgressTracking()
@@ -1547,6 +1558,7 @@ export default function AiPanel({
   const handleRewrite = async () => {
     const content = rewriteText.trim() ? rewriteText : currentCode
     if (!content.trim() || !rewriteInstruction.trim() || loading) return
+    if (!ensureGeminiKey()) return
     setLoading(true)
     setLastInserted(null)
     startProgressTracking()
@@ -1577,6 +1589,7 @@ export default function AiPanel({
     const hasText = Boolean(tikzDesc.trim())
     const hasImages = tikzImages.length > 0
     if ((!hasText && !hasImages) || loading) return
+    if (!ensureGeminiKey()) return
     setLoading(true)
     setLastInserted(null)
     startProgressTracking()
@@ -1696,6 +1709,7 @@ export default function AiPanel({
   const handleTikzRefine = async (customInstruction) => {
     const instruction = (typeof customInstruction === 'string' ? customInstruction : tikzRefinePrompt).trim()
     if (!instruction || tikzRefineLoading || !tikzResult) return
+    if (!ensureGeminiKey()) return
     setTikzRefineLoading(true)
     try {
       const res = await axios.post('/api/ai/tikz-refine', {
@@ -1721,6 +1735,7 @@ export default function AiPanel({
   const handleProblems = async () => {
     if (loading) return
     if (!probTopic.trim()) return
+    if (!ensureGeminiKey()) return
     setLoading(true)
     setLastInserted(null)
     startProgressTracking()
@@ -1801,6 +1816,7 @@ export default function AiPanel({
   const handleBeamer = async () => {
     const content = beamerSource === 'current' ? currentCode : beamerText
     if (!content.trim() || loading) return
+    if (!ensureGeminiKey()) return
     setLoading(true)
     setLastInserted(null)
     startProgressTracking()
@@ -1845,6 +1861,7 @@ export default function AiPanel({
   // 6. Dolgozat generálás (Témazáró, Röpdolgozat, Érettségi próba)
   const handleGenerateExam = async () => {
     if (loading) return
+    if (!ensureGeminiKey()) return
     const effTopic = examTopic.trim() || 'Témazáró Dolgozat'
     setLoading(true)
     setLastInserted(null)

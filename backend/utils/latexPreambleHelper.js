@@ -214,6 +214,22 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
     loaded.add('circuitikz');
   }
 
+  // TikZ positioning könyvtár (pl. right=of A, below=0.3cm of 3)
+  let needsTikzPositioning = false;
+  if (
+    /\\(?:tikz|begin\{tikzpicture\})/.test(fullText) &&
+    /(?:above|below|left|right)(?:\s+(?:left|right))?\s*=\s*(?:[^,\]]*?\s+)?of\s+/.test(fullText) &&
+    !/\\usetikzlibrary\s*\{[^}]*\bpositioning\b/.test(fullText)
+  ) {
+    if (!loaded.has('tikz')) {
+      packagesToAdd.push('\\usepackage{tikz}');
+      addedNames.push('tikz');
+      loaded.add('tikz');
+    }
+    needsTikzPositioning = true;
+    addedNames.push('tikz-positioning');
+  }
+
   // Matematikai áthúzás
   if (/\\(cancel|bcancel|xcancel)\s*\{/.test(fullText) && !loaded.has('cancel')) {
     packagesToAdd.push('\\usepackage{cancel}');
@@ -391,7 +407,7 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
   }
 
   // Ha nincs mit hozzáadni, visszatérünk az eredetivel
-  if (packagesToAdd.length === 0 && macrosToAdd.length === 0) {
+  if (packagesToAdd.length === 0 && macrosToAdd.length === 0 && !needsTikzPositioning) {
     return { supplementedPreamble: preamble, addedPackages: [] };
   }
 
@@ -399,6 +415,21 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
   // A csomagokat érdemes a hyperref ELÉ tenni (LaTeX szabály), vagy a preambulum végére.
   let supplemented = preamble;
   const hyperrefMatch = supplemented.match(/\\usepackage(?:\s*\[[^\]]*\])?\{hyperref\}/);
+  const existingTikzMatch = supplemented.match(/\\usepackage(?:\s*\[[^\]]*\])?\{[^}]*\btikz\b[^}]*\}/);
+  let positioningAfterTikz = false;
+
+  if (needsTikzPositioning) {
+    if (
+      hyperrefMatch &&
+      existingTikzMatch &&
+      existingTikzMatch.index !== undefined &&
+      existingTikzMatch.index > hyperrefMatch.index
+    ) {
+      positioningAfterTikz = true;
+    } else {
+      packagesToAdd.push('\\usetikzlibrary{positioning}');
+    }
+  }
 
   let insertionBlock = '';
   if (packagesToAdd.length > 0) {
@@ -419,6 +450,13 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
       addedNames.push('hyperref');
     }
     supplemented = `${supplemented}\n${insertionBlock}`.trim();
+  }
+
+  if (positioningAfterTikz) {
+    supplemented = supplemented.replace(
+      /(\\usepackage(?:\s*\[[^\]]*\])?\{[^}]*\btikz\b[^}]*\})/,
+      '$1\n\\usetikzlibrary{positioning}'
+    );
   }
 
   // Ha van \maketitle a törzsben, de nincs \author megadva, adjunk hozzá üres \author{}-t,

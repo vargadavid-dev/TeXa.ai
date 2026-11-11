@@ -30,9 +30,10 @@ export default function SettingsModal({
   onClose,
   onWorkspaceChanged,
   onApiKeyChanged,
-  addNotif
+  addNotif,
+  initialTab = 'workspace'
 }) {
-  const [activeTab, setActiveTab] = useState('workspace') // 'workspace' | 'apikey'
+  const [activeTab, setActiveTab] = useState(initialTab === 'apikey' ? 'apikey' : 'workspace') // 'workspace' | 'apikey'
 
   // Helyi (Saját gép) Workspace állapot
   const [localDirName, setLocalDirName] = useState('')
@@ -70,6 +71,9 @@ export default function SettingsModal({
 
   useEffect(() => {
     if (isOpen) {
+      if (initialTab === 'workspace' || initialTab === 'apikey') {
+        setActiveTab(initialTab)
+      }
       const supported = localWorkspace.isSupported()
       setIsSupportedBrowser(supported)
       checkSavedLocalWorkspace()
@@ -78,7 +82,7 @@ export default function SettingsModal({
       setKeyValidation(null)
       setWorkspaceError('')
     }
-  }, [isOpen])
+  }, [isOpen, initialTab])
 
   const checkSavedLocalWorkspace = async () => {
     try {
@@ -222,12 +226,15 @@ export default function SettingsModal({
   }
 
   const handleTestAndSaveKey = async () => {
-    const trimmed = apiKeyInput.trim()
+    const trimmed = apiKeyInput.trim().replace(/^Bearer\s+/i, '').trim()
+    if (trimmed !== apiKeyInput) {
+      setApiKeyInput(trimmed)
+    }
     if (!trimmed) {
       apiKeyManager.clearKey()
       setKeyValidation({ valid: false, message: 'API kulcs törölve. Az AI funkciókhoz új kulcs megadása szükséges.' })
       if (onApiKeyChanged) onApiKeyChanged()
-      if (addNotif) addNotif('info', 'Saját API kulcs eltávolítva.')
+      if (addNotif) addNotif('Saját API kulcs eltávolítva.', 'info')
       return
     }
 
@@ -242,7 +249,7 @@ export default function SettingsModal({
       if (res.data.valid) {
         apiKeyManager.setKey(trimmed)
         setKeyValidation({ valid: true, message: 'API kulcs érvényes és működőképes!' })
-        if (addNotif) addNotif('success', 'Saját Gemini API kulcs sikeresen elmentve!')
+        if (addNotif) addNotif('Saját Gemini API kulcs sikeresen elmentve!', 'success')
         if (onApiKeyChanged) onApiKeyChanged()
       } else {
         setKeyValidation({ valid: false, message: res.data.error || 'A kulcs ellenőrzése sikertelen.' })
@@ -260,7 +267,7 @@ export default function SettingsModal({
     apiKeyManager.clearKey()
     setKeyValidation(null)
     if (onApiKeyChanged) onApiKeyChanged()
-    if (addNotif) addNotif('info', 'Saját API kulcs törölve.')
+    if (addNotif) addNotif('Saját API kulcs törölve.', 'info')
   }
 
   if (!isOpen) return null

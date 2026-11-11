@@ -2721,7 +2721,7 @@ html, body, #root {
 
 .preview-body.empty {
   align-items: center;
-  justify-content: center;
+  justify-content: center !important;
 }
 
 .preview-body iframe {
