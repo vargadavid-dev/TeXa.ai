@@ -1,162 +1,234 @@
-\documentclass[12pt,a4paper]{article}
+\documentclass[11pt, a4paper]{article}
+\usepackage[a4paper, top=1.8cm, bottom=1.8cm, left=2.0cm, right=2.0cm]{geometry}
+
+\usepackage[hungarian]{babel}
+
+
+\usepackage{enumitem}
+\setlist[itemize]{label=-, leftmargin=1.6em, itemsep=1.5pt, topsep=3pt, parsep=0pt}
+\usepackage{amsmath, amssymb}
+\usepackage{xcolor}
+
+%%% Megjelenítéshez automatikusan kiegészített csomagok %%%
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[hungarian]{babel}
-\usepackage{amsmath, amssymb}
-\usepackage{geometry}
-\geometry{a4paper, margin=1.5cm}
-\usepackage{tabularx}
-\usepackage{array}
+\usepackage{amsfonts, amsthm}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
 
-% Oszlopstílusok a javítókulcshoz
-\newcolumntype{L}{>{\raggedright\arraybackslash}X}
-\newcolumntype{R}{>{\raggedleft\arraybackslash}p{2.5cm}}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{primary}{HTML}{1E3A5F}
+\definecolor{muted}{HTML}{4A5568}
+\definecolor{rulegray}{HTML}{CBD5E0}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
 
 \begin{document}
+\setlength{\abovedisplayskip}{6pt}
+\setlength{\belowdisplayskip}{6pt}
+\setlength{\abovedisplayshortskip}{4pt}
+\setlength{\belowdisplayshortskip}{4pt}
 
-\begin{center}
-    \textbf{\Large Folyadékok és gázok mechanikája -- Témazáró dolgozat (E) Javítókulcs}
-\end{center}
-\vspace{0.5cm}
+% --- Fejléc ---
+{\color{primary}\Large\bfseries 3D Koordinátageometria – Dolgozat (A)}\hfill{\color{muted}\large\bfseries Max. 24 pont}\\[3pt]
+{\color{muted}\normalsize Kidolgozott javítókulcs és részletes pontozási útmutató}
+\vspace{4pt}
+{\color{primary}\hrule height 1.2pt}
+\vspace{10pt}
 
-\textbf{Maximum pontszám:} 30 pont (szorgalmival 32 pont)
+% --- 1. feladat ---
+{\color{primary}\bfseries 1. feladat (2 pont)}
 
-\vspace{1cm}
+\textit{Adott két pont a térben: $A(1,2,3)$ és $B(1,6,6)$. Számítsd ki a két pont távolságát!}
 
-\textbf{1. Igaz vagy hamis?}
+\textbf{Megoldás:} Két térbeli pont távolságának képlete alapján:
+\[
+\begin{aligned}
+d(A,B) &= \sqrt{(x_B - x_A)^2 + (y_B - y_A)^2 + (z_B - z_A)^2} \\
+       &= \sqrt{(1 - 1)^2 + (6 - 2)^2 + (6 - 3)^2} = \sqrt{0 + 16 + 9} = \sqrt{25} = 5
+\end{aligned}
+\]
+\textbf{Válasz:} A két pont távolsága \textbf{5} egység.
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-\multicolumn{2}{|p{\dimexpr\textwidth-2\tabcolsep-2\arrayrulewidth\relax}|}{\textbf{a) A hidrosztatikai nyomás egy adott mélységben felfelé kisebb, mint lefelé.}} \\
-\hline
-Hamis (a nyomás adott mélységben minden irányban azonos) & \hfill \textbf{0,5 pont} \\ \hline\hline
-\multicolumn{2}{|p{\dimexpr\textwidth-2\tabcolsep-2\arrayrulewidth\relax}|}{\textbf{b) A közlekedőedények ágaiban a folyadékszint attól függ, hogy milyen alakú az edény adott ága.}} \\
-\hline
-Hamis (a folyadékszint nem függ az edény alakjától) & \hfill \textbf{0,5 pont} \\ \hline\hline
-\multicolumn{2}{|p{\dimexpr\textwidth-2\tabcolsep-2\arrayrulewidth\relax}|}{\textbf{c) Az áramvonalas testeknek kisebb az közegellenállási tényezője, ezért kisebb rájuk ható közegellenállási erő is.}} \\
-\hline
-Igaz & \hfill \textbf{1 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{2 pont} \\ \hline
-\end{tabularx}
+{\color{muted}\small\textbf{Pontozás (2 pont):}}
+\begin{itemize}
+    \item {\color{muted}\small A távolságképlet helyes felírása és behelyettesítése: \textbf{1 pont}}
+    \item {\color{muted}\small Helyes számolás és végeredmény ($5$): \textbf{1 pont}}
+\end{itemize}
 
-\vspace{1cm}
+\vspace{6pt}{\color{rulegray}\hrule}\vspace{8pt}
 
-\textbf{2. Mitől függ a folyadékba teljesen bemerülő testre ható felhajtóerő?}
+% --- 2. feladat ---
+{\color{primary}\bfseries 2. feladat (2 pont)}
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-Helyes válasz: \textbf{b) A folyadék sűrűségétől.} & \hfill \textbf{2 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{2 pont} \\ \hline
-\end{tabularx}
+\textit{Számítsd ki az $\mathbf{a}(2,1,-2)$ és $\mathbf{b}(3,0,4)$ vektorok skaláris szorzatát!}
 
-\vspace{1cm}
+\textbf{Megoldás:} A skaláris szorzat koordinátás képletével:
+\[
+\mathbf{a} \cdot \mathbf{b} = a_1 b_1 + a_2 b_2 + a_3 b_3 = 2 \cdot 3 + 1 \cdot 0 + (-2) \cdot 4 = 6 + 0 - 8 = -2
+\]
+\textbf{Válasz:} A két vektor skaláris szorzata \textbf{$-2$}.
 
-\textbf{3. Megváltozik-e a búvárra ható hidrosztatikai nyomás, miközben átúszik fölötte egy tartályhajó?}
+{\color{muted}\small\textbf{Pontozás (2 pont):}}
+\begin{itemize}
+    \item {\color{muted}\small A skaláris szorzat képletének alkalmazása és behelyettesítés: \textbf{1 pont}}
+    \item {\color{muted}\small Helyes előjelkezelés és végeredmény ($-2$): \textbf{1 pont}}
+\end{itemize}
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-Helyes válasz: \textbf{d) Nem, mert a nyomás csak a vízfelszín alatti mélységtől függ, az pedig nem változik közben.} & \hfill \textbf{2 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{2 pont} \\ \hline
-\end{tabularx}
+\vspace{6pt}{\color{rulegray}\hrule}\vspace{8pt}
 
-\vspace{1cm}
+% --- 3. feladat ---
+{\color{primary}\bfseries 3. feladat (3 pont)}
 
-\textbf{4. Miért csökken a vízcsapból kifolyó vízsugár átmérője?}
+\textit{Írd fel a $P_0(2,-1,4)$ ponton átmenő, $\mathbf{v}(3,5,-1)$ irányvektorú egyenes paraméteres egyenletrendszerét!}
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-Helyes válasz: \textbf{c) A folytonossági törvény miatt, mivel a víz gyorsul.} & \hfill \textbf{2 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{2 pont} \\ \hline
-\end{tabularx}
+\textbf{Megoldás:} A $P_0(x_0, y_0, z_0)$ ponton átmenő, $\mathbf{v}(v_1, v_2, v_3)$ irányvektorú egyenes paraméteres egyenletrendszere:
+\[
+\begin{cases}
+x = x_0 + t \cdot v_1 \\
+y = y_0 + t \cdot v_2 \\
+z = z_0 + t \cdot v_3
+\end{cases}
+\implies
+\begin{cases}
+x = 2 + 3t \\
+y = -1 + 5t \\
+z = 4 - t
+\end{cases}
+\qquad (t \in \mathbb{R})
+\]
+{\color{muted}\small\textbf{Pontozás (3 pont):}}
+\begin{itemize}
+    \item {\color{muted}\small Az $x = 2 + 3t$ egyenlet helyes felírása: \textbf{1 pont}}
+    \item {\color{muted}\small Az $y = -1 + 5t$ egyenlet helyes felírása: \textbf{1 pont}}
+    \item {\color{muted}\small A $z = 4 - t$ egyenlet helyes felírása: \textbf{1 pont}}
+\end{itemize}
 
-\vspace{1cm}
+\vspace{6pt}{\color{rulegray}\hrule}\vspace{8pt}
+
+% --- 4. feladat ---
+{\color{primary}\bfseries 4. feladat (3 pont)}
+
+\textit{Írd fel a $P_0(1,1,1)$ ponton átmenő, $\mathbf{n}(2,-1,3)$ normálvektorú sík egyenletét! Hozza az egyenletet $Ax+By+Cz=D$ alakra!}
+
+\textbf{Megoldás:} A sík normálvektoros egyenlete $A(x - x_0) + B(y - y_0) + C(z - z_0) = 0$, amelybe behelyettesítve:
+\[
+\begin{aligned}
+2(x - 1) - 1(y - 1) + 3(z - 1) &= 0 \\
+2x - 2 - y + 1 + 3z - 3 &= 0 \\
+2x - y + 3z &= 4
+\end{aligned}
+\]
+\textit{(Alternatív megoldás: $2x - y + 3z = 2\cdot 1 + (-1)\cdot 1 + 3\cdot 1 = 4$.)}
+
+\textbf{Válasz:} A sík egyenlete \textbf{$2x - y + 3z = 4$}.
+
+{\color{muted}\small\textbf{Pontozás (3 pont):}}
+\begin{itemize}
+    \item {\color{muted}\small A normálvektor és a pont helyes behelyettesítése: \textbf{1 pont}}
+    \item {\color{muted}\small Zárójelek felbontása és helyes összevonás: \textbf{1 pont}}
+    \item {\color{muted}\small A kért $Ax + By + Cz = D$ alak megadása ($2x - y + 3z = 4$): \textbf{1 pont}}
+\end{itemize}
+
 \newpage
-\textbf{5. Egészítsd ki a mondatokat a megfelelő kifejezésekkel!}
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-a) ...a felső, domborúbb felülete mentén a levegő \textbf{gyorsabban} áramlik... & \hfill \textbf{1 pont} \\ \hline
-...emiatt a szárny felett a légnyomás \textbf{kisebb} lesz... & \hfill \textbf{1 pont} \\ \hline
-...felfelé ható dinamikus \textbf{felhajtóerőt} (vagy emelőerőt) eredményez... & \hfill \textbf{1 pont} \\ \hline
-b) ...különböző anyagok részecskéi közötti... \textbf{adhéziós} erőnek nevezzük. & \hfill \textbf{1 pont} \\ \hline
-c) A(z) \textbf{folytonossági} (vagy kontinuitási) egyenlet szerint... & \hfill \textbf{1 pont} \\ \hline
-...egy összenyomhatatlan közeg áramlási sebessége \textbf{fordítottan} arányos a cső keresztmetszetével. & \hfill \textbf{1 pont} \\ \hline
-d) ...Ez a(z) \textbf{felületi feszültség} jelenségének köszönhető. & \hfill \textbf{1 pont} \\ \hline
-...folyadék belseje felé mutató eredő \textbf{erő} hat... & \hfill \textbf{1 pont} \\ \hline
-...úgy viselkedik, mint egy kifeszített, rugalmas \textbf{hártya}. & \hfill \textbf{1 pont} \\ \hline
-...ez a fizikai mennyiség hirtelen \textbf{lecsökkenne}... & \hfill \textbf{1 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{10 pont} \\ \hline
-\end{tabularx}
+% --- 5. feladat ---
+{\color{primary}\bfseries 5. feladat (2 pont)}
 
-\vspace{1cm}
+\textit{Adja meg az $O(-2,3,0)$ középpontú, $r=4$ sugarú gömb egyenletét!}
 
-\textbf{6. Egy levágott nyakú palackból készült tölcsérbe egy pingponglabdát helyezünk. Alulról erősen befújunk.}
+\textbf{Megoldás:} Az $O(u, v, w)$ középpontú, $r$ sugarú gömb egyenlete $(x - u)^2 + (y - v)^2 + (z - w)^2 = r^2$:
+\[
+(x - (-2))^2 + (y - 3)^2 + (z - 0)^2 = 4^2 \implies (x + 2)^2 + (y - 3)^2 + z^2 = 16
+\]
+\textbf{Válasz:} A gömb egyenlete \textbf{$(x + 2)^2 + (y - 3)^2 + z^2 = 16$}.
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-\multicolumn{2}{|p{\dimexpr\textwidth-2\tabcolsep-2\arrayrulewidth\relax}|}{\textbf{a) Vajon kirepül-e a labda a tölcsérből? Mit tapasztalunk?}} \\
-\hline
-Nem repül ki a labda (bennmarad a tölcsérben). & \hfill \textbf{1 pont} \\ \hline\hline
-\multicolumn{2}{|p{\dimexpr\textwidth-2\tabcolsep-2\arrayrulewidth\relax}|}{\textbf{b) Melyik fizikai törvénnyel magyarázható a jelenség? Fogalmazd meg röviden a törvény lényegét!}} \\
-\hline
-A Bernoulli-törvénnyel magyarázható. & \hfill \textbf{1 pont} \\ \hline
-A törvény lényege: Ahol nagyobb az áramlási sebesség, ott kisebb a nyomás. & \hfill \textbf{1 pont} \\ \hline
-A labda mellett gyorsan áramló levegő nyomása lecsökken, így a felülről ható nagyobb külső légnyomás visszanyomja a labdát a tölcsérbe. & \hfill \textbf{1 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{4 pont} \\ \hline
-\end{tabularx}
+{\color{muted}\small\textbf{Pontozás (2 pont):}}
+\begin{itemize}
+    \item {\color{muted}\small A bal oldal előjelhelyes felírása $(x+2)^2 + (y-3)^2 + z^2$: \textbf{1 pont}}
+    \item {\color{muted}\small A jobb oldal helyes értéke ($r^2 = 16$): \textbf{1 pont}}
+\end{itemize}
 
-\vspace{1cm}
+\vspace{7pt}{\color{rulegray}\hrule}\vspace{9pt}
 
-\textbf{7. Egy fémgömbre teljesen a víz alá merítve $0,45 \text{ kN}$ felhajtóerő hat. Hány $\text{dm}^3$ a gömb térfogata? A víz sűrűsége $1000 \text{ kg/m}^3$.}
+% --- 6. feladat ---
+{\color{primary}\bfseries 6. feladat (8 pont)}
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-Adatok felírása, mértékegység átváltása: $F_{\text{fel}} = 0,45 \text{ kN} = 450 \text{ N}$ \newline $\rho = 1000 \text{ kg/m}^3$, $g \approx 10 \text{ m/s}^2$ & \hfill \textbf{1 pont} \\ \hline
-Képlet felírása: $F_{\text{fel}} = \rho \cdot V \cdot g$ & \hfill \textbf{1 pont} \\ \hline
-Behelyettesítés és kiszámítás: $450 = 1000 \cdot V \cdot 10 \implies V = \frac{450}{10000} = 0,045 \text{ m}^3$ & \hfill \textbf{1 pont} \\ \hline
-Átváltás dm$^3$-be: $0,045 \text{ m}^3 = 45 \text{ dm}^3$ & \hfill \textbf{1 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{4 pont} \\ \hline
-\end{tabularx}
+\textit{Határozza meg az $e:\dfrac{x-1}{2}=\dfrac{y-2}{3}=\dfrac{z-3}{-1}$ egyenletrendszerrel adott egyenes és az $S:2x-y+3z=11$ sík döféspontját (azaz metszéspontjának koordinátáit)!}
 
-\vspace{1cm}
+\textbf{Megoldás:}
 
-\textbf{8. Vízszintes cső: $A_1=0,0012 \text{ m}^2$, $v_1=3 \text{ m/s}$. Szűkebb rész: $A_2=4 \text{ cm}^2$. Mekkora a víz áramlási sebessége ($v_2$)?}
+\textbf{1. lépés – Az egyenes felírása paraméteres alakban:} Legyen a közös arány $t \in \mathbb{R}$:
+\[
+\frac{x-1}{2} = \frac{y-2}{3} = \frac{z-3}{-1} = t \implies x = 1 + 2t, \quad y = 2 + 3t, \quad z = 3 - t
+\]
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-Keresztmetszet átváltása: $A_2 = 4 \text{ cm}^2 = 0,0004 \text{ m}^2$ & \hfill \textbf{1 pont} \\ \hline
-A folytonossági (kontinuitási) egyenlet felírása: $A_1 \cdot v_1 = A_2 \cdot v_2$ & \hfill \textbf{1 pont} \\ \hline
-Behelyettesítés: $0,0012 \cdot 3 = 0,0004 \cdot v_2$ & \hfill \textbf{1 pont} \\ \hline
-Kiszámítás: $0,0036 = 0,0004 \cdot v_2 \implies v_2 = 9 \text{ m/s}$ & \hfill \textbf{1 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{4 pont} \\ \hline
-\end{tabularx}
+\textbf{2. lépés – Behelyettesítés a sík egyenletébe ($2x - y + 3z = 11$):}
+\[
+\begin{aligned}
+2(1 + 2t) - (2 + 3t) + 3(3 - t) &= 11 \\
+2 + 4t - 2 - 3t + 9 - 3t &= 11 \\
+9 - 2t &= 11 \\
+-2t &= 2 \implies t = -1
+\end{aligned}
+\]
 
-\vspace{1cm}
-\newpage
-\textbf{Szorgalmi: Hogyan nevezzük az adhéziós és kohéziós erők miatt kialakuló görbült folyadékfelszínt a kapillárisokban?}
+\textbf{3. lépés – A döféspont ($M$) koordinátáinak meghatározása ($t = -1$ visszahelyettesítésével):}
+\[
+x = 1 + 2(-1) = -1, \qquad y = 2 + 3(-1) = -1, \qquad z = 3 - (-1) = 4
+\]
 
-\vspace{0.5cm}
-\noindent
-\begin{tabularx}{\textwidth}{|L|R|}
-\hline
-Meniszkusz (folyadékmeniszkusz) & \hfill \textbf{+2 pont} \\ \hline\hline
-\multicolumn{1}{|r|}{\textbf{Összesen:}} & \hfill \textbf{+2 pont} \\ \hline
-\end{tabularx}
+\textbf{Ellenőrzés:} Az egyenes egyenletében $\dfrac{-1-1}{2} = \dfrac{-1-2}{3} = \dfrac{4-3}{-1} = -1$; a sík egyenletében $2(-1) - (-1) + 3(4) = -2 + 1 + 12 = 11$ (mindkettő teljesül).
+
+\textbf{Válasz:} A döféspont koordinátái: \textbf{$M(-1,\,-1,\,4)$}.
+
+{\color{muted}\small\textbf{Pontozás (8 pont):}}
+\begin{itemize}
+    \item {\color{muted}\small Az egyenes paraméteres egyenletrendszerének helyes felírása: \textbf{2 pont}}
+    \item {\color{muted}\small Behelyettesítés a sík egyenletébe: \textbf{1 pont}}
+    \item {\color{muted}\small Zárójelek felbontása és összevonás ($9 - 2t = 11$): \textbf{2 pont}}
+    \item {\color{muted}\small A paraméter helyes meghatározása ($t = -1$): \textbf{1 pont}}
+    \item {\color{muted}\small A metszéspont mindhárom koordinátájának helyes kiszámítása ($M(-1,-1,4)$): \textbf{2 pont}}
+\end{itemize}
+
+\vspace{7pt}{\color{rulegray}\hrule}\vspace{9pt}
+
+% --- 7. feladat ---
+{\color{primary}\bfseries 7. feladat (4 pont)}
+
+\textit{Egy ellipszis egyenlete: $\dfrac{x^2}{25}+\dfrac{y^2}{9}=1$. Olvasd le a nagytengely és kistengely felének hosszát, majd számítsd ki a fókuszpont és az origó távolságát!}
+
+\textbf{Megoldás:} Az origó középpontú ellipszis $\dfrac{x^2}{a^2} + \dfrac{y^2}{b^2} = 1$ ($a > b > 0$) kanonikus egyenletéből leolvasható:
+\[
+a^2 = 25 \implies a = 5 \text{ (nagytengely fele)}, \qquad b^2 = 9 \implies b = 3 \text{ (kistengely fele)}
+\]
+A fókuszpont és az origó távolsága (a lineáris excentricitás, $c$):
+\[
+c^2 = a^2 - b^2 = 25 - 9 = 16 \implies c = \sqrt{16} = 4
+\]
+\textbf{Válasz:} Nagytengely fele \textbf{$a = 5$}, kistengely fele \textbf{$b = 3$}, a fókuszpont és az origó távolsága \textbf{$c = 4$}.
+
+{\color{muted}\small\textbf{Pontozás (4 pont):}}
+\begin{itemize}
+    \item {\color{muted}\small A nagytengely felének helyes leolvasása ($a = 5$): \textbf{1 pont}}
+    \item {\color{muted}\small A kistengely felének helyes leolvasása ($b = 3$): \textbf{1 pont}}
+    \item {\color{muted}\small A $c^2 = a^2 - b^2$ összefüggés felírása és behelyettesítése: \textbf{1 pont}}
+\item {\color{muted}\small A fókuszpont távolságának helyes kiszámítása ($c = 4$): \textbf{1 pont}}
+\end{itemize}
+
+\vfill
+{\color{primary}\hrule height 0.8pt}
+\vspace{4pt}
+{\color{muted}\small\textbf{Pontszámok összesítése:} 1. f. (2p) + 2. f. (2p) + 3. f. (3p) + 4. f. (3p) + 5. f. (2p) + 6. f. (8p) + 7. f. (4p) \hfill \textbf{Összesen: 24 pont}}
 
 \end{document}

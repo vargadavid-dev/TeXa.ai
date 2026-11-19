@@ -58,8 +58,13 @@ function resolvePathInProjects(filePath, projectsDir = getProjectsDir()) {
   // Windows backslash normalizálás
   clean = clean.replace(/\\/g, '/');
 
-  // Ha a projekt relatív útvonala "projektek/" prefixszel kezdődik, vágjuk le
-  clean = clean.replace(/^(?:\/|\.\/)?projektek\//i, '');
+  // Ha az útvonalban bárhol szerepel a "(app/)?projektek/" szegmens, nyerjük ki a projekteken belüli relatív részt
+  const projMatch = clean.match(/(?:^|\/)(?:app\/)?projektek\/(.+)$/i);
+  if (projMatch && projMatch[1]) {
+    clean = projMatch[1];
+  } else {
+    clean = clean.replace(/^(?:\/|\.\/)?projektek\//i, '');
+  }
 
   const isWinAbs = /^[A-Za-z]:\//.test(clean);
   const isAnyAbs = clean.startsWith('/') || isWinAbs;
@@ -71,12 +76,7 @@ function resolvePathInProjects(filePath, projectsDir = getProjectsDir()) {
     if (clean === rootNorm || clean.startsWith(rootNorm + '/')) {
       candidate = path.resolve(clean);
     } else {
-      const match = clean.match(/^.*\/projektek\/(.+)$/i);
-      if (match && match[1]) {
-        candidate = path.resolve(root, match[1]);
-      } else {
-        candidate = path.resolve(clean);
-      }
+      candidate = path.resolve(clean);
     }
   } else {
     candidate = path.resolve(root, clean);

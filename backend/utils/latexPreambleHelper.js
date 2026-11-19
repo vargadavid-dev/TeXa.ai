@@ -112,14 +112,20 @@ function supplementPreamble(basePreamble = '', bodyContent = '', options = {}) {
   }
 
   // pdflatex összeférhetetlenségek automatikus szanálása:
-  // Ha fontspec vagy babelfont szerepel (pl. XeLaTeX mintából másolva),
-  // a pdflatex azonnal fatal hibával leállna ("The fontspec package requires either XeTeX or LuaTeX").
-  if (preamble.includes('fontspec') || preamble.includes('babelfont') || preamble.includes('babelprovide')) {
-    preamble = preamble.replace(/\\usepackage(?:\s*\[[^\]]*\])?\s*\{fontspec\}/gi, '');
-    preamble = preamble.replace(/\\babelprovide(?:\s*\[[^\]]*\])?\s*\{[^}]*\}/gi, '');
-    preamble = preamble.replace(/\\babelfont(?:\s*\[[^\]]*\])?\s*\{[^}]*\}\s*\{[^}]*\}/gi, '');
-    preamble = preamble.replace(/\\usepackage\s*\[magyar,\s*bidi=basic,\s*provide=\*\]\{babel\}/gi, '\\usepackage[magyar]{babel}');
-  }
+  // 1. fontspec, babelfont, babelprovide törlése (XeLaTeX/LuaTeX kizárólagos eszközök)
+  preamble = preamble.replace(/\\usepackage(?:\s*\[[^\]]*\])?\s*\{fontspec\}/gi, '');
+  preamble = preamble.replace(/\\babelprovide(?:\s*\[[^\]]*\])?\s*\{[^}]*\}/gi, '');
+  preamble = preamble.replace(/\\babelfont(?:\s*\[[^\]]*\])?\s*\{[^}]*\}\s*\{[^}]*\}/gi, '');
+
+  // 2. babel opciók tisztítása: bidi=basic / provide=* pdflatex alatt fatális ("bidi-only-lua") hibát okoz
+  preamble = preamble.replace(/\\usepackage\s*\[([^\]]*?)\]\s*\{babel\}/gi, (match, opts) => {
+    const cleanedOpts = opts
+      .split(',')
+      .map(o => o.trim())
+      .filter(o => !o.startsWith('bidi=') && !o.startsWith('provide='))
+      .join(', ');
+    return `\\usepackage[${cleanedOpts || 'hungarian'}]{babel}`;
+  });
 
   // Lemaradt backslash automatikus pótlása gyakori metaadat-parancsok előtt (pl. author{...} -> \author{...})
   preamble = preamble.replace(/(^|\n)\s*author\s*\{/g, '$1\\author{');
