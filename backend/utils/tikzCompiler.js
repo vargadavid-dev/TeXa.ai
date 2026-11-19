@@ -4,7 +4,9 @@ const fs = require('fs-extra');
 const { v4: uuidv4 } = require('uuid');
 
 const TEMP_DIR = path.join(__dirname, '..', 'temp');
+const LATEX_PACKAGES_DIR = path.join(__dirname, '..', 'latex_packages');
 fs.ensureDirSync(TEMP_DIR);
+fs.ensureDirSync(LATEX_PACKAGES_DIR);
 
 const PDFLATEX = fs.existsSync('/Library/TeX/texbin/pdflatex')
   ? '/Library/TeX/texbin/pdflatex'
@@ -98,6 +100,9 @@ async function compileStandaloneTikz(tikzCode) {
 
   try {
     await fs.ensureDir(jobDir);
+    if (await fs.pathExists(LATEX_PACKAGES_DIR)) {
+      await fs.copy(LATEX_PACKAGES_DIR, jobDir, { overwrite: false }).catch(() => {});
+    }
     const texPath = path.join(jobDir, 'figure.tex');
     const pdfPath = path.join(jobDir, 'figure.pdf');
     const logPath = path.join(jobDir, 'figure.log');
@@ -107,9 +112,21 @@ async function compileStandaloneTikz(tikzCode) {
     const cmd = `"${PDFLATEX}" -no-shell-escape -interaction=nonstopmode figure.tex`;
 
     const execResult = await new Promise((resolve) => {
-      exec(cmd, { cwd: jobDir, timeout: 8000, maxBuffer: 5 * 1024 * 1024 }, (error, stdout, stderr) => {
-        resolve({ error, stdout, stderr });
-      });
+      exec(
+        cmd,
+        {
+          cwd: jobDir,
+          env: {
+            ...process.env,
+            TEXINPUTS: `.:${LATEX_PACKAGES_DIR}//:${process.env.TEXINPUTS || ''}`
+          },
+          timeout: 8000,
+          maxBuffer: 5 * 1024 * 1024
+        },
+        (error, stdout, stderr) => {
+          resolve({ error, stdout, stderr });
+        }
+      );
     });
 
     const pdfExists = await fs.pathExists(pdfPath);

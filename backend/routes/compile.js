@@ -9,6 +9,7 @@ const { supplementFullLatex } = require('../utils/latexPreambleHelper');
 const router = express.Router();
 const TEMP_DIR = path.join(__dirname, '..', 'temp');
 const ACTIVE_DIR = path.join(TEMP_DIR, 'active');
+const LATEX_PACKAGES_DIR = path.join(__dirname, '..', 'latex_packages');
 
 const PDFLATEX = fs.existsSync('/Library/TeX/texbin/pdflatex')
   ? '/Library/TeX/texbin/pdflatex'
@@ -19,6 +20,14 @@ const SYNCTEX = fs.existsSync('/Library/TeX/texbin/synctex')
 
 fs.ensureDirSync(TEMP_DIR);
 fs.ensureDirSync(ACTIVE_DIR);
+fs.ensureDirSync(LATEX_PACKAGES_DIR);
+
+function getCompileEnv() {
+  return {
+    ...process.env,
+    TEXINPUTS: `.:${LATEX_PACKAGES_DIR}//:${process.env.TEXINPUTS || ''}`
+  };
+}
 
 function parseSyncTeXView(stdout) {
   const pageMatch = stdout.match(/Page:(\d+)/i);
@@ -112,6 +121,9 @@ router.post('/', async (req, res) => {
 
   try {
     await fs.ensureDir(jobDir);
+    if (await fs.pathExists(LATEX_PACKAGES_DIR)) {
+      await fs.copy(LATEX_PACKAGES_DIR, jobDir, { overwrite: false }).catch(() => {});
+    }
     const texFile = path.join(jobDir, 'document.tex');
     const pdfFile = path.join(jobDir, 'document.pdf');
     await fs.writeFile(texFile, finalContent, 'utf8');
@@ -121,9 +133,13 @@ router.post('/', async (req, res) => {
 
     const runLatex = () =>
       new Promise((resolve) => {
-        exec(command, { cwd: jobDir, timeout: 20000, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
-          resolve({ error, stdout, stderr });
-        });
+        exec(
+          command,
+          { cwd: jobDir, env: getCompileEnv(), timeout: 20000, maxBuffer: 10 * 1024 * 1024 },
+          (error, stdout, stderr) => {
+            resolve({ error, stdout, stderr });
+          }
+        );
       });
 
     // Első fordítási kör
@@ -413,12 +429,15 @@ router.post('/figure-preview', async (req, res) => {
     const texFile = path.join(jobDir, 'fig.tex');
     const pdfFile = path.join(jobDir, 'fig.pdf');
     const pngFile = path.join(jobDir, 'fig.png');
+    if (await fs.pathExists(LATEX_PACKAGES_DIR)) {
+      await fs.copy(LATEX_PACKAGES_DIR, jobDir, { overwrite: false }).catch(() => {});
+    }
     await fs.writeFile(texFile, fullDoc, 'utf8');
 
     // 1. Önálló standalone PDF lefordítása pdflatex-szel (-no-shell-escape védelemmel)
     const compileCmd = `"${PDFLATEX}" -no-shell-escape -interaction=nonstopmode fig.tex`;
     await new Promise((resolve, reject) => {
-      exec(compileCmd, { cwd: jobDir, timeout: 9000 }, (err) => {
+      exec(compileCmd, { cwd: jobDir, env: getCompileEnv(), timeout: 9000 }, (err) => {
         if (fs.existsSync(pdfFile) && fs.statSync(pdfFile).size > 500) {
           resolve();
         } else {

@@ -26,61 +26,87 @@ async function saveMetadata(meta) {
   await fs.writeJson(METADATA_FILE, meta, { spaces: 2 });
 }
 
+function findFileRecursive(dir, targetName) {
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        const found = findFileRecursive(full, targetName);
+        if (found) return found;
+      } else if (entry.isFile() && entry.name.normalize('NFC') === targetName) {
+        return full;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 /**
  * Biztonságos és robusztus elérési út feloldó a projektek munkakönyvtárában.
- * Megbízhatóan kezeli a relatív (pl. "Matematika/fajl.tex") és abszolút útvonalakat,
- * szigorúan megakadályozva a könyvtárelhagyásos (path traversal) támadásokat.
+ * Megbízhatóan kezeli a relatív (pl. "Matematika/fajl.tex", "projektek/Matematika/fajl.tex")
+ * és abszolút (Docker /app/..., macOS /Users/...) útvonalakat, Unicode normalizálást (NFC/NFD),
+ * valamint az almappákba rendezett fájlok visszakeresését, szigorúan kizárva a könyvtárelhagyást.
  */
 function resolvePathInProjects(filePath, projectsDir = getProjectsDir()) {
   if (!filePath || typeof filePath !== 'string') return null;
   const root = path.resolve(projectsDir);
-  const trimmed = filePath.trim();
-  if (!trimmed) return null;
+  let clean = filePath.trim().normalize('NFC');
+  if (!clean) return null;
 
-  const isWinAbs = /^[A-Za-z]:[/\\]/.test(trimmed);
-  const isAnyAbs = path.isAbsolute(trimmed) || isWinAbs;
-  let resolved = path.isAbsolute(trimmed)
-    ? path.resolve(trimmed)
-    : (isWinAbs ? null : path.resolve(root, trimmed));
+  // Windows backslash normalizálás
+  clean = clean.replace(/\\/g, '/');
 
-  // Ha az útvonal kívül esik az aktuális projektek mappán (pl. másik OS/konténer vagy szülő munkakörnyezet):
-  if (!resolved || (resolved !== root && !resolved.startsWith(root + path.sep))) {
-    if (resolved) {
-      const workspaceRoot = path.resolve(__dirname, '..', '..');
-      const relFromWs = path.relative(workspaceRoot, resolved);
-      if (relFromWs && !relFromWs.startsWith('..') && !path.isAbsolute(relFromWs)) {
-        const candidate = path.resolve(root, relFromWs);
-        if (fs.existsSync(candidate)) {
-          resolved = candidate;
-        }
-      }
-    }
+  // Ha a projekt relatív útvonala "projektek/" prefixszel kezdődik, vágjuk le
+  clean = clean.replace(/^(?:\/|\.\/)?projektek\//i, '');
 
-    // Különösen macOS/Windows <-> Linux Docker közötti mentett abszolút útvonalakhoz:
-    // kinyerjük az utolsó projektek gyökérmappa utáni relatív útvonalat (kis/nagybetű érzékenyen a /Documents/Projektek/ ütközések elkerülésére).
-    if ((!resolved || (resolved !== root && !resolved.startsWith(root + path.sep))) && isAnyAbs) {
-      const normalized = trimmed.replace(/\\/g, '/');
-      const rootName = path.basename(root).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const markerRegex = new RegExp(`^.*/(?:${rootName}|projektek)/(.+)$`);
-      const match = normalized.match(markerRegex);
+  const isWinAbs = /^[A-Za-z]:\//.test(clean);
+  const isAnyAbs = clean.startsWith('/') || isWinAbs;
+
+  let candidate = null;
+
+  if (isAnyAbs) {
+    const rootNorm = root.replace(/\\/g, '/');
+    if (clean === rootNorm || clean.startsWith(rootNorm + '/')) {
+      candidate = path.resolve(clean);
+    } else {
+      const match = clean.match(/^.*\/projektek\/(.+)$/i);
       if (match && match[1]) {
-        const candidate = path.resolve(root, match[1]);
-        const candRel = path.relative(root, candidate);
-        if (candRel && !candRel.startsWith('..') && !path.isAbsolute(candRel)) {
-          resolved = candidate;
-        }
+        candidate = path.resolve(root, match[1]);
+      } else {
+        candidate = path.resolve(clean);
       }
+    }
+  } else {
+    candidate = path.resolve(root, clean);
+  }
+
+  const checkWithinRoot = (p) => {
+    if (!p) return false;
+    const rel = path.relative(root, p);
+    return !rel.startsWith('..') && !path.isAbsolute(rel);
+  };
+
+  if (candidate && checkWithinRoot(candidate) && fs.existsSync(candidate)) {
+    return candidate;
+  }
+
+  // Ha közvetlenül nem létezik, próbáljuk megtalálni a fájlnév alapján a munkakönyvtárban
+  const targetBaseName = path.basename(clean);
+  if (targetBaseName && targetBaseName.endsWith('.tex')) {
+    const found = findFileRecursive(root, targetBaseName);
+    if (found && checkWithinRoot(found)) {
+      return found;
     }
   }
 
-  if (!resolved) return null;
-
-  const rel = path.relative(root, resolved);
-  if (rel.startsWith('..') || path.isAbsolute(rel)) {
-    return null;
+  // Új fájl mentése esetén az útvonal még nem létezik a lemezen, de érvényes a gyökérben
+  if (candidate && checkWithinRoot(candidate)) {
+    return candidate;
   }
 
-  return resolved;
+  return null;
 }
 
 function autoDetectTags(filename, subject) {

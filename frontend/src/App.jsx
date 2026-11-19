@@ -94,6 +94,17 @@ function findMatchingTreeFile(tree, targetPath) {
       }
     }
   }
+
+  // 3. Fallback: Keresés a fájlnév (basename) alapján, ha a fájlt almappába rendezték
+  const targetBase = targetNorm.split('/').filter(Boolean).pop()
+  if (targetBase && targetBase.endsWith('.tex')) {
+    for (const f of files) {
+      if (f.name === targetBase || (f.path && f.path.endsWith('/' + targetBase))) {
+        return f
+      }
+    }
+  }
+
   return null
 }
 
@@ -423,8 +434,8 @@ export default function App() {
           }
 
           // Szerver mappából olvasás (elkerülve a garantált 404 kéréseket elavult útvonalakra)
-          if (loadedContent === null && !activeHandle) {
-            let canFetchFromServer = !needsLocalPermission
+          if (loadedContent === null && !activeHandle && lastFile?.path) {
+            let canFetchFromServer = false
 
             if (loadedProjects?.source === 'server' && loadedProjects.tree) {
               const matched = findMatchingTreeFile(loadedProjects.tree, lastFile.path)
