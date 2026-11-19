@@ -1381,14 +1381,17 @@ router.post('/fix-error', async (req, res) => {
     const { code, errorLog, provider, model } = req.body;
     if (!code) return res.status(400).json({ error: 'Hiányzó forráskód' });
 
-    // 0. Gyors automatikus szanálás ismert strukturális hibákra (pl. Beamer + enumitem végtelen rekurzív hurok)
+    // 0. Gyors automatikus szanálás ismert strukturális és csomag-összeférhetetlenségi hibákra
     const isBeamer = /\\documentclass(?:\[[^\]]*\])?\{beamer\}/i.test(code);
-    if (
-      isBeamer &&
-      (errorLog?.includes('TeX capacity exceeded') || errorLog?.includes('labelenumi') || errorLog?.includes('grouping levels=255'))
-    ) {
+    const isBabelBidiError = errorLog?.includes('bidi method') || errorLog?.includes('bidi-only-lua') || errorLog?.includes('provide=*');
+    const isFontspecError = errorLog?.includes('fontspec') || errorLog?.includes('babelfont');
+    const isBeamerRecursion = isBeamer && (errorLog?.includes('TeX capacity exceeded') || errorLog?.includes('labelenumi') || errorLog?.includes('grouping levels=255'));
+
+    if (isBabelBidiError || isFontspecError || isBeamerRecursion) {
       const autoCleaned = supplementFullLatex(code);
-      return res.json({ success: true, latex: autoCleaned.trim(), targeted: true, autoHealed: true });
+      if (autoCleaned && autoCleaned.trim() !== code.trim()) {
+        return res.json({ success: true, latex: autoCleaned.trim(), targeted: true, autoHealed: true });
+      }
     }
 
     // 1. Kinyerjük a hibás sorszámot a hibanaplóból (l.<sorszám>)
@@ -1396,8 +1399,8 @@ router.post('/fix-error', async (req, res) => {
     const errorLine = lineMatch ? parseInt(lineMatch[1], 10) : null;
     const totalLines = code.split('\n').length;
 
-    // Ha van pontos hibás sorszám és a dokumentum hosszabb mint 40 sor: CÉLZOTT VILLÁMGYORS JAVÍTÁS
-    if (errorLine && totalLines > 40) {
+    // Ha van pontos hibás sorszám a felhasználó kódjában (nem belső .sty fájlban lévő sor!) és a dokumentum hosszabb mint 40 sor:
+    if (errorLine && totalLines > 40 && errorLine <= totalLines) {
       const ctx = getContextAroundLine(code, errorLine, 8);
       const targetedSys = `Te egy mesterszintű LaTeX hibajavító asszisztens vagy MAGYAR NYELVEN.
 A feladatod a megadott kódrészletben lévő hiba azonnali, precíz kijavítása.
@@ -1443,10 +1446,13 @@ Javítsd ki a kódrészletet úgy, hogy a hiba megszűnjön! Csak a javított k�
 A feladatod egy fordítási hibát (pdflatex compilation error) tartalmazó LaTeX dokumentum elemzése és a hibák precíz kijavítása.
 
 SZIGORÚ SZABÁLYOK:
-1. Elemezd a csatolt pdflatex hibanaplót (pl. hiányzó zárójel, hibás/lezáratlan környezet, hiányzó math mode '$', elgépelt parancs, hiányzó csomag, hibás táblázat/align szintaxis).
-2. Javítsd ki a forráskódot úgy, hogy a dokumentum hiba nélkül leforduljon pdflatex-szel, miközben az eredeti tartalom és szerkezet maradéktalanul megmarad.
-3. CSAK ÉS KIZÁRÓLAG a teljes, javított, azonnal fordítható LaTeX kódot add vissza (\\documentclass-tól \\end{document}-ig)!
-4. Semmilyen bevezető, lezáró vagy magyarázó szöveget NE írj a kód elé vagy mögé!`;
+1. A fordító motor kizárólag szabványos PDFLATEX (TeX Live), NEM LuaLaTeX és NEM XeLaTeX!
+   - Tilos a fontspec, babelfont, bidi=basic és provide=* opciók használata.
+   - Magyar nyelvhez kizárólag a szabványos: \\usepackage[hungarian]{babel} vagy \\usepackage[magyar]{babel} használandó.
+2. Elemezd a csatolt pdflatex hibanaplót (pl. hiányzó zárójel, hibás/lezáratlan környezet, hiányzó math mode '$', elgépelt parancs, hiányzó csomag, hibás táblázat/align szintaxis).
+3. Javítsd ki a forráskódot úgy, hogy a dokumentum hiba nélkül leforduljon pdflatex-szel, miközben az eredeti tartalom és szerkezet maradéktalanul megmarad.
+4. CSAK ÉS KIZÁRÓLAG a teljes, javított, azonnal fordítható LaTeX kódot add vissza (\\documentclass-tól \\end{document}-ig)!
+5. Semmilyen bevezető, lezáró vagy magyarázó szöveget NE írj a kód elé vagy mögé!`;
 
     const prompt = `A pdflatex fordító az alábbi hibával állt le:
 ----------------------------------------
